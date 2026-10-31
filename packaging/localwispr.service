@@ -1,0 +1,15 @@
+[Unit]
+Description=localwispr dictation daemon
+Documentation=https://github.com/kuba001-pl/localwispr
+PartOf=graphical-session.target
+After=graphical-session.target pipewire.service
+
+[Service]
+Type=dbus
+BusName=org.localwispr.Daemon
+ExecStart=@BIN@/localwispr daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

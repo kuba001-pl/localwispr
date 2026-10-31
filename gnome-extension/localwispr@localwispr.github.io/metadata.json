@@ -1,0 +1,8 @@
+{
+  "uuid": "localwispr@localwispr.github.io",
+  "name": "localwispr",
+  "description": "Dictation overlay and in-compositor text insertion for the localwispr daemon.",
+  "shell-version": ["48", "49", "50", "51"],
+  "url": "https://github.com/kuba001-pl/localwispr",
+  "version": 1
+}

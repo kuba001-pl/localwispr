@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<repository version="1.2" xmlns="http://www.gtk.org/introspection/core/1.0" xmlns:c="http://www.gtk.org/introspection/c/1.0">
+  <include name="GObject" version="2.0"/>
+  <include name="GLib" version="2.0"/>
+  <namespace name="LocalwisprSelection" version="1.0" shared-library="liblocalwispr-selection.so" c:identifier-prefixes="Localwispr" c:symbol-prefixes="localwispr">
+    <function name="create" c:identifier="localwispr_selection_create">
+      <return-value transfer-ownership="full"><type name="GObject.Object" c:type="GObject*"/></return-value>
+      <parameters><parameter name="contents" transfer-ownership="none"><type name="GLib.Variant" c:type="GVariant*"/></parameter></parameters>
+    </function>
+  </namespace>
+</repository>

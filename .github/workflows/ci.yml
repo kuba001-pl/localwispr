@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    # Ubuntu runners lack libadwaita 1.6 and gtk4-layer-shell.
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git cmake clang pkgconf \
+            gtk4 libadwaita gtk4-layer-shell pipewire alsa-lib dbus rustup
+          rustup default stable
+          rustup component add rustfmt clippy
+      - uses: actions/checkout@v4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+      - run: cargo fmt --all -- --check
+      # CPU-only: runners have no CUDA. Still compiles whisper.cpp and llama.cpp.
+      - run: cargo clippy --locked --workspace --all-targets --no-default-features -- -D warnings
+      - run: cargo test --locked --workspace --no-default-features
+
+  extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node gnome-extension/tests/extension.test.cjs
+      - run: for f in install.sh setup-permissions.sh gnome-extension/build-clipboard.sh; do bash -n "$f"; done

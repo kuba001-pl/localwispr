@@ -1,0 +1,59 @@
+[package]
+name = "localwispr"
+version = "0.1.0"
+edition = "2024"
+description = "Local, GPU-accelerated push-to-talk dictation for Wayland"
+license = "MIT"
+repository = "https://github.com/kuba001-pl/localwispr"
+rust-version = "1.92"
+
+[workspace]
+members = [".", "llm"]
+
+[features]
+default = ["cuda"]
+# GPU acceleration for whisper.cpp. Disable for a CPU-only build.
+cuda = ["whisper-rs/cuda"]
+
+[dependencies]
+anyhow = "1"
+async-channel = "2"
+clap = { version = "4", features = ["derive"] }
+cpal = { version = "0.18", features = ["pipewire"] }
+crossbeam-channel = "0.5"
+dirs = "7"
+evdev = "0.13"
+futures-util = "0.3"
+gtk4 = { version = "0.11", package = "gtk4", features = ["v4_14"] }
+gtk4-layer-shell = "0.8"
+indicatif = "0.18"
+libc = "0.2"
+libadwaita = { version = "0.9", features = ["v1_6"] }
+realfft = "3"
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "stream"] }
+rtrb = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time", "fs", "io-util", "signal", "process"] }
+toml = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+wayland-client = "0.31"
+whisper-rs = { version = "0.16", features = ["tracing_backend"] }
+wl-clipboard-rs = "0.9"
+zbus = "6"
+
+[profile.release]
+lto = "thin"
+codegen-units = 4
+panic = "abort"
+strip = "debuginfo"
+
+[profile.dev.package."*"]
+opt-level = 2
+
+# Local lifetime and cancellation fixes; see vendor/README.md.
+[patch.crates-io]
+whisper-rs = { path = "vendor/whisper-rs-0.16.0" }
+whisper-rs-sys = { path = "vendor/whisper-rs-sys-0.15.0" }

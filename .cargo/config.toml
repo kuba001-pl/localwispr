@@ -1,0 +1,6 @@
+[env]
+# Build CUDA kernels only for the GPU in this machine (much faster builds).
+# Override with e.g. CMAKE_CUDA_ARCHITECTURES="86;89" for redistributable binaries.
+CMAKE_CUDA_ARCHITECTURES = { value = "native", force = false }
+# Cap parallel nvcc jobs: two ggml CUDA builds at full -j exhaust RAM.
+CMAKE_BUILD_PARALLEL_LEVEL = { value = "8", force = false }
