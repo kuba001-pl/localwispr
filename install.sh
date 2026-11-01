@@ -105,6 +105,8 @@ package_for() { # $1 = soname
         debian:libpipewire*) echo libpipewire-0.3-0t64 ;; suse:libpipewire*) echo libpipewire-0_3-0 ;;
         debian:libasound*) echo libasound2t64 ;;   suse:libasound*) echo libasound2 ;;
         debian:libvulkan*) echo libvulkan1 ;;      suse:libvulkan*) echo libvulkan1 ;;
+        arch:libgomp*) echo gcc-libs ;;            fedora:libgomp*) echo libgomp ;;
+        debian:libgomp*) echo libgomp1 ;;          suse:libgomp*) echo libgomp1 ;;
         *:libcuda.so*) echo "the NVIDIA driver" ;;
         *) echo "$1" ;;
     esac
@@ -114,7 +116,7 @@ package_for() { # $1 = soname
 check_libraries() { # $1 = bundle dir, $2 = extra library dir
     local missing
     missing=$(for b in "$1"/bin/*; do LD_LIBRARY_PATH=$2${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH} ldd "$b" 2>/dev/null; done \
-        | awk '/not found/ {print $1}' | sort -u)
+        | sed -n 's/^[[:space:]]*\([^[:space:]]*\) => not found.*/\1/p' | sort -u)
     [[ -z $missing ]] && return 0
     warn "Missing system libraries: $(echo $missing)"
     local packages

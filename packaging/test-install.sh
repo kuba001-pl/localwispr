@@ -45,7 +45,7 @@ if [[ -f $dist/localwispr-$version-$arch-cuda.tar.xz ]]; then
     bundle=$work/localwispr-$version-$arch-cuda
     grep -q '"cuda_runtime": "[0-9]*"' "$bundle/share/localwispr/bundle.json" || fail "cuda bundle.json"
     missing=$(for b in "$bundle"/bin/*; do LD_LIBRARY_PATH=$(echo "$work"/cuda-*) ldd "$b"; done \
-        | awk '/not found/ {print $1}' | sort -u)
+        | sed -n 's/^[[:space:]]*\([^[:space:]]*\) => not found.*/\1/p' | sort -u)
     [[ $missing == libcuda.so.1 || -z $missing ]] || fail "unresolved: $missing"
     rm -rf "$work"
 fi

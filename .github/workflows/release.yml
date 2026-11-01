@@ -93,7 +93,7 @@ jobs:
           extra=
           [ "${{ matrix.variant }}" = cuda ] && extra="--cuda-runtime $CUDA_MAJOR"
           packaging/bundle.sh --variant ${{ matrix.variant }} --channel release --out dist --archive \
-            --bundle-lib libgtk4-layer-shell.so.0 $extra
+            --bundle-lib libgtk4-layer-shell.so.0 --bundle-lib libgomp.so.1 $extra
           if [ "${{ matrix.variant }}" = cuda ]; then
             packaging/cuda-runtime.sh "$CUDA_MAJOR" dist
           fi
@@ -121,7 +121,7 @@ jobs:
           if command -v pacman; then
             pacman -Syu --noconfirm --needed gtk4 libadwaita pipewire alsa-lib vulkan-icd-loader xz curl tar
           elif command -v dnf; then
-            dnf install -y gtk4 libadwaita pipewire-libs alsa-lib vulkan-loader xz tar
+            dnf install -y gtk4 libadwaita pipewire-libs alsa-lib vulkan-loader xz tar util-linux
           elif command -v zypper; then
             zypper --non-interactive install libgtk-4-1 libadwaita-1-0 libpipewire-0_3-0 libasound2 libvulkan1 xz tar gzip curl
           else
