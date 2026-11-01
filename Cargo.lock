@@ -3383,6 +3383,7 @@ dependencies = [
 name = "whisper-rs"
 version = "0.16.0"
 dependencies = [
+ "libc",
  "tracing",
  "whisper-rs-sys",
 ]

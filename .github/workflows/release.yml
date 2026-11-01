@@ -1,0 +1,163 @@
+name: Release
+
+# Pushing a tag vX.Y.Z (matching Cargo.toml) builds the bundles, smoke-tests
+# them on several distributions and publishes a GitHub release. Running the
+# workflow manually builds and tests without publishing.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CUDA_MAJOR: '13'
+  CUDA_PKG: '13-4'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [vulkan, cuda]
+    runs-on: ubuntu-latest
+    # Debian 13 sets the baseline: glibc 2.41, GTK 4.18, libadwaita 1.7.
+    container: debian:13
+    timeout-minutes: 240
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl git build-essential \
+            cmake clang libclang-dev pkg-config xz-utils file \
+            libgtk-4-dev libadwaita-1-dev libgtk4-layer-shell-dev libpipewire-0.3-dev \
+            libasound2-dev libglib2.0-dev gobject-introspection gir1.2-glib-2.0-dev
+      - name: Install Vulkan SDK pieces
+        if: matrix.variant == 'vulkan'
+        run: apt-get install -y --no-install-recommends libvulkan-dev glslc spirv-headers
+      - name: Install CUDA toolkit
+        if: matrix.variant == 'cuda'
+        run: |
+          curl -fsSLo /tmp/keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/debian13/x86_64/cuda-keyring_1.1-1_all.deb
+          dpkg -i /tmp/keyring.deb
+          apt-get update
+          apt-get install -y --no-install-recommends cuda-nvcc-$CUDA_PKG cuda-cudart-dev-$CUDA_PKG \
+            cuda-driver-dev-$CUDA_PKG libcublas-dev-$CUDA_PKG
+          cuda=/usr/local/cuda-$(echo "$CUDA_PKG" | tr - .)
+          # whisper-rs-sys looks for the libraries under /usr/local/cuda.
+          [ -e /usr/local/cuda ] || ln -s "$cuda" /usr/local/cuda
+          echo "CUDA_PATH=$cuda" >> "$GITHUB_ENV"
+          echo "CUDACXX=$cuda/bin/nvcc" >> "$GITHUB_ENV"
+          echo "$cuda/bin" >> "$GITHUB_PATH"
+      - name: Install Rust
+        run: |
+          curl -fsSL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@v4
+      - name: Check the tag matches Cargo.toml
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != Cargo.toml $version"; exit 1; }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: release-${{ matrix.variant }}-${{ hashFiles('Cargo.lock') }}
+      - name: Build
+        env:
+          LOCALWISPR_CHANNEL: release
+          # Portable CPU code (AVX2 baseline) instead of the build machine's.
+          GGML_NATIVE: 'OFF'
+          # Native code for every GPU generation CUDA 13 supports: Turing,
+          # Ampere (A100, RTX 30), Ada, Hopper, Blackwell (B200, RTX 50).
+          # A driver can only JIT PTX from a toolkit no newer than itself, so
+          # the 75-virtual fallback is just for GPUs released later.
+          CMAKE_CUDA_ARCHITECTURES: 75-real;80-real;86-real;89-real;90-real;100-real;120-real;75-virtual
+          CMAKE_BUILD_PARALLEL_LEVEL: '4'
+          RUSTFLAGS: -C link-arg=-Wl,--disable-new-dtags,-rpath,$ORIGIN/../lib:$ORIGIN/../../../runtime/cuda-13
+        run: |
+          if [ "${{ matrix.variant }}" = cuda ]; then
+            # Link cuBLAS dynamically; it ships separately as the runtime archive.
+            export LLAMA_BUILD_SHARED_LIBS=1
+            cargo build --release --locked --workspace
+          else
+            cargo build --release --locked --workspace --no-default-features --features vulkan
+          fi
+      - name: Bundle
+        run: |
+          mkdir -p dist
+          extra=
+          [ "${{ matrix.variant }}" = cuda ] && extra="--cuda-runtime $CUDA_MAJOR"
+          packaging/bundle.sh --variant ${{ matrix.variant }} --channel release --out dist --archive \
+            --bundle-lib libgtk4-layer-shell.so.0 $extra
+          if [ "${{ matrix.variant }}" = cuda ]; then
+            packaging/cuda-runtime.sh "$CUDA_MAJOR" dist
+          fi
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.variant }}
+          path: dist/*.tar.xz
+          if-no-files-found: error
+          compression-level: 0
+
+  # The bundles must load on every supported distribution (no GPU on runners:
+  # this checks libraries, the CLI and the installer, not inference).
+  smoke-test:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['archlinux:latest', 'fedora:42', 'ubuntu:25.04', 'debian:13', 'opensuse/tumbleweed']
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    steps:
+      - name: Install runtime dependencies
+        run: |
+          if command -v pacman; then
+            pacman -Syu --noconfirm --needed gtk4 libadwaita pipewire alsa-lib vulkan-icd-loader xz curl tar
+          elif command -v dnf; then
+            dnf install -y gtk4 libadwaita pipewire-libs alsa-lib vulkan-loader xz tar
+          elif command -v zypper; then
+            zypper --non-interactive install libgtk-4-1 libadwaita-1-0 libpipewire-0_3-0 libasound2 libvulkan1 xz tar gzip curl
+          else
+            apt-get update
+            apt-get install -y --no-install-recommends libgtk-4-1 libadwaita-1-0 libpipewire-0.3-0t64 \
+              libasound2t64 libvulkan1 xz-utils curl ca-certificates
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Install through install.sh from the local artifacts
+        run: |
+          useradd -m tester
+          chown -R tester dist
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          (cd dist && sha256sum *.tar.xz > SHA256SUMS)
+          su tester -c "bash packaging/test-install.sh $PWD/dist $version"
+
+  publish:
+    needs: smoke-test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp install.sh dist/
+          (cd dist && sha256sum *.tar.xz install.sh > SHA256SUMS && cat SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" dist/* --title "localwispr ${GITHUB_REF_NAME#v}" --generate-notes

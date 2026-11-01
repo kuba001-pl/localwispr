@@ -14,6 +14,8 @@ members = [".", "llm"]
 default = ["cuda"]
 # GPU acceleration for whisper.cpp. Disable for a CPU-only build.
 cuda = ["whisper-rs/cuda"]
+# Portable GPU acceleration (NVIDIA, AMD, Intel) through Vulkan.
+vulkan = ["whisper-rs/vulkan"]
 
 [dependencies]
 anyhow = "1"
