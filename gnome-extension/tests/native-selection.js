@@ -3,6 +3,8 @@ const {Gio, GLib, Meta, GIRepository} = imports.gi;
 const repository = GIRepository.Repository.dup_default?.() ?? GIRepository.Repository;
 repository.prepend_search_path(ARGV[0]);
 repository.prepend_library_path(ARGV[0]);
+// The helper finds its parent type by name, as the extension ensures in the Shell.
+void Meta.SelectionSource.$gtype;
 const Native = imports.gi.LocalwisprSelection;
 const expected = {
     'text/html': new TextEncoder().encode('<b>hello</b>'),

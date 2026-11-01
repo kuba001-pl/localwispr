@@ -1132,8 +1132,168 @@ fn models_page(ctx: &Shared) -> adw::PreferencesPage {
     }
     groups.push(status);
     groups.push(dir);
+    groups.push(updates_group(ctx));
     refresh_model_rows(ctx);
     page(&groups)
+}
+
+/// Runs `localwispr <args>` and returns (success, stdout, stderr).
+async fn run_self(argv: Vec<std::ffi::OsString>) -> Result<(bool, String, String), glib::Error> {
+    let args: Vec<&std::ffi::OsStr> = argv.iter().map(|a| a.as_os_str()).collect();
+    let proc = gtk::gio::Subprocess::newv(
+        &args,
+        gtk::gio::SubprocessFlags::STDOUT_PIPE | gtk::gio::SubprocessFlags::STDERR_PIPE,
+    )?;
+    let (out, err) = proc.communicate_utf8_future(None).await?;
+    let text = |s: Option<glib::GString>| s.map(|s| s.to_string()).unwrap_or_default();
+    Ok((proc.is_successful(), text(out), text(err)))
+}
+
+fn last_line(text: &str) -> &str {
+    text.lines()
+        .rev()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("unknown error")
+}
+
+fn updates_group(ctx: &Shared) -> adw::PreferencesGroup {
+    use crate::update;
+    let g = group(
+        "Updates",
+        Some("Releases come from GitHub. Nothing is installed unless you click Install."),
+    );
+    let row = adw::ActionRow::builder()
+        .title("localwispr")
+        .subtitle(update::long_version())
+        .subtitle_selectable(true)
+        .build();
+    let spinner = adw::Spinner::builder().visible(false).build();
+    let button = gtk::Button::builder()
+        .label("Check now")
+        .valign(gtk::Align::Center)
+        .build();
+    row.add_suffix(&spinner);
+    row.add_suffix(&button);
+    g.add(&row);
+    g.add(&switch_row(
+        ctx,
+        "Check for updates automatically",
+        "Once a day, ask GitHub for the latest version; you get a notice when one is out",
+        |c| c.updates.check,
+        |c, v| c.updates.check = v,
+    ));
+
+    let available: Rc<RefCell<Option<String>>> = Rc::default();
+    let check = {
+        let (row, spinner, button, available) = (
+            row.clone(),
+            spinner.clone(),
+            button.clone(),
+            available.clone(),
+        );
+        let ctx = ctx.clone();
+        move |quiet: bool| {
+            let (row, spinner, button, available, ctx) = (
+                row.clone(),
+                spinner.clone(),
+                button.clone(),
+                available.clone(),
+                ctx.clone(),
+            );
+            spinner.set_visible(true);
+            button.set_sensitive(false);
+            glib::spawn_future_local(async move {
+                let result = run_self(update::own_scope_argv(&["update", "--check"])).await;
+                spinner.set_visible(false);
+                button.set_sensitive(true);
+                match result {
+                    Ok((true, out, _)) => match update::parse_check_output(&out) {
+                        Some(v) => {
+                            row.set_subtitle(&format!(
+                                "{} · version {v} is available",
+                                update::long_version()
+                            ));
+                            button.set_label(&format!("Install {v}"));
+                            button.add_css_class("suggested-action");
+                            *available.borrow_mut() = Some(v);
+                        }
+                        None => {
+                            row.set_subtitle(&format!("{} · up to date", update::long_version()));
+                        }
+                    },
+                    Ok((false, _, err)) if !quiet => {
+                        ctx.toast(&format!("Update check failed: {}", last_line(&err)))
+                    }
+                    Err(e) if !quiet => ctx.toast(&format!("Update check failed: {e}")),
+                    _ => {}
+                }
+            });
+        }
+    };
+    let install = {
+        let (row, spinner, button) = (row.clone(), spinner.clone(), button.clone());
+        let ctx = ctx.clone();
+        move |version: String| {
+            let (row, spinner, button, ctx) =
+                (row.clone(), spinner.clone(), button.clone(), ctx.clone());
+            spinner.set_visible(true);
+            button.set_sensitive(false);
+            button.set_label("Installing…");
+            // The app stays alive while the window is closed mid-update.
+            let hold = ctx.app.hold();
+            glib::spawn_future_local(async move {
+                let _hold = hold;
+                let argv = update::own_scope_argv(&["update", "--yes", "--version", &version]);
+                let result = run_self(argv).await;
+                spinner.set_visible(false);
+                match result {
+                    Ok((true, out, _)) => {
+                        button.set_label("Installed");
+                        button.remove_css_class("suggested-action");
+                        row.set_subtitle(&format!(
+                            "Updated to {version}. Reopen Settings to use the new version."
+                        ));
+                        let notes: Vec<&str> = out
+                            .lines()
+                            .filter_map(|l| l.trim_start().strip_prefix("• "))
+                            .collect();
+                        if notes.is_empty() {
+                            ctx.toast(&format!("Updated to localwispr {version}"));
+                        } else {
+                            let dialog = adw::AlertDialog::builder()
+                                .heading(format!("Updated to localwispr {version}"))
+                                .body(notes.join("\n\n"))
+                                .build();
+                            dialog.add_response("close", "OK");
+                            dialog.present(ctx.app.active_window().as_ref());
+                        }
+                    }
+                    Ok((false, _, err)) => {
+                        button.set_sensitive(true);
+                        button.set_label(&format!("Install {version}"));
+                        ctx.toast(&format!("Update failed: {}", last_line(&err)));
+                    }
+                    Err(e) => {
+                        button.set_sensitive(true);
+                        button.set_label(&format!("Install {version}"));
+                        ctx.toast(&format!("Update failed: {e}"));
+                    }
+                }
+            });
+        }
+    };
+    {
+        let check = check.clone();
+        let available = available.clone();
+        button.connect_clicked(move |_| match available.borrow().clone() {
+            Some(v) => install(v),
+            None => check(false),
+        });
+    }
+    if ctx.cfg.borrow().updates.check {
+        check(true);
+    }
+    g
 }
 
 fn refresh_model_rows(ctx: &Shared) {

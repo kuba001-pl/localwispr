@@ -59,7 +59,71 @@ Performance details:
 
 ## Install
 
-Build requirements: Git, Rust 1.92+, a C/C++ compiler, CMake, Clang/libclang,
+One command, no build tools needed (x86_64; Debian 13, Ubuntu 25.04,
+Fedora 42, Arch, openSUSE Tumbleweed or newer):
+
+```sh
+curl -fsSL https://github.com/kuba001-pl/localwispr/releases/latest/download/install.sh | bash
+```
+
+The installer:
+
+- picks the build: **CUDA** with an NVIDIA driver 580 or newer, otherwise
+  **Vulkan** (AMD, Intel, NVIDIA; falls back to the CPU without a GPU);
+- downloads it from GitHub Releases, checks its SHA-256, and installs it into
+  `~/.local` (no root);
+- on CUDA systems without CUDA 13 libraries, downloads them once (~400 MB) into
+  localwispr's own folder. Updates don't fetch them again;
+- installs the systemd user service, the settings launcher, and the GNOME Shell
+  extension;
+- offers the one-time permission setup (sudo): `input` group for global
+  hotkeys, `/dev/uinput` for pasting outside GNOME, and Caps Lock as
+  push-to-talk. Log out and back in afterwards. GNOME only loads new
+  extensions at login.
+
+It needs GTK 4.14+, libadwaita 1.6+, PipeWire and ALSA libraries, which
+current desktops already have. Anything missing is listed together with the
+package to install. Options go after `bash -s --`, e.g.
+`… | bash -s -- --variant vulkan` (`--variant cuda|vulkan`, `--version X.Y.Z`,
+`--no-service`, `--no-permissions`).
+
+Models are downloaded automatically on first start into
+`~/.local/share/localwispr/models` (resumable, SHA-256 verified). To fetch them
+up front with a progress bar: `localwispr download`.
+
+Outside GNOME, make Caps Lock inert yourself (xkb option `caps:none`; the
+permission setup prints the setting for KDE, Hyprland and Sway), or bind
+push-to-talk to another key in Settings.
+
+### Updating
+
+```sh
+localwispr update            # latest release; restarts the service
+localwispr update --check    # only check
+localwispr update --rollback # back to the previous version
+```
+
+Or use **Settings → Models → Updates**. By default the daemon asks GitHub
+once a day whether a new release exists. That is one request with nothing
+sent. You get a desktop notification, and nothing installs until you ask.
+Turn the check off in the same place (`[updates] check = false`).
+
+Versions are installed side by side under `~/.local/share/localwispr/app`
+and switched atomically, and the previous one is kept for `--rollback`. When
+the GNOME extension changes, the update tells you to log out and back in.
+Until then, the old extension keeps working with the new daemon.
+
+### Uninstall
+
+```sh
+localwispr uninstall                     # keeps config and models
+localwispr uninstall --undo-permissions  # also reverts the permission setup
+```
+
+### Building from source
+
+Needed for other architectures, CPU-only builds, or development. Build
+requirements: Git, Rust 1.92+, a C/C++ compiler, CMake, Clang/libclang,
 pkg-config, GTK 4.14+, libadwaita 1.6+, gtk4-layer-shell, PipeWire and ALSA
 development files:
 
@@ -72,34 +136,19 @@ sudo dnf install git gcc gcc-c++ cmake clang clang-devel pkgconf-pkg-config gtk4
 sudo apt install git build-essential cmake clang libclang-dev pkg-config libgtk-4-dev libadwaita-1-dev libgtk4-layer-shell-dev libpipewire-0.3-dev libasound2-dev
 ```
 
-GPU builds also need an NVIDIA GPU and the CUDA toolkit; `install.sh` finds
-`nvcc` on `PATH`, in `/opt/cuda` or in `/usr/local/cuda` (or set `CUDACXX`).
-CUDA kernels are built for the GPU in the build machine; set
-`CMAKE_CUDA_ARCHITECTURES` (e.g. `"86;89"`) to build for others. On GNOME,
-the optional clipboard helper also needs Mutter's development files
-(`mutter` on Arch, `mutter-devel` on Fedora, `libmutter-*-dev` on Debian/Ubuntu).
-
 ```sh
 git clone https://github.com/kuba001-pl/localwispr.git
 cd localwispr
-./install.sh               # builds with CUDA, installs to ~/.local, enables a systemd user service
-./setup-permissions.sh     # once: input group, /dev/uinput, Caps Lock → inert; then log out/in
+./install.sh --from-source           # CUDA (needs the CUDA toolkit)
+./install.sh --from-source --vulkan  # Vulkan (needs Vulkan headers, glslc, SPIRV-Headers)
+./install.sh --from-source --cpu     # CPU only
 ```
 
-On GNOME, the installer pre-enables the Shell extension; GNOME only discovers
-new extensions at login, so it starts working after you log out and back in
-(the same logout the permission changes need).
-
-Outside GNOME, make Caps Lock inert yourself (xkb option `caps:none`;
-`setup-permissions.sh` prints the setting for KDE, Hyprland and Sway), or bind
-push-to-talk to another key in Settings.
-
-Models are downloaded automatically on first start into
-`~/.local/share/localwispr/models` (resumable, SHA-256 verified). To fetch them
-up front with a progress bar: `localwispr download`.
-
-CPU-only build: `./install.sh --cpu`. Uninstall: `./install.sh --uninstall`
-(keeps config and models) and `./setup-permissions.sh --undo`.
+`install.sh` finds `nvcc` on `PATH`, in `/opt/cuda` or in `/usr/local/cuda`
+(or set `CUDACXX`). CUDA kernels are built for the GPU in the build machine.
+Set `CMAKE_CUDA_ARCHITECTURES` (e.g. `"86;89"`) to build for others. A source
+install is laid out like a release, so `localwispr update` can later replace it
+with a prebuilt release; it asks first.
 
 ### Autostart
 
@@ -219,7 +268,8 @@ layerrule = ignorezero, localwispr
 
 - **Nothing happens on Caps Lock** — `localwispr status` shows the last
   warning. Usually you're not in the `input` group yet (run
-  `./setup-permissions.sh`, then log out and back in).
+  `bash ~/.local/share/localwispr/app/current/share/localwispr/setup-permissions.sh`,
+  then log out and back in).
 - **Caps Lock still toggles capitals** — GNOME: the script sets
   `caps:none`. Other desktops: set that xkb option in your compositor config.
 - **Text doesn't appear on GNOME** — the extension must be enabled
@@ -228,7 +278,7 @@ layerrule = ignorezero, localwispr
   Settings → Output.
 - **No overlay / text not inserted on another desktop** — `localwispr status`
   shows the detected `frontend` and `injection`. Insertion outside GNOME needs
-  `/dev/uinput` access (`./setup-permissions.sh`) and a compositor with
+  `/dev/uinput` access (the permission setup above) and a compositor with
   `ext-data-control` or `wlr-data-control`.
 - **Service doesn't start at login** — see [Autostart](#autostart).
 
@@ -238,8 +288,10 @@ dictated text; trim it before posting).
 
 ## Privacy
 
-Speech, transcripts and cleanup never leave your machine. The only network
-access is downloading models from Hugging Face. To insert text, localwispr
+Speech, transcripts and cleanup never leave your machine. There is no
+localwispr server. Network access is limited to downloading models from
+Hugging Face and releases from GitHub, plus the daily update check (one
+request to github.com that sends nothing; it can be turned off in Settings). To insert text, localwispr
 replaces the clipboard and optionally attempts to restore it (see the
 limitations under [Use](#use)). Membership in the `input` group, needed for
 global hotkeys, lets any program you run read every keystroke. Debug logs
@@ -263,7 +315,13 @@ cargo test --workspace                       # unit tests (DSP, resampler, guard
 cargo test --workspace --no-default-features # without CUDA
 node gnome-extension/tests/extension.test.cjs
 cargo build --release --workspace
+bash packaging/test-install.sh dist 0.2.0    # installer test against locally built bundles
 ```
+
+Releases: bump `version` in `Cargo.toml`, then push a `vX.Y.Z` tag.
+`.github/workflows/release.yml` builds the CUDA and Vulkan bundles on Debian 13,
+installs them on several distributions, and publishes them with `install.sh`
+and `SHA256SUMS`.
 
 ## License
 

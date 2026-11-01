@@ -213,6 +213,18 @@ pub async fn run() -> Result<()> {
     ) {
         anyhow::bail!("localwispr is already running");
     }
+    {
+        let events = events_tx.clone();
+        tokio::spawn(crate::update::check_daily(move |version| {
+            let _ = events.send(Event::Notice(
+                "info",
+                format!(
+                    "localwispr {version} is available: Settings → Models → Updates, \
+                     or run `localwispr update`"
+                ),
+            ));
+        }));
+    }
     // Forward D-Bus requests into the single event stream.
     {
         let ev = events_tx.clone();
@@ -937,9 +949,10 @@ impl Engine {
     // ------------------------------------------------------------- settings --
 
     async fn open_settings(&mut self) {
-        let exe = std::env::current_exe().unwrap_or_else(|_| "localwispr".into());
-        match std::process::Command::new(exe)
-            .arg("settings")
+        // In its own scope, the window survives service restarts (updates).
+        let argv = crate::update::own_scope_argv(&["settings"]);
+        match std::process::Command::new(&argv[0])
+            .args(&argv[1..])
             // Command inherits XDG_ACTIVATION_TOKEN when the caller/session
             // provides one; otherwise the compositor decides whether to focus.
             .stdin(std::process::Stdio::null())

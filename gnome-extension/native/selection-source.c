@@ -1,16 +1,36 @@
 // Multi-representation clipboard source for Mutter. GJS cannot implement the
 // read_async vfunc because it has a callback argument. No desktop state is
 // changed by this helper until its caller explicitly assigns the source.
-#include <meta/meta-selection-source.h>
+//
+// Built without Mutter headers or libraries so one binary works with every
+// GNOME release: MetaSelectionSource is looked up by name in the running
+// Shell, and its public class layout (unchanged since Mutter 3.34) is mirrored
+// below. localwispr_selection_create returns NULL instead of registering a
+// subtype when the running Mutter's type sizes differ from this mirror.
+#include <gio/gio.h>
+
+typedef struct {
+    GObject parent_instance;
+} MetaSelectionSource;
+
+typedef struct {
+    GObjectClass parent_class;
+    void (*activated)(MetaSelectionSource *source);
+    void (*deactivated)(MetaSelectionSource *source);
+    GList *(*get_mimetypes)(MetaSelectionSource *source);
+    void (*read_async)(MetaSelectionSource *source, const gchar *mimetype,
+                       GCancellable *cancellable, GAsyncReadyCallback callback,
+                       gpointer user_data);
+    GInputStream *(*read_finish)(MetaSelectionSource *source, GAsyncResult *result,
+                                 GError **error);
+} MetaSelectionSourceClass;
 
 typedef struct {
     MetaSelectionSource parent;
     GHashTable *contents;
 } LocalwisprSelectionSource;
-typedef MetaSelectionSourceClass LocalwisprSelectionSourceClass;
 
-G_DEFINE_TYPE(LocalwisprSelectionSource, localwispr_selection_source,
-              META_TYPE_SELECTION_SOURCE)
+static gpointer parent_class;
 
 static GList *get_mimetypes(MetaSelectionSource *source)
 {
@@ -50,27 +70,61 @@ static void finalize(GObject *object)
 {
     LocalwisprSelectionSource *self = (LocalwisprSelectionSource *) object;
     g_hash_table_unref(self->contents);
-    G_OBJECT_CLASS(localwispr_selection_source_parent_class)->finalize(object);
+    G_OBJECT_CLASS(parent_class)->finalize(object);
 }
 
-static void localwispr_selection_source_class_init(LocalwisprSelectionSourceClass *klass)
+static void class_init(gpointer klass, G_GNUC_UNUSED gpointer data)
 {
+    MetaSelectionSourceClass *source_class = klass;
+    parent_class = g_type_class_peek_parent(klass);
     G_OBJECT_CLASS(klass)->finalize = finalize;
-    klass->get_mimetypes = get_mimetypes;
-    klass->read_async = read_async;
-    klass->read_finish = read_finish;
+    source_class->get_mimetypes = get_mimetypes;
+    source_class->read_async = read_async;
+    source_class->read_finish = read_finish;
 }
 
-static void localwispr_selection_source_init(LocalwisprSelectionSource *self)
+static void instance_init(GTypeInstance *instance, G_GNUC_UNUSED gpointer klass)
 {
+    LocalwisprSelectionSource *self = (LocalwisprSelectionSource *) instance;
     self->contents = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
-                                         (GDestroyNotify) g_bytes_unref);
+                                           (GDestroyNotify) g_bytes_unref);
 }
 
-MetaSelectionSource *localwispr_selection_create(GVariant *contents)
+static GType selection_source_type(void)
+{
+    /* The once-value must be nonzero, while the type may legitimately be
+     * G_TYPE_INVALID when the running Mutter is incompatible. */
+    static gsize initialized = 0;
+    static GType type = G_TYPE_INVALID;
+    if (g_once_init_enter(&initialized)) {
+        GType parent = g_type_from_name("MetaSelectionSource");
+        GTypeQuery query = {0};
+        if (parent)
+            g_type_query(parent, &query);
+        if (parent && g_type_is_a(parent, G_TYPE_OBJECT) &&
+            query.class_size == sizeof(MetaSelectionSourceClass) &&
+            query.instance_size == sizeof(MetaSelectionSource)) {
+            type = g_type_register_static_simple(
+                parent, "LocalwisprSelectionSource", sizeof(MetaSelectionSourceClass),
+                class_init, sizeof(LocalwisprSelectionSource), instance_init, 0);
+        } else {
+            g_warning("localwispr: MetaSelectionSource %s; multi-format clipboard restore disabled",
+                      parent ? "has an unexpected layout" : "is not registered");
+        }
+        g_once_init_leave(&initialized, 1);
+    }
+    return type;
+}
+
+/* Returns NULL when the running Mutter is incompatible; the caller then falls
+ * back to Meta.SelectionSourceMemory. */
+GObject *localwispr_selection_create(GVariant *contents)
 {
     g_return_val_if_fail(g_variant_is_of_type(contents, G_VARIANT_TYPE("a{say}")), NULL);
-    LocalwisprSelectionSource *self = g_object_new(localwispr_selection_source_get_type(), NULL);
+    GType type = selection_source_type();
+    if (!type)
+        return NULL;
+    LocalwisprSelectionSource *self = g_object_new(type, NULL);
     GVariantIter iter;
     char *mime;
     GVariant *value;
@@ -80,5 +134,5 @@ MetaSelectionSource *localwispr_selection_create(GVariant *contents)
         g_hash_table_replace(self->contents, mime, bytes);
         g_variant_unref(value);
     }
-    return META_SELECTION_SOURCE(self);
+    return G_OBJECT(self);
 }

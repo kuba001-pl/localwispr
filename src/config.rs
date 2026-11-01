@@ -38,6 +38,21 @@ pub struct Config {
     pub cleanup: Cleanup,
     pub output: Output,
     pub hud: Hud,
+    pub updates: Updates,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Updates {
+    /// Once a day, ask GitHub whether a newer release exists (one request to
+    /// github.com, nothing is sent). Updates are never installed unasked.
+    pub check: bool,
+}
+
+impl Default for Updates {
+    fn default() -> Self {
+        Self { check: true }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

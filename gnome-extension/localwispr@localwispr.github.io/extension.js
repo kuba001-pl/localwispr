@@ -106,7 +106,13 @@ function savedSelection(contents) {
         return Meta.SelectionSourceMemory.new(mime, contents.find(([type]) => type === mime)[1]);
     }
     const values = Object.fromEntries(contents.map(([mime, bytes]) => [mime, bytes.get_data()]));
-    return nativeSelection.create(new GLib.Variant('a{say}', values));
+    const source = nativeSelection.create(new GLib.Variant('a{say}', values));
+    if (source)
+        return source;
+    // The helper refuses to run on a Mutter whose ABI it does not match.
+    console.warn('localwispr: clipboard helper incompatible with this GNOME; restoring text only');
+    nativeSelection = null;
+    return savedSelection(contents);
 }
 
 // Inject returns whether the clipboard was preserved; a D-Bus error means the
@@ -122,11 +128,12 @@ function loadNativeSelection(path) {
     nativeSelection = null;
     try {
         const repository = GIRepository.Repository.dup_default?.() ?? GIRepository.Repository.get_default();
-        const [, bytes] = GLib.file_get_contents(`${path}/selection-meta-version`);
-        const version = new TextDecoder().decode(bytes).trim();
-        const loaded = repository.get_version('Meta');
-        if (!/^\d+$/.test(version) || version !== loaded)
-            throw new Error(`helper Meta ${version} does not match loaded Meta ${loaded}`);
+        const [, bytes] = GLib.file_get_contents(`${path}/selection-abi`);
+        const abi = new TextDecoder().decode(bytes).trim();
+        if (abi !== '1')
+            throw new Error(`unsupported helper ABI ${abi}`);
+        // The helper looks up MetaSelectionSource by name; make sure it is registered.
+        void Meta.SelectionSource.$gtype;
         // Do not import (and dlopen) the helper until its ABI has been checked.
         const paths = GIRepository.Repository.dup_default ? repository : GIRepository.Repository;
         paths.prepend_search_path(path);

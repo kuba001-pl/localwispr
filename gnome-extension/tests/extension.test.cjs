@@ -365,20 +365,39 @@ test('daemon sync retries bootstrap and later polling failures with cancellable 
 test('helper ABI is checked before importing its library', () => {
     const h = harness();
     let imports = 0;
-    let version = '19';
-    const repository = {get_version() { return '51'; }, prepend_search_path() {}, prepend_library_path() {}};
+    let abi = '0';
+    const repository = {prepend_search_path() {}, prepend_library_path() {}};
     h.context.GIRepository.Repository = {dup_default() { return repository; }};
-    h.context.GLib.file_get_contents = () => [true, new TextEncoder().encode(version)];
+    h.context.Meta.SelectionSource = {$gtype: 1};
+    h.context.GLib.file_get_contents = () => [true, new TextEncoder().encode(`${abi}\n`)];
     h.context.imports = {gi: {get LocalwisprSelection() { imports++; return {}; }}};
     h.loadNativeSelection('/extension');
     assert.equal(imports, 0);
-    assert.ok(h.warnings.some(message => message.includes('does not match loaded Meta')));
-    version = '51';
+    assert.ok(h.warnings.some(message => message.includes('unsupported helper ABI')));
+    abi = '1';
     h.loadNativeSelection('/extension');
     assert.equal(imports, 1);
     h.context.GLib.file_get_contents = () => { throw new Error('missing ABI stamp'); };
     h.loadNativeSelection('/extension');
     assert.equal(imports, 1);
+});
+
+test('a helper that rejects the running Mutter falls back to text-only restoration', async () => {
+    const h = harness();
+    vm.runInContext('nativeSelection = {create() { return null; }};', h.context);
+    h.owners.get(1).formats = new Map([['text/html', '<b>original</b>'], ['text/plain;charset=utf-8', 'preferred']]);
+    const service = new h.ShellService(1);
+    const reply = h.invocation();
+    const operation = service.InjectAsync(['dictation', 'ctrl-v', true, 400], reply);
+    await h.flush();
+    await h.fire(20);
+    assert.ok(h.keyEvents.length > 0);
+    await h.fire(400);
+    await operation;
+    assert.deepEqual(reply.replies, [true]);
+    assert.deepEqual([...h.owners.get(1).formats], [['text/plain;charset=utf-8', 'preferred']]);
+    assert.equal(vm.runInContext('nativeSelection', h.context), null);
+    assert.ok(h.warnings.some(message => message.includes('restoring text only')));
 });
 
 test('restoration failure returns false and teardown still releases resources', async () => {
@@ -398,7 +417,7 @@ test('restoration failure returns false and teardown still releases resources', 
     assert.equal(h.timers.size, 0);
 });
 
-test('helper build prefers matching headers, supports override, and announces fallback', () => {
+test('helper build needs only GLib and stamps its ABI', () => {
     const os = require('node:os');
     const {spawnSync} = require('node:child_process');
     const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'localwispr-build-test-'));
@@ -406,37 +425,24 @@ test('helper build prefers matching headers, supports override, and announces fa
         const bin = path.join(temporary, 'bin');
         fs.mkdirSync(bin);
         const scripts = {
-            'gnome-shell': '#!/bin/sh\necho "GNOME Shell 51.1"\n',
-            'pkg-config': `#!/bin/sh
-case "$1" in
-    --exists) case " $TEST_PACKAGES " in *" \${2#libmutter-} "*) exit 0;; *) exit 1;; esac;;
-    --list-all) for v in $TEST_PACKAGES; do echo "libmutter-$v Meta"; done;;
-    --variable=libdir|--variable=girdir) echo /nonexistent;;
-esac
-`,
+            'pkg-config': '#!/bin/sh\ncase "$1" in --exists) [ -z "$TEST_NO_GIO" ];; *) echo -lgio-2.0;; esac\n',
             'cc': '#!/bin/sh\nexit 0\n',
             'gi-compile-repository': '#!/bin/sh\nexit 0\n',
         };
         for (const [name, script] of Object.entries(scripts))
             fs.writeFileSync(path.join(bin, name), script, {mode: 0o755});
-        for (const [packages, override, expected, fallback] of [
-            ['19 51', '', '51', false], ['19 50', '', '19', false], ['18 50', '', '50', true], ['18 51', '18', '18', false],
-        ]) {
-            const output = path.join(temporary, `out-${expected}`);
-            const result = spawnSync('bash', [path.join(__dirname, '../build-clipboard.sh'), output], {
-                encoding: 'utf8', env: {...process.env, PATH: `${bin}:${process.env.PATH}`,
-                    CC: path.join(bin, 'cc'), MUTTER_VERSION: override, TEST_PACKAGES: packages},
-            });
-            assert.equal(result.status, 0, result.stderr);
-            assert.equal(fs.readFileSync(path.join(output, 'selection-meta-version'), 'utf8').trim(), expected);
-            assert.equal(result.stderr.includes('falling back'), fallback);
-        }
-        const invalid = spawnSync('bash', [path.join(__dirname, '../build-clipboard.sh'), temporary], {
-            encoding: 'utf8', env: {...process.env, PATH: `${bin}:${process.env.PATH}`,
-                MUTTER_VERSION: '99', TEST_PACKAGES: '51'},
-        });
-        assert.notEqual(invalid.status, 0);
-        assert.match(invalid.stderr, /libmutter-99 is not installed/);
+        const env = {...process.env, PATH: `${bin}:${process.env.PATH}`, CC: path.join(bin, 'cc')};
+        const output = path.join(temporary, 'out');
+        fs.mkdirSync(output);
+        fs.writeFileSync(path.join(output, 'selection-meta-version'), '51\n');
+        const result = spawnSync('bash', [path.join(__dirname, '../build-clipboard.sh'), output], {encoding: 'utf8', env});
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(fs.readFileSync(path.join(output, 'selection-abi'), 'utf8').trim(), '1');
+        assert.ok(!fs.existsSync(path.join(output, 'selection-meta-version')));
+        const missing = spawnSync('bash', [path.join(__dirname, '../build-clipboard.sh'), output],
+            {encoding: 'utf8', env: {...env, TEST_NO_GIO: '1'}});
+        assert.notEqual(missing.status, 0);
+        assert.match(missing.stderr, /GLib\/GIO development files/);
     } finally {
         fs.rmSync(temporary, {recursive: true, force: true});
     }

@@ -13,6 +13,7 @@ mod llm_proto;
 mod models;
 mod settings;
 mod stt;
+mod update;
 mod wav;
 
 use std::path::PathBuf;
@@ -22,7 +23,7 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "localwispr", version, about)]
+#[command(name = "localwispr", version = update::long_version(), about)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Command>,
@@ -72,6 +73,39 @@ enum Command {
     Cancel,
     /// Print the running daemon's status.
     Status,
+    /// Update to the latest release from GitHub (or check for one).
+    Update {
+        /// Only report whether an update is available.
+        #[arg(long)]
+        check: bool,
+        /// Don't ask for confirmation.
+        #[arg(long, short)]
+        yes: bool,
+        /// Switch GPU backend: `cuda` (NVIDIA) or `vulkan` (any GPU, CPU fallback).
+        #[arg(long)]
+        variant: Option<String>,
+        /// Install this release instead of the latest (e.g. `0.2.0`).
+        #[arg(long, conflicts_with = "rollback")]
+        version: Option<String>,
+        /// Switch back to the previously installed version.
+        #[arg(long, conflicts_with_all = ["check", "variant"])]
+        rollback: bool,
+        /// Don't install or restart the systemd user service.
+        #[arg(long)]
+        no_service: bool,
+    },
+    /// Install the bundle this binary belongs to (used by install.sh and `update`).
+    #[command(hide = true)]
+    Install {
+        #[arg(long)]
+        no_service: bool,
+    },
+    /// Remove localwispr (keeps config and models).
+    Uninstall {
+        /// Also undo setup-permissions.sh (asks for sudo).
+        #[arg(long)]
+        undo_permissions: bool,
+    },
 }
 
 fn init_logging() {
@@ -94,6 +128,10 @@ fn main() -> Result<()> {
         // GTK frontends run their own main loop (no tokio on the main thread).
         Command::Settings => settings::run(),
         Command::Hud => hud::run(),
+        Command::Install { no_service } => update::install(update::InstallOptions {
+            service: !no_service,
+        }),
+        Command::Uninstall { undo_permissions } => update::uninstall(undo_permissions),
         other => tokio::runtime::Builder::new_multi_thread()
             .worker_threads(4)
             .enable_all()
@@ -177,7 +215,27 @@ async fn async_main(cmd: Command) -> Result<()> {
             };
             res.context("is the localwispr daemon running?")
         }
-        Command::Settings | Command::Hud => unreachable!(),
+        Command::Update {
+            check,
+            yes,
+            variant,
+            version,
+            rollback,
+            no_service,
+        } => {
+            update::update(update::UpdateOptions {
+                check,
+                yes,
+                variant,
+                version,
+                rollback,
+                no_service,
+            })
+            .await
+        }
+        Command::Settings | Command::Hud | Command::Install { .. } | Command::Uninstall { .. } => {
+            unreachable!()
+        }
     }
 }
 

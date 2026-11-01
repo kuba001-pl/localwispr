@@ -12,6 +12,7 @@ rust-version = "1.92"
 [features]
 default = ["cuda"]
 cuda = ["llama-cpp-2/cuda"]
+vulkan = ["llama-cpp-2/vulkan"]
 
 [dependencies]
 anyhow = "1"
