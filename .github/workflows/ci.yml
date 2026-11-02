@@ -42,5 +42,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node gnome-extension/tests/extension.test.cjs
+      - run: node --test gnome-extension/tests/extension.test.cjs packaging/tests/bundle.test.cjs
       - run: for f in install.sh setup-permissions.sh gnome-extension/build-clipboard.sh packaging/*.sh; do bash -n "$f"; done

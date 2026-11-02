@@ -19,31 +19,83 @@ use crate::dbus::DaemonProxy;
 
 const BAR_W: f64 = 4.0;
 const BAR_GAP: f64 = 4.0;
-const BARS_H: f64 = 34.0;
+const BARS_H: f64 = 26.0;
 const BAR_MIN: f64 = 4.0;
-const CAPSULE_W: i32 = 420;
-const CAPSULE_PAD_X: i32 = 24;
+const CAPSULE_W: i32 = 220;
+const CAPSULE_MAX_W: i32 = 420;
+const CAPSULE_PAD_X: i32 = 20;
+const WAVEFORM_W: i32 = 180;
+const SHADOW_MARGIN: i32 = 18;
 const TEXT_LINES: i32 = 2;
 
-fn capsule_width(bands: usize) -> i32 {
-    CAPSULE_W.max((bands * 2) as i32 * (BAR_W + BAR_GAP) as i32 + 2 * CAPSULE_PAD_X)
+/// Exact critically damped motion preserves velocity across new destinations.
+/// It starts gently and behaves consistently at different frame rates.
+fn spring(
+    value: f64,
+    velocity: f64,
+    target: f64,
+    dt: f64,
+    frequency: f64,
+    precision: f64,
+) -> (f64, f64) {
+    let offset = value - target;
+    let step = (velocity + frequency * offset) * dt;
+    let decay = (-frequency * dt).exp();
+    let next = target + (offset + step) * decay;
+    let speed = (velocity - frequency * step) * decay;
+    if (next - target).abs() < precision && speed.abs() < precision * 12.0 {
+        (target, 0.0)
+    } else {
+        (next, speed)
+    }
+}
+
+fn capsule_width(text_width: i32, limit: i32) -> i32 {
+    let limit = limit.clamp(2 * CAPSULE_PAD_X + 1, CAPSULE_MAX_W);
+    text_width
+        .saturating_add(2 * CAPSULE_PAD_X)
+        .clamp(CAPSULE_W.min(limit), limit)
+}
+
+fn animations_enabled() -> bool {
+    gtk4::Settings::default().is_none_or(|settings| settings.is_gtk_enable_animations())
 }
 
 /// The newest words that fit in TEXT_LINES lines of `width` px, cut at a word
 /// boundary ("… ask what you can do for your country.") so the preview never
 /// shows half a word.
 fn text_tail(label: &gtk4::Label, text: &str, width: i32) -> String {
-    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
     let layout = label.create_pango_layout(None);
     layout.set_wrap(gtk4::pango::WrapMode::WordChar);
     layout.set_width(width * gtk4::pango::SCALE);
-    let fits = |t: &str| {
+    fitting_text_tail(text, |t| {
         layout.set_text(t);
         layout.line_count() <= TEXT_LINES
-    };
+    })
+}
+
+fn fitting_text_tail(text: &str, fits: impl Fn(&str) -> bool) -> String {
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
     let words: Vec<&str> = text.split(' ').collect();
-    if words.len() < 2 || fits(&text) {
-        return text; // a single overlong word wraps by character instead
+    if fits(&text) {
+        return text;
+    }
+    let last = words.last().copied().unwrap_or_default();
+    if words.len() < 2 || !fits(&format!("… {last}")) {
+        // Preserve the newest characters of an oversized URL or unbroken
+        // transcript, with every slice on a valid Unicode boundary.
+        let chars: Vec<char> = last.chars().collect();
+        let tail = |i: usize| format!("… {}", chars[i..].iter().collect::<String>());
+        let (mut lo, mut hi) = (0, chars.len());
+        while lo < hi {
+            let mid = (lo + hi) / 2;
+            if fits(&tail(mid)) {
+                hi = mid;
+            } else {
+                lo = mid + 1;
+            }
+        }
+        return tail(lo);
     }
     let tail = |i: usize| format!("… {}", words[i..].join(" "));
     // Smallest start index whose tail fits.
@@ -74,21 +126,30 @@ struct State {
     target: Vec<f64>,
     current: Vec<f64>,
     opacity: f64,
+    opacity_velocity: f64,
     time: f64,
     last_frame: Option<i64>,
     notice_gen: u64,
     ticking: bool,
     pending_notice: Option<String>,
     daemon_state: String,
+    raw_text: String,
+    text_is_notice: bool,
+    width: f64,
+    target_width: f64,
+    width_velocity: f64,
 }
 
 impl State {
     /// False means the frame callback can be removed until the next show.
-    fn advance(&mut self, dt: f64) -> bool {
-        self.time += dt;
-        let k = 1.0 - (-dt * 20.0).exp();
+    fn advance(&mut self, dt: f64, animate: bool) -> bool {
+        if animate {
+            self.time += dt;
+        }
         for i in 0..self.current.len() {
             let target = self.target[i];
+            let rate = if target > self.current[i] { 20.0 } else { 12.0 };
+            let k = 1.0 - (-dt * rate).exp();
             self.current[i] += (target - self.current[i]) * k;
         }
         let target_op = if matches!(self.mode, Mode::Hidden | Mode::FadingOut) {
@@ -96,8 +157,35 @@ impl State {
         } else {
             1.0
         };
-        let rate = if target_op > self.opacity { 14.0 } else { 22.0 };
-        self.opacity += (target_op - self.opacity) * (1.0 - (-dt * rate).exp());
+        if animate {
+            if target_op > 0.0 {
+                (self.opacity, self.opacity_velocity) = spring(
+                    self.opacity,
+                    self.opacity_velocity,
+                    target_op,
+                    dt,
+                    20.0,
+                    0.002,
+                );
+            } else {
+                // Finish before the daemon inserts text, preserving its latency.
+                self.opacity += (target_op - self.opacity) * (1.0 - (-dt * 65.0).exp());
+                self.opacity_velocity = 0.0;
+            }
+            (self.width, self.width_velocity) = spring(
+                self.width,
+                self.width_velocity,
+                self.target_width,
+                dt,
+                12.0,
+                0.08,
+            );
+        } else {
+            self.opacity = target_op;
+            self.opacity_velocity = 0.0;
+            self.width = self.target_width;
+            self.width_velocity = 0.0;
+        }
         if self.mode == Mode::Hidden || (self.mode == Mode::FadingOut && self.opacity < 0.02) {
             self.mode = Mode::Hidden;
             self.opacity = 0.0;
@@ -158,9 +246,9 @@ fn css(cfg: &HudCfg) -> String {
         "window.lw-hud {{ background: transparent; }}
          .lw-capsule {{
             background-color: rgba(0, 0, 0, {op});
-            border-radius: 28px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
-            padding: 10px {pad}px 12px {pad}px;
+            border-radius: 24px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+            padding: 10px {pad}px;
             margin: 18px;
          }}
          .lw-live {{ color: rgba(255, 255, 255, 0.62); font-style: italic; font-size: 13px; }}
@@ -197,20 +285,31 @@ fn build(app: &gtk4::Application) {
     win.set_margin(Edge::Bottom, cfg.bottom_margin.min(i32::MAX as u32) as i32);
     win.set_keyboard_mode(KeyboardMode::None);
 
-    let capsule = gtk4::Box::new(gtk4::Orientation::Vertical, 6);
+    let capsule = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
     capsule.add_css_class("lw-capsule");
-    capsule.set_size_request(capsule_width(bands), -1);
+    // GTK size requests include the CSS margins reserved for the shadow.
+    capsule.set_size_request(CAPSULE_W + 2 * SHADOW_MARGIN, -1);
     let label = gtk4::Label::new(None);
     label.add_css_class("lw-live");
     label.set_wrap(true);
     label.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
     label.set_justify(gtk4::Justification::Center);
-    label.set_visible(false);
+    // Keep the label's natural width from overriding the animated capsule.
+    label.set_max_width_chars(1);
+    label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+    label.set_lines(TEXT_LINES);
+    label.set_margin_bottom(6);
+    let text_layout = label.create_pango_layout(Some("Ag\nAg"));
+    label.set_height_request(text_layout.pixel_size().1);
+    let text_revealer = gtk4::Revealer::new();
+    text_revealer.set_transition_type(gtk4::RevealerTransitionType::SlideDown);
+    text_revealer.set_transition_duration(280);
+    text_revealer.set_child(Some(&label));
     let area = gtk4::DrawingArea::new();
     area.set_content_height(BARS_H as i32);
-    area.set_content_width(((bands * 2) as f64 * (BAR_W + BAR_GAP)) as i32);
+    area.set_content_width(WAVEFORM_W);
     area.set_halign(gtk4::Align::Center);
-    capsule.append(&label);
+    capsule.append(&text_revealer);
     capsule.append(&area);
     win.set_child(Some(&capsule));
 
@@ -220,12 +319,18 @@ fn build(app: &gtk4::Application) {
         target: vec![0.0; bands],
         current: vec![0.0; bands],
         opacity: 0.0,
+        opacity_velocity: 0.0,
         time: 0.0,
         last_frame: None,
         notice_gen: 0,
         ticking: false,
         pending_notice: None,
         daemon_state: "idle".into(),
+        raw_text: String::new(),
+        text_is_notice: false,
+        width: CAPSULE_W as f64,
+        target_width: CAPSULE_W as f64,
+        width_velocity: 0.0,
     }));
 
     // Click-through: an empty input region on every map.
@@ -244,6 +349,7 @@ fn build(app: &gtk4::Application) {
         win: win.clone(),
         capsule,
         label,
+        text_revealer,
         area,
         provider,
         state,
@@ -267,6 +373,7 @@ struct Ui {
     win: gtk4::Window,
     capsule: gtk4::Box,
     label: gtk4::Label,
+    text_revealer: gtk4::Revealer,
     area: gtk4::DrawingArea,
     provider: gtk4::CssProvider,
     state: Rc<RefCell<State>>,
@@ -284,7 +391,12 @@ impl Ui {
             s.last_frame = None;
         }
         s.mode = mode;
+        if !animations_enabled() {
+            s.opacity = 1.0;
+        }
         drop(s);
+        self.win.set_opacity(self.state.borrow().opacity);
+        self.apply_geometry();
         self.win.set_visible(true);
         self.start_animation();
     }
@@ -304,12 +416,15 @@ impl Ui {
                 .unwrap_or(1.0 / 60.0)
                 .min(0.1);
             s.last_frame = Some(now);
-            if !s.advance(dt) {
+            if !s.advance(dt, animations_enabled()) {
                 drop(s);
                 widget.set_visible(false);
                 return glib::ControlFlow::Break;
             }
-            widget.set_opacity(s.opacity);
+            let opacity = s.opacity;
+            drop(s);
+            widget.set_opacity(opacity);
+            ui.apply_geometry();
             ui.area.queue_draw();
             glib::ControlFlow::Continue
         });
@@ -330,19 +445,16 @@ impl Ui {
         if !s.configure(cfg.clone()) {
             return;
         }
-        let bands = cfg.bands as usize;
         let daemon_state = s.daemon_state.clone();
         drop(s);
-        self.area
-            .set_content_width(((bands * 2) as f64 * (BAR_W + BAR_GAP)) as i32);
-        self.capsule.set_size_request(capsule_width(bands), -1);
         self.provider.load_from_string(&css(&cfg));
         self.win
             .set_margin(Edge::Bottom, cfg.bottom_margin.min(i32::MAX as u32) as i32);
-        if self.state.borrow().mode != Mode::Notice {
-            self.label
-                .set_visible(cfg.show_live_text && !self.label.text().is_empty());
-        }
+        let (text, notice) = {
+            let s = self.state.borrow();
+            (s.raw_text.clone(), s.text_is_notice)
+        };
+        self.set_text(&text, notice);
         self.set_daemon_state(&daemon_state);
     }
 
@@ -355,6 +467,13 @@ impl Ui {
         match state {
             "recording" => {
                 if self.state.borrow().mode != Mode::Recording {
+                    let compact = capsule_width(0, self.width_limit()) as f64;
+                    {
+                        let mut s = self.state.borrow_mut();
+                        s.width = compact;
+                        s.target_width = compact;
+                        s.width_velocity = 0.0;
+                    }
                     self.set_text("", false);
                 }
                 self.show(Mode::Recording);
@@ -404,18 +523,55 @@ impl Ui {
         }
     }
 
-    fn set_text(&self, text: &str, notice: bool) {
-        let (show_text, bands) = {
-            let s = self.state.borrow();
-            (s.cfg.show_live_text || notice, s.cfg.bands as usize)
+    fn width_limit(&self) -> i32 {
+        self.win
+            .surface()
+            .and_then(|surface| WidgetExt::display(&self.win).monitor_at_surface(&surface))
+            .map(|monitor| monitor.geometry().width() - 2 * SHADOW_MARGIN)
+            .unwrap_or(CAPSULE_MAX_W)
+            .clamp(2 * CAPSULE_PAD_X + 1, CAPSULE_MAX_W)
+    }
+
+    fn apply_geometry(&self) {
+        let limit = self.width_limit() as f64;
+        let (width, opacity, margin) = {
+            let mut s = self.state.borrow_mut();
+            if s.width > limit {
+                s.width = limit;
+                s.width_velocity = 0.0;
+            }
+            s.target_width = s.target_width.min(limit);
+            (s.width.round() as i32, s.opacity, s.cfg.bottom_margin)
         };
-        if notice {
-            self.label.set_text(text);
-        } else {
-            let width = capsule_width(bands) - 2 * CAPSULE_PAD_X;
-            self.label.set_text(&text_tail(&self.label, text, width));
+        if self.capsule.width_request() != width + 2 * SHADOW_MARGIN {
+            self.capsule.set_size_request(width + 2 * SHADOW_MARGIN, -1);
+            self.area
+                .set_content_width(WAVEFORM_W.min(width - 2 * CAPSULE_PAD_X));
+            self.render_text(width);
         }
-        self.label.set_visible(show_text && !text.is_empty());
+        let shift = if animations_enabled() {
+            ((1.0 - opacity) * 6.0).round() as u32
+        } else {
+            0
+        };
+        self.win.set_margin(
+            Edge::Bottom,
+            margin.saturating_sub(shift).min(i32::MAX as u32) as i32,
+        );
+    }
+
+    fn render_text(&self, width: i32) {
+        let tail = text_tail(
+            &self.label,
+            &self.state.borrow().raw_text,
+            (width - 2 * CAPSULE_PAD_X).max(1),
+        );
+        if self.label.text().as_str() != tail {
+            self.label.set_text(&tail);
+        }
+    }
+
+    fn set_text(&self, text: &str, notice: bool) {
         if notice {
             self.label.remove_css_class("lw-live");
             self.label.add_css_class("lw-notice");
@@ -423,6 +579,32 @@ impl Ui {
             self.label.remove_css_class("lw-notice");
             self.label.add_css_class("lw-live");
         }
+        let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+        let show_text = (self.state.borrow().cfg.show_live_text || notice) && !text.is_empty();
+        let layout = self.label.create_pango_layout(Some(&text));
+        layout.set_width(-1);
+        let wanted = capsule_width(
+            if show_text { layout.pixel_size().0 } else { 0 },
+            self.width_limit(),
+        ) as f64;
+        {
+            let mut s = self.state.borrow_mut();
+            s.raw_text = text;
+            s.text_is_notice = notice;
+            s.target_width =
+                if show_text && !notice && matches!(s.mode, Mode::Recording | Mode::Processing) {
+                    s.target_width.max(wanted).min(self.width_limit() as f64)
+                } else {
+                    wanted
+                };
+            if s.mode == Mode::Hidden || !animations_enabled() {
+                s.width = s.target_width;
+                s.width_velocity = 0.0;
+            }
+        }
+        self.text_revealer.set_reveal_child(show_text);
+        self.apply_geometry();
+        self.render_text(self.state.borrow().width.round() as i32);
     }
 }
 
@@ -508,7 +690,11 @@ fn draw(s: &State, cr: &gtk4::cairo::Context, w: f64, h: f64) {
     if n == 0 {
         return;
     }
-    let total = (n * 2) as f64 * (BAR_W + BAR_GAP) - BAR_GAP;
+    let natural = (n * 2) as f64 * (BAR_W + BAR_GAP) - BAR_GAP;
+    let scale = (w / natural).min(1.0);
+    let bar_w = BAR_W * scale;
+    let step = (BAR_W + BAR_GAP) * scale;
+    let total = natural * scale;
     let x0 = (w - total) / 2.0;
     let mid = h / 2.0;
     for slot in 0..n * 2 {
@@ -525,9 +711,9 @@ fn draw(s: &State, cr: &gtk4::cairo::Context, w: f64, h: f64) {
             _ => (s.current[band].clamp(0.0, 1.0), 0.92),
         };
         let bh = BAR_MIN + level * (h - BAR_MIN);
-        let x = x0 + slot as f64 * (BAR_W + BAR_GAP);
+        let x = x0 + slot as f64 * step;
         let y = mid - bh / 2.0;
-        let r = BAR_W / 2.0;
+        let r = bar_w / 2.0;
         cr.new_sub_path();
         cr.arc(x + r, y + r, r, std::f64::consts::PI, 0.0);
         cr.arc(x + r, y + bh - r, r, 0.0, std::f64::consts::PI);
@@ -548,12 +734,18 @@ mod tests {
             target: vec![0.0; 16],
             current: vec![0.0; 16],
             opacity: 1.0,
+            opacity_velocity: 0.0,
             time: 0.0,
             last_frame: None,
             notice_gen: 0,
             ticking: true,
             pending_notice: None,
             daemon_state: "recording".into(),
+            raw_text: String::new(),
+            text_is_notice: false,
+            width: CAPSULE_W as f64,
+            target_width: CAPSULE_W as f64,
+            width_velocity: 0.0,
         }
     }
 
@@ -563,10 +755,10 @@ mod tests {
         s.last_frame = Some(100);
         s.mode = Mode::FadingOut;
         let mut frames = 0;
-        while s.advance(1.0 / 60.0) {
+        while s.advance(1.0 / 60.0, true) {
             frames += 1;
             assert!(
-                frames < 30,
+                frames <= 4,
                 "fade must finish within the daemon dissolve bound"
             );
         }
@@ -574,7 +766,94 @@ mod tests {
         assert_eq!(s.opacity, 0.0);
         assert!(!s.ticking);
         assert_eq!(s.last_frame, None);
-        assert!(!s.advance(1.0 / 60.0));
+        assert!(!s.advance(1.0 / 60.0, true));
+    }
+
+    #[test]
+    fn compact_width_grows_with_text_and_fits_narrow_monitors() {
+        assert_eq!(capsule_width(0, CAPSULE_MAX_W), 220);
+        assert_eq!(capsule_width(190, CAPSULE_MAX_W), 230);
+        assert_eq!(capsule_width(2000, CAPSULE_MAX_W), 420);
+        assert_eq!(capsule_width(2000, 180), 180);
+        assert_eq!(capsule_width(i32::MAX, CAPSULE_MAX_W), 420);
+    }
+
+    #[test]
+    fn transcript_tail_preserves_newest_words_and_unicode_characters() {
+        let fits = |text: &str| text.chars().count() <= 15;
+        assert_eq!(fitting_text_tail("  a   few words  ", fits), "a few words");
+        assert_eq!(
+            fitting_text_tail("one two three four five six", fits),
+            "… four five six"
+        );
+        let token = format!("{}終わり😀", "長".repeat(80));
+        for text in [token.clone(), format!("earlier words {token}")] {
+            let tail = fitting_text_tail(&text, fits);
+            assert!(fits(&tail));
+            assert!(tail.starts_with("… "));
+            assert!(tail.ends_with("終わり😀"));
+        }
+    }
+
+    #[test]
+    fn width_animation_converges_without_overshoot_at_different_frame_rates() {
+        for hz in [30, 60, 144] {
+            let mut s = state();
+            s.target_width = CAPSULE_MAX_W as f64;
+            for _ in 0..hz {
+                let before = s.width;
+                assert!(s.advance(1.0 / hz as f64, true));
+                assert!(s.width >= before && s.width <= s.target_width);
+            }
+            assert_eq!(s.width, s.target_width);
+        }
+    }
+
+    #[test]
+    fn width_starts_gently_and_retargeting_preserves_momentum() {
+        let mut s = state();
+        s.target_width = 320.0;
+        s.advance(1.0 / 60.0, true);
+        assert!(s.width > 220.0 && s.width < 224.0);
+        for _ in 0..10 {
+            s.advance(1.0 / 60.0, true);
+        }
+        let velocity = s.width_velocity;
+        assert!(velocity > 0.0);
+        s.target_width = 420.0;
+        assert_eq!(s.width_velocity, velocity);
+        let width = s.width;
+        s.advance(1.0 / 60.0, true);
+        assert!(s.width - width > 1.0);
+        assert!(s.width_velocity > 0.0);
+    }
+
+    #[test]
+    fn spring_positions_match_across_frame_rates_before_settling() {
+        let mut positions = Vec::new();
+        for hz in [30, 60, 144] {
+            let (mut width, mut velocity) = (220.0, 0.0);
+            for _ in 0..hz {
+                (width, velocity) = spring(width, velocity, 420.0, 0.3 / hz as f64, 12.0, 0.08);
+            }
+            positions.push(width);
+        }
+        for width in positions.iter().skip(1) {
+            assert!((width - positions[0]).abs() < 1e-8);
+        }
+    }
+
+    #[test]
+    fn reduced_motion_snaps_geometry_and_finishes_exit_immediately() {
+        let mut s = state();
+        s.opacity = 0.0;
+        s.target_width = 340.0;
+        assert!(s.advance(1.0 / 60.0, false));
+        assert_eq!(s.width, 340.0);
+        assert_eq!(s.opacity, 1.0);
+        s.mode = Mode::FadingOut;
+        assert!(!s.advance(1.0 / 60.0, false));
+        assert_eq!(s.mode, Mode::Hidden);
     }
 
     #[test]

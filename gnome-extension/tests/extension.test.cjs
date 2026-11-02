@@ -8,6 +8,7 @@ const test = require('node:test');
 
 function harness() {
     let nextSource = 1;
+    let frameTime = 0;
     const timers = new Map();
     const keyEvents = [];
     const warnings = [];
@@ -48,9 +49,48 @@ function harness() {
         constructor(_type, value) { this.value = value; }
         deepUnpack() { return this.value; }
     }
+    const animationSettings = {enable_animations: true};
+    const monitor = {x: 0, y: 0, width: 1280, height: 720};
+    class Layout {
+        constructor() { this.width = -1; this.text = ''; }
+        copy() { return Object.assign(new Layout(), this); }
+        set_width(width) { this.width = width; }
+        set_text(text) { this.text = text; }
+        set_ellipsize() {}
+        set_wrap() {}
+        get_line_count() { return this.width < 0 ? 1 : Math.max(1, Math.ceil(Array.from(this.text).length * 7 / this.width)); }
+        get_pixel_size() { return [Array.from(this.text).length * 7, this.get_line_count() * 16]; }
+    }
+    class Actor {
+        constructor(properties) {
+            Object.assign(this, {width: 0, height: 0, text: '', opacity: 255, visible: true, easeCalls: 0}, properties);
+            this.clutter_text = {get_layout: () => {
+                const layout = new Layout(); layout.text = this.text; return layout;
+            }};
+            this.handlers = new Map();
+        }
+        connect(signal, callback) { this.handlers.set(signal, callback); return this.handlers.size; }
+        add_child() {}
+        get_theme_node() { return {get_horizontal_padding: () => 40, get_vertical_padding: () => 20}; }
+        get_preferred_height(width) { return [0, Math.max(1, Math.ceil(Array.from(this.text).length * 7 / width)) * 16]; }
+        set_size(width, height) { this.width = width; this.height = height; }
+        set_position(x, y) { this.x = x; this.y = y; }
+        set_style(style) { this.style = style; }
+        remove_all_transitions() { this.completion = null; }
+        ease({onComplete, duration, mode, ...values}) { this.easeCalls++; Object.assign(this, values); this.completion = onComplete; }
+        show() { this.visible = true; }
+        hide() { this.visible = false; }
+        queue_repaint() {}
+        destroy() { this.handlers.get('destroy')?.(); }
+    }
     const context = vm.createContext({
         TextEncoder, TextDecoder, console: {warn(message) { warnings.push(message); }},
-        Clutter: {InputDeviceType: {KEYBOARD_DEVICE: 1}, KeyState: {PRESSED: 1, RELEASED: 0}},
+        Clutter: {InputDeviceType: {KEYBOARD_DEVICE: 1}, KeyState: {PRESSED: 1, RELEASED: 0},
+            ActorAlign: {CENTER: 0}, AnimationMode: {EASE_IN_OUT_CUBIC: 1, EASE_IN_QUAD: 2},
+            Timeline: class {
+                connect() { return 1; } disconnect() {} start() { this.playing = true; }
+                stop() { this.playing = false; } is_playing() { return this.playing; }
+            }},
         Gio: {
             Cancellable: class {
                 constructor() { this.handlers = new Map(); this.next = 1; }
@@ -74,7 +114,7 @@ function harness() {
             PRIORITY_DEFAULT: 0, SOURCE_REMOVE: false,
             timeout_add(_priority, ms, fn) { const id = nextSource++; timers.set(id, {ms, fn}); return id; },
             Source: {remove(id) { timers.delete(id); }},
-            get_monotonic_time() { return 1; },
+            get_monotonic_time() { frameTime += 1e6 / 60; return frameTime; },
         },
         Meta: {
             SelectionType: {SELECTION_PRIMARY: 0, SELECTION_CLIPBOARD: 1, SELECTION_DND: 2},
@@ -88,13 +128,17 @@ function harness() {
             }; }}; }}},
             display: {get_selection() { return selection; }, disconnect() {}},
         },
-        St: {}, Pango: {}, Main: {}, GIRepository: {}, Extension: class {},
+        St: {Widget: Actor, Label: Actor, DrawingArea: Actor,
+            ThemeContext: {get_for_stage: () => ({scale_factor: 1})}, Settings: {get: () => animationSettings}},
+        Pango: {SCALE: 1, EllipsizeMode: {NONE: 0}, WrapMode: {WORD_CHAR: 0}, Alignment: {CENTER: 0}},
+        Main: {layoutManager: {monitors: [monitor], currentMonitor: monitor, addTopChrome() {}}},
+        GIRepository: {}, Extension: class {},
         logError(error, message) { errors.push(`${message}: ${error}`); },
     });
     const filename = path.join(__dirname, '../localwispr@localwispr.github.io/extension.js');
     const code = fs.readFileSync(filename, 'utf8')
         .replace(/^import .*;\n/gm, '').replace('export default class', 'class');
-    vm.runInContext(`${code}\nthis.api = {Lifetime, ShellService, LocalWisprExtension, Capsule, loadNativeSelection};`, context);
+    vm.runInContext(`${code}\nthis.api = {Lifetime, ShellService, LocalWisprExtension, Capsule, loadNativeSelection, spring};`, context);
     vm.runInContext(`nativeSelection = {create(variant) { return {formats: new Map(Object.entries(variant.value))}; }};`, context);
     const flush = () => new Promise(resolve => setImmediate(resolve));
     async function fire(ms) {
@@ -108,7 +152,7 @@ function harness() {
             return_dbus_error(name) { this.replies.push(name.split('.').pop()); },
             return_error_literal(...error) { this.replies.push(error); }};
     }
-    return {...context.api, context, owners, selection, timers, keyEvents, warnings, errors, transfers,
+    return {...context.api, context, owners, selection, timers, keyEvents, warnings, errors, transfers, monitor, animationSettings,
         get disposed() { return disposed; }, flush, fire, invocation};
 }
 
@@ -232,13 +276,11 @@ test('without the helper, multi-format content pastes and restores the best text
 
 test('HUD configuration gates rendering, resizes bands and hides live text', () => {
     const h = harness();
-    const c = Object.create(h.Capsule.prototype);
-    Object.assign(c, {current: Array(16).fill(0.8), target: Array(16).fill(0.9),
-        mode: 'recording', label: {text: 'live words', visible: true},
-        actor: {set_style(value) { this.style = value; }},
-        _reposition() {}, hide() { this.mode = 'hidden'; }});
+    const c = new h.Capsule();
+    c.setText('live words');
+    c.mode = 'recording';
     c.configure(['none', 4, 100, false, 0.2]);
-    assert.equal(c.mode, 'hidden');
+    assert.equal(c.mode, 'fading');
     assert.equal(c.enabled, false);
     assert.equal(c.label.visible, false);
     assert.equal(c.current.length, 4);
@@ -246,6 +288,7 @@ test('HUD configuration gates rendering, resizes bands and hides live text', () 
     assert.equal(c.bottomMargin, 100);
     assert.ok(c.actor.style.includes('0.2'));
     c.configure(['gnome', 48, 50, true, 0.8]);
+    for (let i = 0; i < 50; i++) c._tick();
     assert.equal(c.enabled, true);
     assert.equal(c.current.length, 48);
     assert.equal(c.label.visible, true);
@@ -253,6 +296,123 @@ test('HUD configuration gates rendering, resizes bands and hides live text', () 
     assert.equal(c.target.length, 48);
     assert.equal(c.target[0], 0.1);
     assert.ok(c.target.slice(2).every(value => value === 0));
+    assert.equal(c.actor.width, 220, 'band count does not stretch the capsule');
+});
+
+test('capsule grows smoothly, stays centered, holds width through revisions and resets next recording', () => {
+    const h = harness();
+    const c = new h.Capsule();
+    c.configure(['gnome', 16, 64, true, 0.92]);
+    c.show('recording');
+    assert.equal(c.actor.width, 220);
+    assert.equal(c.actor.height, 46);
+    c.setText('A few words');
+    assert.equal(c.targetWidth, 220);
+    c.setText('A longer transcript expands smoothly as more words arrive');
+    assert.equal(c.targetWidth, 420);
+    assert.equal(c.actor.width, 220);
+    c._tick();
+    assert.ok(c.actor.width > 220 && c.actor.width < 420);
+    assert.equal(c.actor.x, Math.round((1280 - c.actor.width) / 2));
+    c.setText('Short revision');
+    assert.equal(c.targetWidth, 420);
+    const entranceCalls = c.actor.easeCalls;
+    c.show('processing');
+    assert.equal(c.actor.easeCalls, entranceCalls, 'processing does not restart the entrance');
+    assert.equal(c.targetWidth, 420);
+    for (let i = 0; i < 80; i++) c._tick();
+    assert.equal(c.actor.width, 420);
+    c.hide();
+    const exitCalls = c.actor.easeCalls;
+    c.hide();
+    assert.equal(c.actor.easeCalls, exitCalls, 'repeated idle states do not restart the exit');
+    const staleCompletion = c.actor.completion;
+    c.setText('');
+    c.show('recording');
+    staleCompletion();
+    assert.equal(c.mode, 'recording');
+    assert.equal(c.actor.visible, true);
+    assert.equal(c.actor.width, 220);
+    assert.equal(c.actor.height, 46);
+    c.destroy();
+});
+
+test('capsule respects narrow screens, reduced motion, hidden live text and oversized Unicode tokens', () => {
+    const h = harness();
+    h.monitor.width = 300;
+    h.animationSettings.enable_animations = false;
+    const c = new h.Capsule();
+    c.configure(['gnome', 48, 64, true, 0.9]);
+    c.show('recording');
+    c.setText('Long words '.repeat(50));
+    assert.equal(c.actor.width, 268);
+    assert.ok(c.label.get_preferred_height(c.label.width)[1] <= 32);
+    c.setText('😀'.repeat(500));
+    assert.ok(!/[\uD800-\uDBFF]$/.test(c.label.text));
+    assert.ok(c.label.get_preferred_height(c.label.width)[1] <= 32);
+    c.configure(['gnome', 48, 64, false, 0.9]);
+    assert.equal(c.actor.width, 220);
+    assert.equal(c.actor.height, 46);
+    assert.equal(c.label.visible, false);
+    c.setText('A notice remains visible even with live text off', true);
+    assert.equal(c.label.visible, true);
+    c.destroy();
+});
+
+test('motion starts gently and preserves momentum as the transcript grows', () => {
+    const h = harness();
+    const c = new h.Capsule();
+    c.configure(['gnome', 16, 64, true, 0.9]);
+    c.show('recording');
+    c.setText('A longer transcript grows smoothly across the screen');
+    c._tick();
+    assert.ok(c.actor.width > 220 && c.actor.width < 228, 'first frame eases into the expansion');
+    for (let i = 0; i < 12; i++) c._tick();
+    const velocity = c.widthVelocity;
+    c.setText('A longer transcript grows smoothly across the screen with more words');
+    assert.equal(c.widthVelocity, velocity, 'incoming text does not restart the motion');
+    for (let i = 0; i < 70; i++) c._tick();
+    const width = c.actor.width;
+    const height = c.actor.height;
+    c.setText('');
+    assert.equal(c.actor.width, width, 'an empty partial does not collapse the pill immediately');
+    assert.equal(c.actor.height, height);
+    for (let i = 0; i < 80; i++) c._tick();
+    assert.equal(c.actor.width, 220);
+    assert.equal(c.actor.height, 46);
+    c.destroy();
+});
+
+test('spring motion is stable across frame rates and retargets without restarting velocity', () => {
+    const h = harness();
+    const positions = [];
+    for (const hz of [30, 60, 144]) {
+        let width = 220, velocity = 0;
+        for (let i = 0; i < hz; i++) {
+            const before = width;
+            [width, velocity] = h.spring(width, velocity, 420, 0.3 / hz, 12);
+            assert.ok(width >= before && width <= 420);
+        }
+        positions.push(width);
+    }
+    assert.ok(Math.max(...positions) - Math.min(...positions) < 1e-8);
+});
+
+test('switching to a narrow monitor bounds an expansion already in motion', () => {
+    const h = harness();
+    const c = new h.Capsule();
+    c.configure(['gnome', 16, 64, true, 0.9]);
+    c.show('recording');
+    c.setText('A long transcript expands across the available screen space');
+    c.actor.width = 260;
+    c.widthVelocity = 1000;
+    h.monitor.width = 300;
+    for (let frame = 0; frame < 30; frame++) {
+        c._tick();
+        assert.ok(c.actor.width <= 268, 'pill stays inside the screen margin on every frame');
+        assert.ok(c.actor.x >= 16);
+    }
+    c.destroy();
 });
 
 

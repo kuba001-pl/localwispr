@@ -45,11 +45,23 @@ const SHELL_XML = `
 
 const BAR_W = 4;
 const BAR_GAP = 4;
-const BARS_H = 34;
+const BARS_H = 26;
 const BAR_MIN = 4;
 const BOTTOM_MARGIN = 64;
-const CAPSULE_W = 420;
+const CAPSULE_W = 220;
+const CAPSULE_MAX_W = 420;
+const WAVEFORM_W = 180;
 const TEXT_LINES = 2;
+// Exact critically damped motion: starts gently and keeps velocity when the
+// transcript changes the destination, without frame-rate-dependent stepping.
+function spring(value, velocity, target, dt, frequency) {
+    const offset = value - target;
+    const step = (velocity + frequency * offset) * dt;
+    const decay = Math.exp(-frequency * dt);
+    const next = target + (offset + step) * decay;
+    const speed = (velocity - frequency * step) * decay;
+    return Math.abs(next - target) < 0.08 && Math.abs(speed) < 1 ? [target, 0] : [next, speed];
+}
 const SNAPSHOT_LIMIT = 32 * 1024 * 1024;
 const TRANSFER_TIMEOUT_MS = 5000;
 const TEXT_MIMES = ['text/plain;charset=utf-8', 'UTF8_STRING', 'text/plain', 'STRING'];
@@ -155,29 +167,35 @@ class Capsule {
         this.bottomMargin = BOTTOM_MARGIN;
         this.showLiveText = true;
         this.enabled = false;
+        this.rawText = '';
+        this.isNotice = false;
+        this.targetWidth = CAPSULE_W;
+        this.targetHeight = BARS_H + 20;
+        this.widthVelocity = 0;
+        this.heightVelocity = 0;
 
-        this.actor = new St.BoxLayout({
+        // Explicit child geometry lets the capsule resize without exposing
+        // extra wrapped lines halfway through an expansion.
+        this.actor = new St.Widget({
             style_class: 'lw-capsule',
-            orientation: Clutter.Orientation.VERTICAL,
             reactive: false,
             visible: false,
             opacity: 0,
             width: CAPSULE_W,
+            height: BARS_H + 20,
         });
         this.label = new St.Label({
             style_class: 'lw-live',
             x_align: Clutter.ActorAlign.CENTER,
             visible: false,
+            clip_to_allocation: true,
         });
         const ct = this.label.clutter_text;
         ct.ellipsize = Pango.EllipsizeMode.NONE;
         ct.line_wrap = true;
         ct.line_wrap_mode = Pango.WrapMode.WORD_CHAR;
         ct.line_alignment = Pango.Alignment.CENTER;
-        this.area = new St.DrawingArea({
-            height: BARS_H,
-            x_expand: true,
-        });
+        this.area = new St.DrawingArea({height: BARS_H});
         this.area.connect('repaint', area => this._draw(area));
         this.actor.add_child(this.label);
         this.actor.add_child(this.area);
@@ -188,13 +206,16 @@ class Capsule {
         // Height changes are notified during allocation; moving the actor
         // there makes Clutter warn, so reposition before the next redraw.
         this._laterId = 0;
-        this.actor.connect('notify::height', () => {
+        const queueLayout = () => {
             this._laterId ||= global.compositor.get_laters().add(Meta.LaterType.BEFORE_REDRAW, () => {
                 this._laterId = 0;
+                this._layout();
                 this._reposition();
                 return GLib.SOURCE_REMOVE;
             });
-        });
+        };
+        this.actor.connect('notify::height', queueLayout);
+        this.actor.connect('notify::width', queueLayout);
 
         this.timeline = new Clutter.Timeline({
             actor: this.area,
@@ -227,10 +248,92 @@ class Capsule {
         const m = this._monitor();
         if (!m)
             return;
-        const [, natH] = this.actor.get_preferred_height(this.actor.width);
         const x = Math.round(m.x + (m.width - this.actor.width) / 2);
-        const y = Math.round(m.y + m.height - natH - this.bottomMargin);
+        const y = Math.round(m.y + m.height - this.actor.height - this.bottomMargin);
         this.actor.set_position(x, y);
+    }
+
+    _scale() {
+        return St.ThemeContext.get_for_stage(global.stage).scale_factor;
+    }
+
+    _animationsEnabled() {
+        return St.Settings.get().enable_animations;
+    }
+
+    _updateSize(reset = false) {
+        const scale = this._scale();
+        const monitor = this._monitor();
+        this._monitorWidth = monitor?.width;
+        this._sizeScale = scale;
+        const maxWidth = Math.max(1, Math.min(CAPSULE_MAX_W * scale,
+            monitor ? monitor.width - 32 * scale : CAPSULE_MAX_W * scale));
+        this._maxWidth = maxWidth;
+        const minWidth = Math.min(CAPSULE_W * scale, maxWidth);
+        const node = this.actor.get_theme_node();
+        const layout = this.label.clutter_text.get_layout().copy();
+        layout.set_width(-1);
+        layout.set_text(this.rawText, -1);
+        const [textWidth] = layout.get_pixel_size();
+        const visible = this.rawText.length > 0 && (this.isNotice || this.showLiveText);
+        const requested = visible ? textWidth + node.get_horizontal_padding() : minWidth;
+        const width = Math.max(minWidth, Math.min(maxWidth, requested));
+        // Preview revisions can remove words; keep a steady silhouette until
+        // the next recording, while still respecting a smaller monitor.
+        this.targetWidth = reset || !visible ? width : Math.min(maxWidth, Math.max(this.targetWidth, width));
+        if (reset || this.mode === 'hidden' || !this._animationsEnabled()) {
+            this.actor.width = this.targetWidth;
+            this.widthVelocity = 0;
+        } else if (this.actor.width > maxWidth) {
+            this.actor.width = maxWidth;
+            this.widthVelocity = 0;
+        }
+        this._layout();
+        if (reset || this.mode === 'hidden' || !this._animationsEnabled()) {
+            this.actor.height = this.targetHeight;
+            this.heightVelocity = 0;
+            this._layout();
+        }
+        this._reposition();
+    }
+
+    _layout() {
+        const scale = this._scale();
+        const node = this.actor.get_theme_node();
+        const padX = node.get_horizontal_padding() / 2;
+        const padY = node.get_vertical_padding() / 2;
+        const width = Math.max(1, Math.floor(this.actor.width - 2 * padX));
+        const barsHeight = BARS_H * scale;
+        const visible = this.rawText.length > 0 && (this.isNotice || this.showLiveText);
+        if (this._renderedText !== this.rawText || this._renderedWidth !== width ||
+            this._renderedScale !== scale || this._renderedNotice !== this.isNotice) {
+            this._renderedText = this.rawText;
+            this._renderedWidth = width;
+            this._renderedScale = scale;
+            this._renderedNotice = this.isNotice;
+            const tail = this._tail(this.rawText, width);
+            if (this.label.text !== tail)
+                this.label.text = tail;
+            // Query Pango directly: an actor's preferred height includes any
+            // explicit height from the preceding animation frame.
+            const layout = this.label.clutter_text.get_layout().copy();
+            layout.set_width(width * Pango.SCALE);
+            layout.set_text(this.label.text, -1);
+            this._textHeight = layout.get_pixel_size()[1];
+            layout.set_width(-1);
+            layout.set_text('Ag', -1);
+            this._lineHeight = layout.get_pixel_size()[1];
+        }
+        // Keep two lines of room once text arrives so line wrapping doesn't
+        // make the capsule bounce as the width eases outward.
+        const gap = 6 * scale;
+        this.targetHeight = 2 * padY + barsHeight + (visible ? 2 * this._lineHeight + gap : 0);
+        const available = Math.max(0, this.actor.height - 2 * padY - barsHeight - gap);
+        this.label.set_position(padX, padY);
+        this.label.set_size(width, Math.min(available, this._textHeight));
+        this.label.visible = visible && available > 0;
+        this.area.set_position(padX, this.actor.height - padY - barsHeight);
+        this.area.set_size(width, barsHeight);
     }
 
     configure([frontend, bands, margin, liveText, opacity]) {
@@ -242,10 +345,8 @@ class Capsule {
             this.current = new Array(bands).fill(0);
             this.target = new Array(bands).fill(0);
         }
-        this.actor.width = Math.max(CAPSULE_W, bands * 2 * (BAR_W + BAR_GAP) + 48);
         this.actor.set_style(`background-color: rgba(0, 0, 0, ${Math.max(0, Math.min(1, opacity))});`);
-        this.label.visible = this.label.text.length > 0 && (this.mode === 'notice' || liveText);
-        this._reposition();
+        this._updateSize();
         if (!this.enabled)
             this.hide();
     }
@@ -253,26 +354,34 @@ class Capsule {
     show(mode) {
         if (!this.enabled)
             return;
-        if (this.mode === 'hidden' || this.mode === 'fading') {
+        const entering = this.mode === 'hidden' || this.mode === 'fading';
+        if (entering) {
             this.current.fill(0);
             this.target.fill(0);
             this.lastFrame = 0;
+            this.actor.remove_all_transitions();
         }
         this.mode = mode;
-        this.actor.remove_all_transitions();
         this.actor.show();
+        this._updateSize();
         this._reposition();
-        this.actor.ease({opacity: 255, duration: 110, mode: Clutter.AnimationMode.EASE_OUT_QUAD});
+        if (entering) {
+            if (this.actor.opacity === 0)
+                this.actor.translation_y = this._animationsEnabled() ? 6 * this._scale() : 0;
+            this.actor.ease({opacity: 255, translation_y: 0, duration: 260,
+                mode: Clutter.AnimationMode.EASE_IN_OUT_CUBIC});
+        }
         if (!this.timeline.is_playing())
             this.timeline.start();
     }
 
     hide() {
-        if (this.mode === 'hidden')
+        if (this.mode === 'hidden' || this.mode === 'fading')
             return;
         this.mode = 'fading';
         this.actor.ease({
             opacity: 0,
+            translation_y: this._animationsEnabled() ? 3 * this._scale() : 0,
             duration: 70, // the daemon pastes 80 ms after going idle
             mode: Clutter.AnimationMode.EASE_IN_QUAD,
             onComplete: () => {
@@ -286,18 +395,18 @@ class Capsule {
     }
 
     setText(text, notice = false) {
-        this.label.text = notice ? text : this._tail(text);
-        this.label.visible = text.length > 0 && (notice || this.showLiveText);
+        this.rawText = text.replace(/\s+/g, ' ').trim();
+        this.isNotice = notice;
         this.label.style_class = notice ? 'lw-notice' : 'lw-live';
+        this._updateSize(this.mode === 'hidden' || this.mode === 'fading' ||
+            !this.rawText && this.mode !== 'recording');
     }
 
     // The newest words that fit in TEXT_LINES lines, cut at a word boundary
     // ("… ask what you can do for your country.") so the line never jumps
     // mid-word as the preview grows.
-    _tail(text) {
+    _tail(text, width) {
         text = text.replace(/\s+/g, ' ').trim();
-        const node = this.actor.get_theme_node();
-        const width = this.actor.width - node.get_horizontal_padding();
         if (!text || width <= 0)
             return text;
         const layout = this.label.clutter_text.get_layout().copy();
@@ -309,8 +418,22 @@ class Capsule {
             return layout.get_line_count() <= TEXT_LINES;
         };
         const words = text.split(' ');
-        if (words.length < 2 || fits(text))
-            return text; // a single overlong word wraps by character instead
+        if (fits(text))
+            return text;
+        // An unbroken URL or identifier can itself exceed two lines.
+        // Trim by Unicode code point so the viewport stays bounded.
+        if (words.length < 2 || !fits(`… ${words.at(-1)}`)) {
+            const chars = Array.from(words.at(-1));
+            let lo = 0, hi = chars.length;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (fits(`… ${chars.slice(mid).join('')}`))
+                    hi = mid;
+                else
+                    lo = mid + 1;
+            }
+            return `… ${chars.slice(lo).join('')}`;
+        }
         let lo = 1, hi = words.length - 1; // smallest start index that fits
         while (lo < hi) {
             const mid = (lo + hi) >> 1;
@@ -332,10 +455,30 @@ class Capsule {
         const now = GLib.get_monotonic_time();
         const dt = this.lastFrame ? Math.min((now - this.lastFrame) / 1e6, 0.1) : 1 / 60;
         this.lastFrame = now;
-        this.time += dt;
-        const k = 1 - Math.exp(-dt * 20);
-        for (let i = 0; i < this.current.length; i++)
+        const animate = this._animationsEnabled();
+        if (animate)
+            this.time += dt;
+        for (let i = 0; i < this.current.length; i++) {
+            const rate = this.target[i] > this.current[i] ? 20 : 12;
+            const k = 1 - Math.exp(-dt * rate);
             this.current[i] += (this.target[i] - this.current[i]) * k;
+        }
+        if (this._monitorWidth !== this._monitor()?.width || this._sizeScale !== this._scale())
+            this._updateSize();
+        let width, height;
+        [width, this.widthVelocity] = animate ?
+            spring(this.actor.width, this.widthVelocity, this.targetWidth, dt, 12) : [this.targetWidth, 0];
+        if (width > this._maxWidth) {
+            width = this._maxWidth;
+            this.widthVelocity = 0;
+        }
+        this.actor.width = width;
+        this._layout();
+        [height, this.heightVelocity] = animate ?
+            spring(this.actor.height, this.heightVelocity, this.targetHeight, dt, 14) : [this.targetHeight, 0];
+        this.actor.height = height;
+        this._layout();
+        this._reposition();
         this.area.queue_repaint();
     }
 
@@ -343,7 +486,11 @@ class Capsule {
         const cr = area.get_context();
         const [w, h] = area.get_surface_size();
         const n = this.current.length;
-        const total = n * 2 * (BAR_W + BAR_GAP) - BAR_GAP;
+        const scale = this._scale();
+        const step = Math.min((BAR_W + BAR_GAP) * scale,
+            Math.min(WAVEFORM_W * scale, w) / (n * 2));
+        const barWidth = Math.min(BAR_W * scale, step * 0.56);
+        const total = n * 2 * step - (step - barWidth);
         const x0 = (w - total) / 2;
         const mid = h / 2;
         for (let slot = 0; slot < n * 2; slot++) {
@@ -360,10 +507,10 @@ class Capsule {
                 level = Math.max(0, Math.min(1, this.current[band]));
                 alpha = 0.92;
             }
-            const bh = BAR_MIN + level * (h - BAR_MIN);
-            const x = x0 + slot * (BAR_W + BAR_GAP);
+            const bh = BAR_MIN * scale + level * (h - BAR_MIN * scale);
+            const x = x0 + slot * step;
             const y = mid - bh / 2;
-            const r = BAR_W / 2;
+            const r = barWidth / 2;
             cr.newSubPath();
             cr.arc(x + r, y + r, r, Math.PI, 0);
             cr.arc(x + r, y + bh - r, r, 0, Math.PI);

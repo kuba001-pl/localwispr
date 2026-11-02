@@ -78,7 +78,9 @@ done
 rmdir --ignore-fail-on-non-empty "$bundle/lib"
 
 ext=$bundle/share/gnome-shell/extensions/$uuid
-cp "$root/gnome-extension/$uuid/"* "$ext/"
+# Only runtime assets belong in an installation. Development tools and tests
+# must never be swept into a release by a directory-wide copy.
+install -m644 "$root/gnome-extension/$uuid/"{extension.js,metadata.json,stylesheet.css} "$ext/"
 if ! log=$("$root/gnome-extension/build-clipboard.sh" "$ext" 2>&1); then
     [[ $channel == release ]] && { printf '%s\n' "$log" >&2; exit 1; }
     echo "!! clipboard helper not built; only text clipboard contents will be restored" >&2
