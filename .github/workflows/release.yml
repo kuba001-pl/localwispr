@@ -6,6 +6,11 @@ name: Release
 on:
   push:
     tags: ['v*']
+    # Rebuilding on main when the native code may have changed keeps the
+    # compiler cache warm for the next release (tag runs can read caches made
+    # on main, but not each other's).
+    branches: [main]
+    paths: [Cargo.toml, Cargo.lock, llm/Cargo.toml, 'vendor/**', .github/workflows/release.yml]
   workflow_dispatch:
 
 env:
@@ -31,7 +36,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates curl git build-essential \
-            cmake clang libclang-dev pkg-config xz-utils file \
+            cmake clang libclang-dev pkg-config xz-utils file ccache \
             libgtk-4-dev libadwaita-1-dev libgtk4-layer-shell-dev libpipewire-0.3-dev \
             libasound2-dev libglib2.0-dev gobject-introspection gir1.2-glib-2.0-dev
       - name: Install Vulkan SDK pieces
@@ -67,6 +72,19 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: release-${{ matrix.variant }}-${{ hashFiles('Cargo.lock') }}
+      # Compiling llama.cpp and whisper.cpp (CUDA kernels for every GPU
+      # generation, twice) is most of the build; ccache skips it when they
+      # did not change.
+      - name: Set up the compiler cache
+        run: |
+          echo "CCACHE_DIR=$PWD/.ccache" >> "$GITHUB_ENV"
+          echo "CCACHE_MAXSIZE=4G" >> "$GITHUB_ENV"
+          echo "CCACHE_SLOPPINESS=time_macros" >> "$GITHUB_ENV"
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ matrix.variant }}-${{ github.sha }}
+          restore-keys: ccache-${{ matrix.variant }}-
       - name: Build
         env:
           LOCALWISPR_CHANNEL: release
@@ -78,6 +96,9 @@ jobs:
           # the 75-virtual fallback is just for GPUs released later.
           CMAKE_CUDA_ARCHITECTURES: 75-real;80-real;86-real;89-real;90-real;100-real;120-real;75-virtual
           CMAKE_BUILD_PARALLEL_LEVEL: '4'
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_CUDA_COMPILER_LAUNCHER: ccache
           RUSTFLAGS: -C link-arg=-Wl,--disable-new-dtags,-rpath,$ORIGIN/../lib:$ORIGIN/../../../runtime/cuda-13
         run: |
           if [ "${{ matrix.variant }}" = cuda ]; then
@@ -87,6 +108,7 @@ jobs:
           else
             cargo build --release --locked --workspace --no-default-features --features vulkan
           fi
+          ccache --show-stats
       - name: Bundle
         run: |
           mkdir -p dist
