@@ -7,8 +7,9 @@
 #                             source bundles get a timestamp (default: source)
 #   --target-dir DIR          cargo target directory (default: target)
 #   --out DIR                 where to put the bundle (default: target/bundle)
-#   --bundle-lib SONAME       copy a system library into lib/ (repeatable);
-#                             binaries must be linked with RPATH $ORIGIN/../lib
+#   --bundle-lib SONAME       copy a system library the binaries (or llama.cpp's
+#                             libraries) load into lib/ (repeatable); binaries
+#                             must be linked with RPATH $ORIGIN/../lib
 #   --cuda-runtime MAJOR      record that the bundle needs CUDA MAJOR libraries
 #   --archive                 also write <bundle>.tar.xz
 #
@@ -65,8 +66,13 @@ if grep -q '^libllama\.so' <<< "$needed"; then
     cp -a "$libdir"/lib*.so.* "$bundle/lib/"
 fi
 for soname in "${bundle_libs[@]}"; do
-    path=$(ldd "$bundle/bin/localwispr" | awk -v l="$soname" '$1 == l {print $3}')
-    [[ -f $path ]] || { echo "$soname is not linked by localwispr" >&2; exit 1; }
+    path=
+    for b in "$bundle"/bin/*; do
+        while read -r lib _ resolved _; do
+            [[ $lib == "$soname" && -f $resolved ]] && path=$resolved
+        done < <(LD_LIBRARY_PATH=$bundle/lib ldd "$b" 2>/dev/null)
+    done
+    [[ -n $path ]] || { echo "$soname is not linked by the bundle's binaries" >&2; exit 1; }
     install -m644 "$path" "$bundle/lib/$soname"
 done
 rmdir --ignore-fail-on-non-empty "$bundle/lib"
