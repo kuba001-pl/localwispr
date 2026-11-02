@@ -327,8 +327,9 @@ async fn replay_previews(
             .submit(audio[start..end].to_vec(), true, cfg, None)
             .await??;
         tracing::debug!(
-            "preview {:.1}s [{}] {}",
+            "preview {:.1}s {} ms [{}] {}",
             end as f32 / rate as f32,
+            t.elapsed().as_millis(),
             tr.language,
             tr.text
         );

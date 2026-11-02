@@ -831,6 +831,8 @@ impl Engine {
         let data_control = self.caps.data_control;
         let is_gnome = self.caps.is_gnome();
         let visible_frontend = self.frontend != Frontend::None;
+        let show_final_text =
+            visible_frontend && self.cfg.hud.show_live_text && self.cfg.transcription.live_preview;
         let emitter = self.emitter.clone();
         let injector = self.injector.clone();
         let events = self.events.clone();
@@ -865,6 +867,11 @@ impl Engine {
                     !task_cancelled.load(Ordering::Acquire),
                     "dictation cancelled"
                 );
+                // The last preview lags the end of speech; while cleanup runs,
+                // show what was actually heard.
+                if show_final_text {
+                    let _ = DaemonIface::partial_text(&emitter, &transcript.text).await;
+                }
                 let (mut text, outcome) =
                     cleanup::polish(llm.as_mut(), &transcript.text, &cfg.cleanup).await;
                 if let Outcome::Failed(e) = outcome {
