@@ -17,7 +17,7 @@ use tokio::sync::{mpsc, oneshot};
 use zbus::object_server::SignalEmitter;
 
 use crate::audio::{self, AudioHandle, SAMPLE_RATE};
-use crate::cleanup::{self, LlmClient, Outcome};
+use crate::cleanup::{self, LlmClient, Outcome, Pass};
 use crate::config::{Config, FrontendChoice, PttMode};
 use crate::dbus::{self, DaemonIface, Request, Status};
 use crate::desktop::Capabilities;
@@ -62,6 +62,12 @@ enum Event {
     PartialDone {
         utterance: u64,
         result: Result<Transcript>,
+    },
+    PreviewPolished {
+        utterance: u64,
+        raw: String,
+        text: String,
+        outcome: Outcome,
     },
     SttLoaded(LoadKey, Result<SttWorker>),
     SttUnloaded,
@@ -119,6 +125,18 @@ fn missing_injection_message(gnome: bool, data_control: bool, uinput: bool) -> &
     }
 }
 
+/// LLM polishing of live previews, one at a time.
+#[derive(Default)]
+struct LivePolish {
+    in_flight: bool,
+    /// Newest raw preview, waiting for the polish in flight.
+    queued: Option<String>,
+    /// Raw preview most recently polished (or being polished).
+    last_raw: Option<String>,
+    /// Newest preview the LLM polished successfully: (raw, polished).
+    polished: Option<(String, String)>,
+}
+
 struct HudProcess {
     kill: Option<oneshot::Sender<()>>,
     started: Instant,
@@ -155,6 +173,7 @@ pub struct Engine {
     utterance: u64,
     partial_in_flight: bool,
     last_partial_samples: usize,
+    live_polish: LivePolish,
     capture_reply: Option<oneshot::Sender<Vec<String>>>,
 
     loading_stt: Option<LoadKey>,
@@ -419,6 +438,7 @@ impl Engine {
             utterance: 0,
             partial_in_flight: false,
             last_partial_samples: 0,
+            live_polish: LivePolish::default(),
             capture_reply: None,
             loading_stt: None,
             unloading_stt: false,
@@ -455,7 +475,29 @@ impl Engine {
                     && !t.text.is_empty()
                 {
                     tracing::debug!("preview ({} ms, {:.1}s): {}", t.ms, t.audio_secs, t.text);
-                    let _ = DaemonIface::partial_text(&self.emitter, &t.text).await;
+                    self.show_preview(t.text).await;
+                }
+            }
+            Event::PreviewPolished {
+                utterance,
+                raw,
+                text,
+                outcome,
+            } => {
+                if utterance != self.utterance {
+                    return;
+                }
+                self.live_polish.in_flight = false;
+                if !matches!(self.phase, Phase::Recording { .. }) {
+                    return;
+                }
+                tracing::debug!("preview polished ({outcome:?}): {text}");
+                if outcome == Outcome::Polished {
+                    self.live_polish.polished = Some((raw, text.clone()));
+                }
+                let _ = DaemonIface::partial_text(&self.emitter, &text).await;
+                if let Some(next) = self.live_polish.queued.take() {
+                    self.start_live_polish(next);
                 }
             }
             Event::Processed {
@@ -712,6 +754,7 @@ impl Engine {
         self.utterance += 1;
         self.last_partial_samples = 0;
         self.partial_in_flight = false;
+        self.live_polish = LivePolish::default();
         self.phase = Phase::Recording {
             since: Instant::now(),
         };
@@ -721,6 +764,7 @@ impl Engine {
     async fn cancel_recording(&mut self) {
         self.utterance += 1;
         self.partial_in_flight = false;
+        self.cancel_live_polish().await;
         if let Some(a) = &self.audio {
             a.send(audio::Cmd::Cancel);
         }
@@ -792,6 +836,61 @@ impl Engine {
         });
     }
 
+    /// Shows a raw preview, polished first when the LLM is used for previews.
+    async fn show_preview(&mut self, raw: String) {
+        let c = &self.cfg.cleanup;
+        if c.enabled && c.live_preview && self.llm.is_some() {
+            if self.live_polish.last_raw.as_deref() == Some(raw.as_str()) {
+                return; // unchanged since the last polish
+            }
+            if self.live_polish.in_flight {
+                self.live_polish.queued = Some(raw);
+            } else {
+                self.start_live_polish(raw);
+            }
+        } else {
+            // What insertion falls back to without the LLM.
+            let text = cleanup::fallback(&raw, c);
+            let _ = DaemonIface::partial_text(&self.emitter, &text).await;
+        }
+    }
+
+    fn start_live_polish(&mut self, raw: String) {
+        if self.live_polish.last_raw.as_deref() == Some(raw.as_str()) {
+            return;
+        }
+        let Some(llm) = self.llm.as_ref().map(LlmClient::shared) else {
+            return;
+        };
+        self.live_polish.in_flight = true;
+        self.live_polish.last_raw = Some(raw.clone());
+        let cfg = self.cfg.cleanup.clone();
+        let events = self.events.clone();
+        let utterance = self.utterance;
+        tokio::spawn(async move {
+            let (text, outcome) = cleanup::polish(Some(&llm), &raw, &cfg, Pass::Preview).await;
+            drop(llm);
+            let _ = events.send(Event::PreviewPolished {
+                utterance,
+                raw,
+                text,
+                outcome,
+            });
+        });
+    }
+
+    /// Stops a preview polish so it never delays the final one, and returns
+    /// the newest successful preview polish.
+    async fn cancel_live_polish(&mut self) -> Option<(String, String)> {
+        let live = std::mem::take(&mut self.live_polish);
+        if live.in_flight
+            && let Some(llm) = &self.llm
+        {
+            llm.cancel_pending().await;
+        }
+        live.polished
+    }
+
     async fn finish_recording(&mut self) {
         let Phase::Recording { since } = self.phase else {
             return;
@@ -803,6 +902,7 @@ impl Engine {
             return;
         }
         let t_release = Instant::now();
+        let preview_polish = self.cancel_live_polish().await;
         self.phase = Phase::Processing;
         let _ = DaemonIface::state_changed(&self.emitter, "processing").await;
 
@@ -867,18 +967,29 @@ impl Engine {
                     !task_cancelled.load(Ordering::Acquire),
                     "dictation cancelled"
                 );
-                // The last preview lags the end of speech; while cleanup runs,
-                // show what was actually heard.
-                if show_final_text {
-                    let _ = DaemonIface::partial_text(&emitter, &transcript.text).await;
-                }
-                let (mut text, outcome) =
-                    cleanup::polish(llm.as_mut(), &transcript.text, &cfg.cleanup).await;
+                let reused =
+                    cleanup::reuse_preview_polish(preview_polish, &transcript.text, &cfg.cleanup);
+                let (mut text, outcome) = match reused {
+                    Some(polished) => {
+                        tracing::debug!(
+                            "final transcript matches the last preview; reusing its polish"
+                        );
+                        (polished, Outcome::Polished)
+                    }
+                    None => {
+                        cleanup::polish(llm.as_ref(), &transcript.text, &cfg.cleanup, Pass::Final)
+                            .await
+                    }
+                };
                 if let Outcome::Failed(e) = outcome {
                     tracing::warn!("cleanup skipped: {e}");
-                    if !llm.as_mut().is_some_and(|l| l.is_alive()) {
+                    if !llm.as_ref().is_some_and(|l| l.is_alive()) {
                         llm = None;
                     }
+                }
+                // The overlay ends on exactly what is inserted.
+                if show_final_text {
+                    let _ = DaemonIface::partial_text(&emitter, &text).await;
                 }
                 if cfg.output.append_space && !text.ends_with(char::is_whitespace) {
                     text.push(' ');

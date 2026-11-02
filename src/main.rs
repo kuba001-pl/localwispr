@@ -17,7 +17,7 @@ mod update;
 mod wav;
 
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
@@ -188,11 +188,11 @@ async fn async_main(cmd: Command) -> Result<()> {
         Command::Cleanup { text } => {
             let cfg = config::Config::load_or_default();
             let model = models::ModelRef::resolve(&cfg.cleanup.model, models::ModelKind::Llm)?;
-            let mut llm = cleanup::LlmClient::spawn(&model.path(), cfg.cleanup.gpu_layers).await?;
+            let llm = cleanup::LlmClient::spawn(&model.path(), cfg.cleanup.gpu_layers).await?;
             let mut c = cfg.cleanup.clone();
             c.enabled = true;
             let t = Instant::now();
-            let (out, outcome) = cleanup::polish(Some(&mut llm), &text, &c).await;
+            let (out, outcome) = cleanup::polish(Some(&llm), &text, &c, cleanup::Pass::Final).await;
             println!("{out}\n  [{outcome:?}, {} ms]", t.elapsed().as_millis());
             Ok(())
         }
@@ -254,7 +254,7 @@ async fn transcribe_files(files: &[PathBuf], raw: bool, repeat: u32, live: bool)
     .await??;
     eprintln!("whisper load+warmup: {} ms", t.elapsed().as_millis());
 
-    let mut llm = if !raw && cfg.cleanup.enabled {
+    let llm = if !raw && cfg.cleanup.enabled {
         let m = models::ModelRef::resolve(&cfg.cleanup.model, models::ModelKind::Llm)?;
         Some(cleanup::LlmClient::spawn(&m.path(), cfg.cleanup.gpu_layers).await?)
     } else {
@@ -280,8 +280,15 @@ async fn transcribe_files(files: &[PathBuf], raw: bool, repeat: u32, live: bool)
         }
         for i in 0..repeat {
             stt.new_utterance();
+            let mut shown = None;
+            let mut preview_polish = None;
             if live {
-                replay_previews(&stt, &audio, &cfg.transcription).await?;
+                let polish_llm = llm.as_ref().filter(|_| cfg.cleanup.live_preview);
+                (shown, preview_polish) = replay_previews(&stt, polish_llm, &audio, &cfg).await?;
+                // Released: like the daemon, stop a preview polish in flight.
+                if let Some(l) = polish_llm {
+                    l.cancel_pending().await;
+                }
             }
             let t0 = Instant::now();
             let tr = stt
@@ -289,12 +296,33 @@ async fn transcribe_files(files: &[PathBuf], raw: bool, repeat: u32, live: bool)
                 .await??;
             let t_stt = t0.elapsed();
             let t1 = Instant::now();
-            let (out, outcome) = cleanup::polish(llm.as_mut(), &tr.text, &cfg.cleanup).await;
+            let reused = cleanup::reuse_preview_polish(preview_polish, &tr.text, &cfg.cleanup)
+                .map(|polished| (polished, cleanup::Outcome::Polished));
+            let was_reused = reused.is_some();
+            let (out, outcome) = match reused {
+                Some(r) => r,
+                None => {
+                    cleanup::polish(llm.as_ref(), &tr.text, &cfg.cleanup, cleanup::Pass::Final)
+                        .await
+                }
+            };
             let t_llm = t1.elapsed();
             if i == 0 {
                 println!(
                     "language: {}\nraw:      {}\nfinal:    {}",
                     tr.language, tr.text, out
+                );
+            }
+            if live {
+                println!(
+                    "preview:  {} (last shown before release{})",
+                    shown.as_deref().unwrap_or(""),
+                    match (shown.as_deref() == Some(out.as_str()), was_reused) {
+                        (true, true) => "; identical; polish reused",
+                        (true, false) => "; identical",
+                        (false, true) => "; polish reused",
+                        (false, false) => "",
+                    }
                 );
             }
             println!(
@@ -310,21 +338,68 @@ async fn transcribe_files(files: &[PathBuf], raw: bool, repeat: u32, live: bool)
     Ok(())
 }
 
-/// Mimics the daemon while recording: a preview every `preview_interval_ms`
-/// of captured audio, skipped while the previous one is still decoding.
+/// Mimics the daemon while recording, in real time: a preview every
+/// `preview_interval_ms` of captured audio (skipped while one is decoding)
+/// and, with `llm`, one preview polish at a time. Returns the last text the
+/// overlay would show and the newest successful polish (raw, polished).
 async fn replay_previews(
     stt: &stt::SttWorker,
+    llm: Option<&cleanup::LlmClient>,
     audio: &[f32],
-    cfg: &config::Transcription,
-) -> Result<()> {
+    cfg: &config::Config,
+) -> Result<(Option<String>, Option<(String, String)>)> {
+    type Polished = (String, String, cleanup::Outcome, Instant);
     let rate = audio::SAMPLE_RATE as usize;
-    let interval = cfg.preview_interval_ms as usize * rate / 1000;
-    let mut end = interval;
-    while end < audio.len() {
-        let start = end.saturating_sub(28 * rate);
+    let tcfg = &cfg.transcription;
+    let interval = Duration::from_millis(tcfg.preview_interval_ms as u64);
+    let start = Instant::now();
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Polished>();
+    let mut shown: Option<String> = None;
+    let mut in_flight = false;
+    let mut queued: Option<String> = None;
+    let mut last_raw: Option<String> = None;
+    let mut polished: Option<(String, String)> = None;
+    let spawn_polish = |raw: String| {
+        let llm = llm.map(cleanup::LlmClient::shared);
+        let tx = tx.clone();
+        let c = cfg.cleanup.clone();
+        tokio::spawn(async move {
+            let t = Instant::now();
+            let (text, outcome) =
+                cleanup::polish(llm.as_ref(), &raw, &c, cleanup::Pass::Preview).await;
+            tracing::debug!("  polish {} ms ({outcome:?})", t.elapsed().as_millis());
+            let _ = tx.send((raw, text, outcome, Instant::now()));
+        });
+    };
+    let mut next = start + interval;
+    loop {
+        // Handle finished polishes while waiting for the next tick.
+        loop {
+            tokio::select! {
+                _ = tokio::time::sleep_until(next.into()) => break,
+                Some((raw, text, outcome, _)) = rx.recv() => {
+                    in_flight = false;
+                    if outcome == cleanup::Outcome::Polished {
+                        polished = Some((raw, text.clone()));
+                    }
+                    tracing::debug!("  shown {:.1}s: {text}", start.elapsed().as_secs_f32());
+                    shown = Some(text);
+                    if let Some(q) = queued.take() && last_raw.as_ref() != Some(&q) {
+                        in_flight = true;
+                        last_raw = Some(q.clone());
+                        spawn_polish(q);
+                    }
+                }
+            }
+        }
+        let end = (start.elapsed().as_secs_f64() * rate as f64) as usize;
+        if end >= audio.len() {
+            break;
+        }
+        let from = end.saturating_sub(28 * rate);
         let t = Instant::now();
         let tr = stt
-            .submit(audio[start..end].to_vec(), true, cfg, None)
+            .submit(audio[from..end].to_vec(), true, tcfg, None)
             .await??;
         tracing::debug!(
             "preview {:.1}s {} ms [{}] {}",
@@ -333,8 +408,37 @@ async fn replay_previews(
             tr.language,
             tr.text
         );
-        let busy = t.elapsed().as_millis() as usize * rate / 1000;
-        end += interval.max(busy);
+        if !tr.text.is_empty() {
+            if llm.is_some() {
+                if last_raw.as_deref() != Some(tr.text.as_str()) {
+                    if in_flight {
+                        queued = Some(tr.text);
+                    } else {
+                        in_flight = true;
+                        last_raw = Some(tr.text.clone());
+                        spawn_polish(tr.text);
+                    }
+                }
+            } else {
+                shown = Some(cleanup::fallback(&tr.text, &cfg.cleanup));
+            }
+        }
+        // Like a tokio interval with MissedTickBehavior::Skip.
+        next += interval;
+        while next <= Instant::now() {
+            next += interval;
+        }
     }
-    Ok(())
+    // Audio ends here (key released); sleep until the clip's real duration.
+    let release = start + Duration::from_secs_f64(audio.len() as f64 / rate as f64);
+    tokio::time::sleep_until(release.into()).await;
+    while let Ok((raw, text, outcome, at)) = rx.try_recv() {
+        if at <= release {
+            if outcome == cleanup::Outcome::Polished {
+                polished = Some((raw, text.clone()));
+            }
+            shown = Some(text);
+        }
+    }
+    Ok((shown, polished))
 }

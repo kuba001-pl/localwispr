@@ -4,6 +4,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -11,7 +13,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, Lines};
 use tokio::process::{Child, ChildStdin, ChildStdout};
 
 use crate::config::Cleanup;
-use crate::llm_proto::{ChatMessage, Request, Response};
+use crate::llm_proto::{CANCELLED, ChatMessage, Request, Response};
 
 // ----------------------------------------------------------------- fillers --
 
@@ -487,13 +489,27 @@ impl std::fmt::Display for WorkerRefused {
 
 impl std::error::Error for WorkerRefused {}
 
+/// Handle to the `localwispr-llm` worker. Cheap to share with
+/// [`LlmClient::shared`]: live previews clean text through a shared handle
+/// while the daemon keeps ownership. Completions run one at a time.
 pub struct LlmClient {
-    child: Child,
-    stdin: ChildStdin,
-    stdout: Lines<BufReader<ChildStdout>>,
-    next_id: u64,
-    usable: bool,
+    inner: Arc<Inner>,
     pub model_path: PathBuf,
+}
+
+struct Inner {
+    child: tokio::sync::Mutex<Child>,
+    stdin: tokio::sync::Mutex<ChildStdin>,
+    /// Held for a whole request/response exchange, which serialises requests
+    /// and keeps every response paired with its request.
+    stdout: tokio::sync::Mutex<Lines<BufReader<ChildStdout>>>,
+    next_id: AtomicU64,
+    usable: AtomicBool,
+    /// The worker understands `Request::Cancel`.
+    can_cancel: AtomicBool,
+    /// Bumped by [`LlmClient::cancel_pending`]; a cancellable request started
+    /// in an older epoch is dropped before it reaches the worker.
+    epoch: AtomicU64,
 }
 
 fn worker_binary() -> PathBuf {
@@ -507,26 +523,34 @@ fn worker_binary() -> PathBuf {
 }
 
 impl LlmClient {
+    fn from_child(mut child: Child, model_path: PathBuf) -> Self {
+        let stdin = child.stdin.take().expect("piped stdin");
+        let stdout = BufReader::new(child.stdout.take().expect("piped stdout")).lines();
+        Self {
+            inner: Arc::new(Inner {
+                child: tokio::sync::Mutex::new(child),
+                stdin: tokio::sync::Mutex::new(stdin),
+                stdout: tokio::sync::Mutex::new(stdout),
+                next_id: AtomicU64::new(1),
+                usable: AtomicBool::new(true),
+                can_cancel: AtomicBool::new(false),
+                epoch: AtomicU64::new(0),
+            }),
+            model_path,
+        }
+    }
+
     pub async fn spawn(model_path: &Path, gpu_layers: u32) -> Result<Self> {
         let t0 = Instant::now();
         let bin = worker_binary();
-        let mut child = tokio::process::Command::new(&bin)
+        let child = tokio::process::Command::new(&bin)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .kill_on_drop(true)
             .spawn()
             .with_context(|| format!("starting {}", bin.display()))?;
-        let stdin = child.stdin.take().unwrap();
-        let stdout = BufReader::new(child.stdout.take().unwrap()).lines();
-        let mut client = Self {
-            child,
-            stdin,
-            stdout,
-            next_id: 1,
-            usable: true,
-            model_path: model_path.to_path_buf(),
-        };
+        let client = Self::from_child(child, model_path.to_path_buf());
         let result = tokio::time::timeout(Duration::from_secs(180), async {
             client
                 .send(&Request::Load {
@@ -535,8 +559,10 @@ impl LlmClient {
                     n_ctx: 4096,
                 })
                 .await?;
-            match client.recv().await? {
-                Response::Loaded { model, ms } => {
+            let mut stdout = client.inner.stdout.lock().await;
+            match recv(&mut stdout).await? {
+                Response::Loaded { model, ms, cancel } => {
+                    client.inner.can_cancel.store(cancel, Ordering::Release);
                     tracing::info!(
                         "cleanup model {model} ready in {ms} ms ({} ms incl. spawn)",
                         t0.elapsed().as_millis()
@@ -556,59 +582,91 @@ impl LlmClient {
         Ok(client)
     }
 
-    async fn invalidate(&mut self) {
-        self.usable = false;
-        // kill() sends SIGKILL and waits/reaps; wait() also handles an already
-        // exited child if signaling failed. Never reuse a partially written pipe.
-        let _ = self.child.kill().await;
-        let _ = self.child.wait().await;
+    /// Another handle to the same worker. It keeps the worker process alive
+    /// while it exists, so only lend it to short tasks.
+    pub fn shared(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            model_path: self.model_path.clone(),
+        }
     }
 
-    async fn send(&mut self, req: &Request) -> Result<()> {
+    async fn invalidate(&self) {
+        self.inner.usable.store(false, Ordering::Release);
+        // kill() sends SIGKILL and waits/reaps; wait() also handles an already
+        // exited child if signaling failed. Never reuse a partially written pipe.
+        let mut child = self.inner.child.lock().await;
+        let _ = child.kill().await;
+        let _ = child.wait().await;
+    }
+
+    async fn send(&self, req: &Request) -> Result<()> {
         let mut line = serde_json::to_vec(req)?;
         line.push(b'\n');
-        self.stdin.write_all(&line).await?;
-        self.stdin.flush().await?;
+        let mut stdin = self.inner.stdin.lock().await;
+        stdin.write_all(&line).await?;
+        stdin.flush().await?;
         Ok(())
     }
 
-    async fn recv(&mut self) -> Result<Response> {
-        let line = self
-            .stdout
-            .next_line()
-            .await?
-            .ok_or_else(|| anyhow!("LLM worker exited"))?;
-        Ok(serde_json::from_str(&line)?)
+    /// Abandons every completion started so far: one still waiting for its
+    /// turn never runs, a running one stops within one decode step. Later
+    /// requests are unaffected.
+    pub async fn cancel_pending(&self) {
+        self.inner.epoch.fetch_add(1, Ordering::AcqRel);
+        if !self.inner.can_cancel.load(Ordering::Acquire)
+            || !self.inner.usable.load(Ordering::Acquire)
+        {
+            return;
+        }
+        let below = self.inner.next_id.load(Ordering::Acquire);
+        if let Err(e) = self.send(&Request::Cancel { below }).await {
+            tracing::debug!("LLM cancel not sent: {e:#}");
+        }
     }
 
-    pub async fn complete(
-        &mut self,
+    pub async fn complete(&self, messages: Vec<ChatMessage>, max_tokens: u32) -> Result<String> {
+        self.complete_with_deadline(messages, max_tokens, Duration::from_secs(30), None)
+            .await
+    }
+
+    /// Like [`Self::complete`], but abandoned by [`Self::cancel_pending`].
+    pub async fn complete_cancellable(
+        &self,
         messages: Vec<ChatMessage>,
         max_tokens: u32,
     ) -> Result<String> {
-        self.complete_with_deadline(messages, max_tokens, Duration::from_secs(30))
+        let epoch = self.inner.epoch.load(Ordering::Acquire);
+        self.complete_with_deadline(messages, max_tokens, Duration::from_secs(30), Some(epoch))
             .await
     }
 
     async fn complete_with_deadline(
-        &mut self,
+        &self,
         messages: Vec<ChatMessage>,
         max_tokens: u32,
         deadline: Duration,
+        epoch: Option<u64>,
     ) -> Result<String> {
-        if !self.usable {
+        if !self.inner.usable.load(Ordering::Acquire) {
             bail!("LLM worker is invalidated");
         }
-        let id = self.next_id;
-        self.next_id += 1;
         let result = tokio::time::timeout(deadline, async {
+            let mut stdout = self.inner.stdout.lock().await;
+            if !self.inner.usable.load(Ordering::Acquire) {
+                bail!("LLM worker is invalidated");
+            }
+            if epoch.is_some_and(|e| e != self.inner.epoch.load(Ordering::Acquire)) {
+                return Err(WorkerRefused(format!("LLM: {CANCELLED}")).into());
+            }
+            let id = self.inner.next_id.fetch_add(1, Ordering::AcqRel);
             self.send(&Request::Complete {
                 id,
                 messages,
                 max_tokens,
             })
             .await?;
-            match self.recv().await? {
+            match recv(&mut stdout).await? {
                 Response::Completion {
                     id: rid,
                     text,
@@ -634,7 +692,7 @@ impl LlmClient {
         .unwrap_or_else(|_| Err(anyhow!("LLM worker timed out")));
         match result {
             // The worker answered in protocol (e.g. a transcript too long for
-            // its context): it is still healthy.
+            // its context, or a cancelled preview): it is still healthy.
             Err(e) if e.is::<WorkerRefused>() => Err(anyhow!("{e}")),
             Err(e) => {
                 // Cancellation of a partial write makes the stream unusable too.
@@ -645,9 +703,23 @@ impl LlmClient {
         }
     }
 
-    pub fn is_alive(&mut self) -> bool {
-        self.usable && matches!(self.child.try_wait(), Ok(None))
+    pub fn is_alive(&self) -> bool {
+        self.inner.usable.load(Ordering::Acquire)
+            && self
+                .inner
+                .child
+                .try_lock()
+                .map(|mut c| matches!(c.try_wait(), Ok(None)))
+                .unwrap_or(true) // being reaped right now: invalidate() decides
     }
+}
+
+async fn recv(stdout: &mut Lines<BufReader<ChildStdout>>) -> Result<Response> {
+    let line = stdout
+        .next_line()
+        .await?
+        .ok_or_else(|| anyhow!("LLM worker exited"))?;
+    Ok(serde_json::from_str(&line)?)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -661,12 +733,47 @@ pub enum Outcome {
 
 /// Full cleanup pipeline. Never fails: any problem falls back to the
 /// rule-cleaned raw transcript.
-pub async fn polish(llm: Option<&mut LlmClient>, raw: &str, cfg: &Cleanup) -> (String, Outcome) {
-    let fallback = if cfg.remove_fillers {
+/// What is inserted when the LLM is off, unavailable or rejected.
+pub fn fallback(raw: &str, cfg: &Cleanup) -> String {
+    if cfg.remove_fillers {
         strip_fillers(raw)
     } else {
         raw.trim().to_owned()
-    };
+    }
+}
+
+/// The polish of a preview, if it can stand in for polishing the final
+/// transcript: the same words in the same order (case and punctuation aside,
+/// which the LLM rewrites anyway), and it still passes the drift guard
+/// against the final text. After a pause before release, the final pass
+/// usually hears exactly what the last preview did.
+pub fn reuse_preview_polish(
+    preview: Option<(String, String)>,
+    final_raw: &str,
+    cfg: &Cleanup,
+) -> Option<String> {
+    let (preview_raw, polished) = preview?;
+    let same_words = words(&preview_raw) == words(final_raw);
+    (same_words && check(final_raw, &polished, cfg).is_ok()).then_some(polished)
+}
+
+/// Which transcript is being polished.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Pass {
+    /// Text that will be inserted.
+    Final,
+    /// A live preview: cancelled by [`LlmClient::cancel_pending`], and
+    /// rejections of half-finished sentences are expected, so not warned about.
+    Preview,
+}
+
+pub async fn polish(
+    llm: Option<&LlmClient>,
+    raw: &str,
+    cfg: &Cleanup,
+    pass: Pass,
+) -> (String, Outcome) {
+    let fallback = fallback(raw, cfg);
     if !cfg.enabled {
         return (fallback, Outcome::Raw);
     }
@@ -677,13 +784,21 @@ pub async fn polish(llm: Option<&mut LlmClient>, raw: &str, cfg: &Cleanup) -> (S
         return (fallback, Outcome::Failed("cleanup model not loaded".into()));
     };
     let max_tokens = (raw.chars().count() as u32 / 2 + 48).min(1500);
-    match llm.complete(build_messages(raw, cfg), max_tokens).await {
+    let messages = build_messages(raw, cfg);
+    let reply = match pass {
+        Pass::Final => llm.complete(messages, max_tokens).await,
+        Pass::Preview => llm.complete_cancellable(messages, max_tokens).await,
+    };
+    match reply {
         Ok(out) => {
             let out = unwrap_output(&out);
             match check(raw, &out, cfg) {
                 Ok(()) => (out, Outcome::Polished),
                 Err(r) => {
-                    tracing::warn!("rejected LLM output {out:?}: {r:?}");
+                    match pass {
+                        Pass::Final => tracing::warn!("rejected LLM output {out:?}: {r:?}"),
+                        Pass::Preview => tracing::debug!("preview cleanup rejected {out:?}: {r:?}"),
+                    }
                     (fallback, Outcome::Rejected(r))
                 }
             }
@@ -754,33 +869,37 @@ mod tests {
     }
 
     fn fake_worker(script: &str) -> LlmClient {
-        let mut child = tokio::process::Command::new("sh")
+        let child = tokio::process::Command::new("sh")
             .args(["-c", script])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .kill_on_drop(true)
             .spawn()
             .unwrap();
-        LlmClient {
-            stdin: child.stdin.take().unwrap(),
-            stdout: BufReader::new(child.stdout.take().unwrap()).lines(),
-            child,
-            next_id: 1,
-            usable: true,
-            model_path: PathBuf::new(),
-        }
+        LlmClient::from_child(child, PathBuf::new())
+    }
+
+    fn reaped(client: &LlmClient) -> bool {
+        client
+            .inner
+            .child
+            .try_lock()
+            .unwrap()
+            .try_wait()
+            .unwrap()
+            .is_some()
     }
 
     #[tokio::test]
     async fn blocked_request_write_has_a_deadline_and_reaps_worker() {
-        let mut client = fake_worker("exec sleep 60"); // never reads stdin
+        let client = fake_worker("exec sleep 60"); // never reads stdin
         let messages = vec![ChatMessage::new("user", "x".repeat(2 << 20))];
         let result = client
-            .complete_with_deadline(messages, 10, Duration::from_millis(80))
+            .complete_with_deadline(messages, 10, Duration::from_millis(80), None)
             .await;
         assert!(result.unwrap_err().to_string().contains("timed out"));
         assert!(!client.is_alive());
-        assert!(client.child.try_wait().unwrap().is_some());
+        assert!(reaped(&client));
         // Invalidated clients cannot block on a second request.
         assert!(
             client
@@ -794,15 +913,15 @@ mod tests {
 
     #[tokio::test]
     async fn missing_response_times_out_and_reaps_worker() {
-        let mut client = fake_worker("read request; exec sleep 60");
+        let client = fake_worker("read request; exec sleep 60");
         assert!(
             client
-                .complete_with_deadline(Vec::new(), 10, Duration::from_millis(80))
+                .complete_with_deadline(Vec::new(), 10, Duration::from_millis(80), None)
                 .await
                 .is_err()
         );
         assert!(!client.is_alive());
-        assert!(client.child.try_wait().unwrap().is_some());
+        assert!(reaped(&client));
     }
 
     #[tokio::test]
@@ -813,32 +932,75 @@ mod tests {
             r#"{"kind":"completion","id":1,"text":"partial","prompt_tokens":0,"cached_tokens":0,"generated_tokens":10,"reached_eog":false,"ms":0}"#,
         ] {
             // Response literals contain no shell quote characters.
-            let mut client = fake_worker(&format!(
+            let client = fake_worker(&format!(
                 "read request; printf '%s\\n' '{response}'; exec sleep 60"
             ));
             assert!(
                 client
-                    .complete_with_deadline(Vec::new(), 10, Duration::from_secs(1))
+                    .complete_with_deadline(Vec::new(), 10, Duration::from_secs(1), None)
                     .await
                     .is_err()
             );
             assert!(!client.is_alive());
-            assert!(client.child.try_wait().unwrap().is_some());
+            assert!(reaped(&client));
         }
     }
 
     #[tokio::test]
     async fn error_reply_keeps_worker() {
         // E.g. a transcript too long for the context: the worker is healthy.
-        let mut client = fake_worker(
+        let client = fake_worker(
             r#"read request; printf '%s\n' '{"kind":"error","id":1,"error":"prompt too long"}'; exec sleep 60"#,
         );
         let err = client
-            .complete_with_deadline(Vec::new(), 10, Duration::from_secs(1))
+            .complete_with_deadline(Vec::new(), 10, Duration::from_secs(1), None)
             .await
             .unwrap_err();
         assert!(err.to_string().contains("prompt too long"));
         assert!(client.is_alive());
+    }
+
+    #[tokio::test]
+    async fn cancelled_running_completion_keeps_worker() {
+        // Answers the cancelled request the way localwispr-llm does.
+        let client = fake_worker(
+            r#"read request; read cancel; case "$cancel" in *'"cmd":"cancel","below":2'*) printf '%s\n' '{"kind":"error","id":1,"error":"cancelled"}';; esac; exec sleep 60"#,
+        );
+        client.inner.can_cancel.store(true, Ordering::Release);
+        let preview = client.shared();
+        let running =
+            tokio::spawn(async move { preview.complete_cancellable(Vec::new(), 10).await });
+        while client.inner.next_id.load(Ordering::Acquire) == 1 {
+            tokio::task::yield_now().await;
+        }
+        client.cancel_pending().await;
+        let err = tokio::time::timeout(Duration::from_secs(5), running)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap_err();
+        assert!(err.to_string().contains(CANCELLED));
+        assert!(client.is_alive());
+    }
+
+    #[tokio::test]
+    async fn cancelled_waiting_completion_never_reaches_worker() {
+        let client = fake_worker("exec sleep 60"); // would never answer
+        let busy = client.inner.stdout.lock().await; // a request in progress
+        let preview = client.shared();
+        let waiting =
+            tokio::spawn(async move { preview.complete_cancellable(Vec::new(), 10).await });
+        tokio::task::yield_now().await;
+        client.cancel_pending().await;
+        drop(busy);
+        let err = tokio::time::timeout(Duration::from_secs(5), waiting)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap_err();
+        assert!(err.to_string().contains(CANCELLED));
+        assert!(client.is_alive());
+        assert_eq!(client.inner.next_id.load(Ordering::Acquire), 1);
     }
 
     #[test]
@@ -894,6 +1056,38 @@ mod tests {
         let raw = "can you tell me how to install rust on linux please";
         let out = "Sure! To install Rust on Linux, run the rustup installer.";
         assert!(check(raw, out, &cfg()).is_err());
+    }
+
+    #[test]
+    fn preview_polish_is_reused_only_for_the_same_words() {
+        let polished = "Ask what you can do for your country.".to_owned();
+        let preview = || {
+            Some((
+                "ask what you can do, for your country".to_owned(),
+                polished.clone(),
+            ))
+        };
+        let reuse = |raw: &str| reuse_preview_polish(preview(), raw, &cfg());
+        assert_eq!(
+            reuse("Ask what you can do for your country.").as_ref(),
+            Some(&polished)
+        );
+        assert_eq!(
+            reuse("ask what you can do for your country"),
+            Some(polished.clone())
+        );
+        assert_eq!(reuse("Ask what you can do for your country. And"), None);
+        assert_eq!(reuse("Ask what you can do for my country."), None);
+        assert_eq!(reuse_preview_polish(None, "anything", &cfg()), None);
+        // A polish that the guard would reject for the final text is not reused.
+        let bad = Some((
+            "what's the capital of france".to_owned(),
+            "Paris.".to_owned(),
+        ));
+        assert_eq!(
+            reuse_preview_polish(bad, "What's the capital of France?", &cfg()),
+            None
+        );
     }
 
     #[test]

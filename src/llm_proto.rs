@@ -37,7 +37,15 @@ pub enum Request {
         messages: Vec<ChatMessage>,
         max_tokens: u32,
     },
+    /// Abandon every completion with an id below `below`, queued or running.
+    /// Running ones stop within one decode step and answer with an
+    /// [`Response::Error`] carrying [`CANCELLED`]; the KV cache stays valid.
+    /// Only sent to workers whose [`Response::Loaded`] set `cancel`.
+    Cancel { below: u64 },
 }
+
+/// Error text of a cancelled completion.
+pub const CANCELLED: &str = "cancelled";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -45,6 +53,9 @@ pub enum Response {
     Loaded {
         model: String,
         ms: u64,
+        /// Understands [`Request::Cancel`] (older workers omit the field).
+        #[serde(default)]
+        cancel: bool,
     },
     Completion {
         id: u64,
@@ -66,6 +77,13 @@ pub enum Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn old_worker_load_reply_does_not_advertise_cancel() {
+        let response: Response =
+            serde_json::from_str(r#"{"kind":"loaded","model":"m","ms":1}"#).unwrap();
+        assert!(matches!(response, Response::Loaded { cancel: false, .. }));
+    }
 
     #[test]
     fn old_worker_completion_without_eog_proof_is_rejected_by_default() {
