@@ -51,8 +51,12 @@ which takes ~70 ms off the speech-model column. Models stay loaded (~4 GB VRAM).
 Performance details:
 
 - the speech model only decodes speech (Silero VAD runs once);
-- live previews only encode as much audio as exists, and the final pass
-  aborts any preview still running;
+- live previews (~70–180 ms each on an RTX 3080) use the same full encoder
+  context as the final pass, and the LLM polishes them too (~50–90 ms), so
+  the overlay shows the text that will be inserted. On release, previews in
+  flight are aborted; when the final transcript has the same words as the
+  last preview (you paused before releasing), its polish is reused and the
+  LLM is skipped. Turn off "Polish the live preview" to save GPU time;
 - the LLM reuses its cached system prompt (KV cache);
 - prompt-lookup speculative decoding verifies copied transcript tokens in
   batches: 2.5–3.5× faster, with greedy output unchanged.

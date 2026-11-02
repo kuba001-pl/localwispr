@@ -847,6 +847,13 @@ fn cleanup_page(ctx: &Shared) -> adw::PreferencesPage {
     ));
     main.add(&switch_row(
         ctx,
+        "Polish the live preview",
+        "The overlay shows the text that will be inserted (more GPU while dictating)",
+        |c| c.cleanup.live_preview,
+        |c, v| c.cleanup.live_preview = v,
+    ));
+    main.add(&switch_row(
+        ctx,
         "Remove obvious fillers without LLM",
         "um, uh, yyy, eee… (also used as fallback)",
         |c| c.cleanup.remove_fillers,

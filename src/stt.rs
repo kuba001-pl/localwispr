@@ -367,12 +367,14 @@ fn transcribe(
         p.set_temperature_inc(0.0); // no fallback re-decodes
     }
     if job.partial {
-        // Encode only as much context as there is audio (~2–4× faster previews).
-        let frames = ((audio_secs + 1.0) * 50.0).ceil() as i32;
-        p.set_audio_ctx(frames.clamp(128, 1500));
-        // A reduced audio_ctx occasionally sends the decoder into a repetition
-        // loop that runs to the 448-token limit (~400 ms). Real speech stays
-        // well under ~8 tokens/s even in Polish.
+        // Previews use the full 30 s encoder context, like the final pass.
+        // Shrinking `audio_ctx` to the clip length looked like a cheap speedup
+        // (~40–100 ms on an RTX 3080), but Whisper was never trained on it:
+        // large-v3-turbo then loops, hallucinates and returns empty text for
+        // whole seconds, so the HUD showed gibberish or stalled.
+        //
+        // Bound runaway decodes anyway; real speech stays well under ~8
+        // tokens/s even in Polish.
         p.set_max_tokens((audio_secs * 8.0) as i32 + 16);
     }
     let prompt = [switch_hint.unwrap_or(""), cfg.initial_prompt.trim()]

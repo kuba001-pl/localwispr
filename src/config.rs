@@ -168,6 +168,11 @@ pub struct Cleanup {
     pub enabled: bool,
     /// Model id from the catalog, or an absolute path to a `.gguf` file.
     pub model: String,
+    /// Polish live previews too, so the overlay shows the text that will be
+    /// inserted. Costs one LLM pass per preview while dictating; when the
+    /// final transcript matches the last preview, its polish is reused and
+    /// insertion skips the LLM.
+    pub live_preview: bool,
     /// Rule-based removal of unambiguous fillers ("um", "yyy"…). Applied in
     /// raw mode and whenever the LLM output is rejected.
     pub remove_fillers: bool,
@@ -189,6 +194,7 @@ impl Default for Cleanup {
         Self {
             enabled: true,
             model: "qwen2.5-3b".into(),
+            live_preview: true,
             remove_fillers: true,
             max_length_drift: 0.4,
             max_new_words: 0.1,
