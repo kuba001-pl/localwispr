@@ -1,0 +1,4346 @@
+[
+  {
+    "id": "name-00-mixed",
+    "condition": "relevant",
+    "reference": "Sprawdź Qdrant before the meeting, a potem wróć do raportu.",
+    "off": "Sprawdź brand before the meeting, a potem wróć do raportu.",
+    "source": "Sprawdź Qdrant before the meeting, a potem wróć do raportu.",
+    "source_geo": 0.8676351511572491,
+    "off_geo": 0.9562054589326838,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "brand"
+        ],
+        "candidate": [
+          "qdrant"
+        ],
+        "base_conf": [
+          {
+            "min": 0.6855362057685852,
+            "geo": 0.6855362057685852
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.18841156363487244,
+            "geo": 0.5642527896132754
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-01-mixed",
+    "condition": "distractor",
+    "reference": "The invoice for Anthropic jest już gotowa, tylko adres wymaga poprawki.",
+    "off": "The invoice forans robits jest już gotowa, tylko adres wymaga poprawki.",
+    "source": "Invoice for anzrobic jest już gotowa, tylko adres wymaga poprawki.",
+    "source_geo": 0.5789679942915251,
+    "off_geo": 0.7206260480899295,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "delete",
+        "baseline": [
+          "the"
+        ],
+        "candidate": [],
+        "base_conf": [
+          {
+            "min": 0.21671514213085175,
+            "geo": 0.21671514213085172
+          }
+        ],
+        "candidate_conf": []
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "forans",
+          "robits"
+        ],
+        "candidate": [
+          "for",
+          "anzrobic"
+        ],
+        "base_conf": [
+          {
+            "min": 0.16609860956668854,
+            "geo": 0.386607796052273
+          },
+          {
+            "min": 0.2671809792518616,
+            "geo": 0.42424473036143295
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.40272778272628784,
+            "geo": 0.40272778272628784
+          },
+          {
+            "min": 0.07421117275953293,
+            "geo": 0.16664061759984702
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-03-pl",
+    "condition": "relevant",
+    "reference": "Po spotkaniu otwórz Vercel i pobierz mały przykład do prezentacji.",
+    "off": "Po spotkaniu otwórz mercel i pobierz mały przykład do prezentacji.",
+    "source": "Po spotkaniu otwórz wercel i pobierz mały przykład do prezentacji",
+    "source_geo": 0.9149839972710297,
+    "off_geo": 0.896365799408905,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "mercel"
+        ],
+        "candidate": [
+          "wercel"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1792815774679184,
+            "geo": 0.35063302550965775
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2123287171125412,
+            "geo": 0.4599155396477799
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-03-pl",
+    "condition": "distractor",
+    "reference": "Po spotkaniu otwórz Vercel i pobierz mały przykład do prezentacji.",
+    "off": "Po spotkaniu otwórz mercel i pobierz mały przykład do prezentacji.",
+    "source": "Po spotkaniu otwórz wercel i pobierz mały przykład do prezentacji.",
+    "source_geo": 0.8789800873806572,
+    "off_geo": 0.896365799408905,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "mercel"
+        ],
+        "candidate": [
+          "wercel"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1792815774679184,
+            "geo": 0.35063302550965775
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.17982353270053864,
+            "geo": 0.40152821074645667
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-05-mixed",
+    "condition": "relevant",
+    "reference": "Keep ElevenLabs on the test account, bo dane są wyłącznie przykładowe.",
+    "off": "KPLM Labs on the test at sound, podane są wyłącznie przykładowe.",
+    "source": "KPLFM Labs on the test at sound, podane są wyłącznie przykładowe.",
+    "source_geo": 0.5419615493752606,
+    "off_geo": 0.5264857343014497,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "kplm"
+        ],
+        "candidate": [
+          "kplfm"
+        ],
+        "base_conf": [
+          {
+            "min": 0.18613004684448242,
+            "geo": 0.3029716760820968
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2913500964641571,
+            "geo": 0.3573178278492929
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-05-mixed",
+    "condition": "distractor",
+    "reference": "Keep ElevenLabs on the test account, bo dane są wyłącznie przykładowe.",
+    "off": "KPLM Labs on the test at sound, podane są wyłącznie przykładowe.",
+    "source": "KPLFM Labs on the test at sound, podane są wyłącznie przykładowe.",
+    "source_geo": 0.49081016355780194,
+    "off_geo": 0.5264857343014497,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "kplm"
+        ],
+        "candidate": [
+          "kplfm"
+        ],
+        "base_conf": [
+          {
+            "min": 0.18613004684448242,
+            "geo": 0.3029716760820968
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1672525256872177,
+            "geo": 0.24166936465469196
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-06-pl",
+    "condition": "relevant",
+    "reference": "Wyjaśnij proszę, dlaczego Hugging Face pojawia się dwa razy na diagramie.",
+    "off": "Wyjaśnij proszę, dlaczego chudnik facepoja miała się dwa razy na diagramie?",
+    "source": "Wyjaśnij proszę, dlaczego Hugging face pojawia się dwa razy na diagramie?",
+    "source_geo": 0.787333808301995,
+    "off_geo": 0.6497577930802589,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "chudnik",
+          "facepoja",
+          "miała"
+        ],
+        "candidate": [
+          "hugging",
+          "face",
+          "pojawia"
+        ],
+        "base_conf": [
+          {
+            "min": 0.07644446194171906,
+            "geo": 0.2034733372020502
+          },
+          {
+            "min": 0.2558292746543884,
+            "geo": 0.5042214094941525
+          },
+          {
+            "min": 0.31366145610809326,
+            "geo": 0.4928020016553648
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.6581825613975525,
+            "geo": 0.8064636435830183
+          },
+          {
+            "min": 0.15265674889087677,
+            "geo": 0.15265674889087677
+          },
+          {
+            "min": 0.8369588255882263,
+            "geo": 0.8800201468457909
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-06-pl",
+    "condition": "distractor",
+    "reference": "Wyjaśnij proszę, dlaczego Hugging Face pojawia się dwa razy na diagramie.",
+    "off": "Wyjaśnij proszę, dlaczego chudnik facepoja miała się dwa razy na diagramie?",
+    "source": "Wyjaśnij proszę, dlaczego chóż link wacie pojawia się dwa razy na diagramie?",
+    "source_geo": 0.5827465930760675,
+    "off_geo": 0.6497577930802589,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "chudnik",
+          "facepoja",
+          "miała"
+        ],
+        "candidate": [
+          "chóż",
+          "link",
+          "wacie",
+          "pojawia"
+        ],
+        "base_conf": [
+          {
+            "min": 0.07644446194171906,
+            "geo": 0.2034733372020502
+          },
+          {
+            "min": 0.2558292746543884,
+            "geo": 0.5042214094941525
+          },
+          {
+            "min": 0.31366145610809326,
+            "geo": 0.4928020016553648
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.09428379684686661,
+            "geo": 0.1307391941804088
+          },
+          {
+            "min": 0.7893619537353516,
+            "geo": 0.7893619537353516
+          },
+          {
+            "min": 0.08470745384693146,
+            "geo": 0.10128848442606532
+          },
+          {
+            "min": 0.8827696442604065,
+            "geo": 0.9331800577900402
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-07-en",
+    "condition": "relevant",
+    "reference": "Yesterday we moved the trial to OpenTelemetry, and today the dashboard is empty.",
+    "off": "Yesterday we moved the trial to open telemetry, and today the dashboard is empty.",
+    "source": "Yesterday we moved the trial to OpenTelemetry, and today the dashboard is empty.",
+    "source_geo": 0.9149562928288056,
+    "off_geo": 0.9692689763590087,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "open",
+          "telemetry"
+        ],
+        "candidate": [
+          "opentelemetry"
+        ],
+        "base_conf": [
+          {
+            "min": 0.8593107461929321,
+            "geo": 0.8593107461929321
+          },
+          {
+            "min": 0.9477801322937012,
+            "geo": 0.9817106291478375
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8786046504974365,
+            "geo": 0.9450354214846726
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-09-en",
+    "condition": "relevant",
+    "reference": "The security team approved Tailscale after checking the access policy.",
+    "off": "The security team approved TailScale after checking the access policy.",
+    "source": "The security team approved Tailscale after checking the access policy",
+    "source_geo": 0.9128923823100962,
+    "off_geo": 0.8424356281189567,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-09-en",
+    "condition": "distractor",
+    "reference": "The security team approved Tailscale after checking the access policy.",
+    "off": "The security team approved TailScale after checking the access policy.",
+    "source": "The security team approved Tailscale after checking the access policy",
+    "source_geo": 0.8146709691068901,
+    "off_geo": 0.8424356281189567,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-09-pl",
+    "condition": "relevant",
+    "reference": "Zespół bezpieczeństwa zaakceptował Tailscale po sprawdzeniu uprawnień.",
+    "off": "Współbezpieczeństwa zaakceptował tajustz, ale po sprawdzeniu uprawnień.",
+    "source": "Współbezpieczeństwa zaakceptował Tailscale po sprawdzeniu uprawnień.",
+    "source_geo": 0.8192779883839217,
+    "off_geo": 0.7927080800857917,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "tajustz",
+          "ale"
+        ],
+        "candidate": [
+          "tailscale"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2175750732421875,
+            "geo": 0.42764666734663276
+          },
+          {
+            "min": 0.9934289455413818,
+            "geo": 0.9934289455413818
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.43982064723968506,
+            "geo": 0.584018163552999
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-09-pl",
+    "condition": "distractor",
+    "reference": "Zespół bezpieczeństwa zaakceptował Tailscale po sprawdzeniu uprawnień.",
+    "off": "Współbezpieczeństwa zaakceptował tajustz, ale po sprawdzeniu uprawnień.",
+    "source": "Współbezpieczeństwa zaakceptował tajust, ale po sprawdzeniu uprawnień.",
+    "source_geo": 0.7822257570108417,
+    "off_geo": 0.7927080800857917,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "tajustz"
+        ],
+        "candidate": [
+          "tajust"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2175750732421875,
+            "geo": 0.42764666734663276
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.23663091659545898,
+            "geo": 0.44019565650016734
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-10-en",
+    "condition": "relevant",
+    "reference": "Move the issue into Linear after you attach the screenshot.",
+    "off": "Move the issue into linear after you attach the screenshot.",
+    "source": "Move the issue into Linear after you attach the screenshot",
+    "source_geo": 0.9088673126358465,
+    "off_geo": 0.8678333095362848,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-10-en",
+    "condition": "distractor",
+    "reference": "Move the issue into Linear after you attach the screenshot.",
+    "off": "Move the issue into linear after you attach the screenshot.",
+    "source": "Move the issue into linear after you attach the screenshot",
+    "source_geo": 0.9206010768560192,
+    "off_geo": 0.8678333095362848,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-11-pl",
+    "condition": "relevant",
+    "reference": "Notatki ze spotkania zapisałam w Notion w osobnym katalogu.",
+    "off": "Notatki me spotkania napisałam w nocion w osobnym katalogu.",
+    "source": "Notatki, me spotkania napisałam w Notion w osobnym katalogu.",
+    "source_geo": 0.6789120983474414,
+    "off_geo": 0.718220136969307,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "nocion"
+        ],
+        "candidate": [
+          "notion"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3464394807815552,
+            "geo": 0.5137111480381602
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8158983588218689,
+            "geo": 0.9032071743670148
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-11-pl",
+    "condition": "distractor",
+    "reference": "Notatki ze spotkania zapisałam w Notion w osobnym katalogu.",
+    "off": "Notatki me spotkania napisałam w nocion w osobnym katalogu.",
+    "source": "Notatki, me spotkania napisałam w nocion w osobnym katalogu.",
+    "source_geo": 0.6276702471030945,
+    "off_geo": 0.718220136969307,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-12-pl",
+    "condition": "relevant",
+    "reference": "Kolega używa Cursor do przeglądu zmian przed wyjazdem do domu.",
+    "off": "Kolega używa cursor do przeglądu zmian przed wyjazdem do domu.",
+    "source": "Kolega używa Cursor do przeglądu zmian przed wyjazdem do domu",
+    "source_geo": 0.9385414235987444,
+    "off_geo": 0.9696015594117718,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-12-mixed",
+    "condition": "relevant",
+    "reference": "Review this in Cursor, zanim wsiądziesz do pociągu do Krakowa.",
+    "off": "Renief, this insursor. Zanim wsiągiesz do pociągu do Krakowa.",
+    "source": "Renief, this Insursor, zanim wsiągiesz do pociągu do Krakowa.",
+    "source_geo": 0.6215123310083756,
+    "off_geo": 0.6010401963919703,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-12-mixed",
+    "condition": "distractor",
+    "reference": "Review this in Cursor, zanim wsiądziesz do pociągu do Krakowa.",
+    "off": "Renief, this insursor. Zanim wsiągiesz do pociągu do Krakowa.",
+    "source": "Renief, Cisinsursor, zanim wsiądziesz do pociągu do Krakowa.",
+    "source_geo": 0.6279589897619011,
+    "off_geo": 0.6010401963919703,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "this",
+          "insursor"
+        ],
+        "candidate": [
+          "cisinsursor"
+        ],
+        "base_conf": [
+          {
+            "min": 0.09263048321008682,
+            "geo": 0.09263048321008681
+          },
+          {
+            "min": 0.4232316315174103,
+            "geo": 0.6815556263525211
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.10083795338869095,
+            "geo": 0.35768239742452507
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "wsiągiesz"
+        ],
+        "candidate": [
+          "wsiądziesz"
+        ],
+        "base_conf": [
+          {
+            "min": 0.24374550580978394,
+            "geo": 0.6484100989008221
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.4983830451965332,
+            "geo": 0.8125220449106172
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-13-pl",
+    "condition": "relevant",
+    "reference": "Raport badawczy wymienia Perplexity obok kilku innych narzędzi.",
+    "off": "Raport badawczy wymienia perpleksity obok kilku innych narzędzi.",
+    "source": "Raport badawczy wymienia Perplexity obok kilku innych narzędzi.",
+    "source_geo": 0.9054161398102097,
+    "off_geo": 0.9227444434054511,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "perpleksity"
+        ],
+        "candidate": [
+          "perplexity"
+        ],
+        "base_conf": [
+          {
+            "min": 0.5444512367248535,
+            "geo": 0.7805334467586466
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.7334438562393188,
+            "geo": 0.9003051988059357
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-14-mixed",
+    "condition": "relevant",
+    "reference": "Check PostgreSQL first, potem zrestartuj proces, jeśli nadal nie działa.",
+    "off": "Hec, postre, SQL first. Potem zrestartuj proces, jeśli nadal ja miała.",
+    "source": "Hec, postgreSQL first, potem zrestartuj proces, jeśli nadal ja miała.",
+    "source_geo": 0.64874913266755,
+    "off_geo": 0.6196281942432409,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "postre",
+          "sql"
+        ],
+        "candidate": [
+          "postgresql"
+        ],
+        "base_conf": [
+          {
+            "min": 0.35252389311790466,
+            "geo": 0.3725207534762511
+          },
+          {
+            "min": 0.7750383615493774,
+            "geo": 0.7750383615493774
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.5317162871360779,
+            "geo": 0.7697653954504791
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-14-mixed",
+    "condition": "distractor",
+    "reference": "Check PostgreSQL first, potem zrestartuj proces, jeśli nadal nie działa.",
+    "off": "Hec, postre, SQL first. Potem zrestartuj proces, jeśli nadal ja miała.",
+    "source": "Hec, postre, SQL First, potem zrestartuj proces, jeśli nadal ja miała.",
+    "source_geo": 0.6064851531465305,
+    "off_geo": 0.6196281942432409,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-15-pl",
+    "condition": "relevant",
+    "reference": "Dwa procesy w Kubernetes przestały odpowiadać podczas nocnej konserwacji.",
+    "off": "Zwa procesy w kubernetest przestały odpomiadać podczas nocnej konsermacji.",
+    "source": "Zwa procesy w Kubernetes przestały odpominać podczas nocnej konsermacji.",
+    "source_geo": 0.7828218957659379,
+    "off_geo": 0.8101468323347343,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "kubernetest"
+        ],
+        "candidate": [
+          "kubernetes"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4972047507762909,
+            "geo": 0.7192148970528668
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8979779481887817,
+            "geo": 0.8979779481887817
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "odpomiadać"
+        ],
+        "candidate": [
+          "odpominać"
+        ],
+        "base_conf": [
+          {
+            "min": 0.24593804776668549,
+            "geo": 0.7140350175190145
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2628850042819977,
+            "geo": 0.6838458420989878
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-15-pl",
+    "condition": "distractor",
+    "reference": "Dwa procesy w Kubernetes przestały odpowiadać podczas nocnej konserwacji.",
+    "off": "Zwa procesy w kubernetest przestały odpomiadać podczas nocnej konsermacji.",
+    "source": "Zwa procesy w kubernetest przestały odpominać podczas nocnej konsermacji.",
+    "source_geo": 0.7728118300096782,
+    "off_geo": 0.8101468323347343,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "odpomiadać"
+        ],
+        "candidate": [
+          "odpominać"
+        ],
+        "base_conf": [
+          {
+            "min": 0.24593804776668549,
+            "geo": 0.7140350175190145
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.265927255153656,
+            "geo": 0.6936424126383632
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-15-mixed",
+    "condition": "relevant",
+    "reference": "Two workers in Kubernetes zniknęły podczas wieczornej aktualizacji.",
+    "off": "For workers in Kubernetes zniknęły podczas nieczornej aktualizacji.",
+    "source": "for workers in Kubernetes zniknęły podczas nieczornej aktualizacji.",
+    "source_geo": 0.880440839361385,
+    "off_geo": 0.8758839434440002,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-15-mixed",
+    "condition": "distractor",
+    "reference": "Two workers in Kubernetes zniknęły podczas wieczornej aktualizacji.",
+    "off": "For workers in Kubernetes zniknęły podczas nieczornej aktualizacji.",
+    "source": "For Workers in Kubernetes zniknęły podczas nieczornej aktualizacji.",
+    "source_geo": 0.8511220348613658,
+    "off_geo": 0.8758839434440002,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-17-en",
+    "condition": "relevant",
+    "reference": "Ask whether Prometheus can retain those metrics for another week.",
+    "off": "Ask whether Prometheus can retain those metrics for another week.",
+    "source": "Ask whether Prometheus can retain those metrics for another week",
+    "source_geo": 0.9292196625613841,
+    "off_geo": 0.9599782786410888,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-18-pl",
+    "condition": "relevant",
+    "reference": "Powiadomienie z Datadog przyszło, gdy przygotowywałem herbatę.",
+    "off": "Ponadomienie z daca rok przyszło, gdy przyrozumiałem hertakę.",
+    "source": "Ponadomienie z Datadog przyszło, gdy przyrozumiałem hertachę.",
+    "source_geo": 0.5782522490103045,
+    "off_geo": 0.6054607901748574,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "daca",
+          "rok"
+        ],
+        "candidate": [
+          "datadog"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2756829857826233,
+            "geo": 0.3557610683328954
+          },
+          {
+            "min": 0.9344468712806702,
+            "geo": 0.9344468712806702
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2967832684516907,
+            "geo": 0.488069453669621
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "hertakę"
+        ],
+        "candidate": [
+          "hertachę"
+        ],
+        "base_conf": [
+          {
+            "min": 0.17906302213668823,
+            "geo": 0.4709141766717098
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1802249252796173,
+            "geo": 0.4731659391948964
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-19-en",
+    "condition": "relevant",
+    "reference": "For the workshop, create a tiny example using LangChain and an empty document.",
+    "off": "For the workshop, create a tiny example using Lanchain and an empty document.",
+    "source": "For the workshop, create a tiny example using LangChain and an empty document",
+    "source_geo": 0.8980691144963381,
+    "off_geo": 0.8449462387297856,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "lanchain"
+        ],
+        "candidate": [
+          "langchain"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3148677945137024,
+            "geo": 0.49195076837826224
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.6308653354644775,
+            "geo": 0.8415706173623629
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-20-en",
+    "condition": "relevant",
+    "reference": "Our vector search experiment uses Weaviate for the temporary collection.",
+    "off": "Our vector search experiment uses we evade for the temporary collection.",
+    "source": "Our vector search experiment uses Weaviate for the temporary collection",
+    "source_geo": 0.89296030470216,
+    "off_geo": 0.6960725973670789,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "we",
+          "evade"
+        ],
+        "candidate": [
+          "weaviate"
+        ],
+        "base_conf": [
+          {
+            "min": 0.33701416850090027,
+            "geo": 0.33701416850090027
+          },
+          {
+            "min": 0.09485790133476257,
+            "geo": 0.24786684158787325
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8514964580535889,
+            "geo": 0.8866203108612463
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-20-en",
+    "condition": "distractor",
+    "reference": "Our vector search experiment uses Weaviate for the temporary collection.",
+    "off": "Our vector search experiment uses we evade for the temporary collection.",
+    "source": "Our vector search experiment uses we wait for the temporary collection",
+    "source_geo": 0.6840574852978973,
+    "off_geo": 0.6960725973670789,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "evade"
+        ],
+        "candidate": [
+          "wait"
+        ],
+        "base_conf": [
+          {
+            "min": 0.09485790133476257,
+            "geo": 0.24786684158787325
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.08677306771278381,
+            "geo": 0.08677306771278381
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-20-mixed",
+    "condition": "distractor",
+    "reference": "Testujemy Weaviate for vector search i jutro porównamy wyniki.",
+    "off": "Testujemy mea na te formek torsearch i jutro porównamy wyniki.",
+    "source": "Testujemy mea na te formek Torsearch i jutro porównamy wyniki.",
+    "source_geo": 0.7670388535428176,
+    "off_geo": 0.7824749375584698,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-21-en",
+    "condition": "relevant",
+    "reference": "We should estimate the cost of Pinecone before increasing the index size.",
+    "off": "We should estimate the cost of pinecone before increasing the index size.",
+    "source": "We should estimate the cost of Pinecone before increasing the index size",
+    "source_geo": 0.9042351995021615,
+    "off_geo": 0.9201343256299794,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-21-en",
+    "condition": "distractor",
+    "reference": "We should estimate the cost of Pinecone before increasing the index size.",
+    "off": "We should estimate the cost of pinecone before increasing the index size.",
+    "source": "We should estimate the cost of pinecone before increasing the index size",
+    "source_geo": 0.9083969356828263,
+    "off_geo": 0.9201343256299794,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-21-pl",
+    "condition": "relevant",
+    "reference": "Oszacuj koszt Pinecone, zanim zwiększymy rozmiar indeksu.",
+    "off": "Poszacuj koszt Pinecone, zanim zmiększymy rozmiar indeksu.",
+    "source": "oszacuj koszt Pinecone, zanim zmiększymy rozmiar indeksu.",
+    "source_geo": 0.7916179643127487,
+    "off_geo": 0.7709839862003265,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "poszacuj"
+        ],
+        "candidate": [
+          "oszacuj"
+        ],
+        "base_conf": [
+          {
+            "min": 0.5074451565742493,
+            "geo": 0.8404347251535641
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2984069287776947,
+            "geo": 0.7369815105061835
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-21-pl",
+    "condition": "distractor",
+    "reference": "Oszacuj koszt Pinecone, zanim zwiększymy rozmiar indeksu.",
+    "off": "Poszacuj koszt Pinecone, zanim zmiększymy rozmiar indeksu.",
+    "source": "oszacuj koszt Pinecone, zanim zmiększymy rozmiar indeksu.",
+    "source_geo": 0.7367685853784868,
+    "off_geo": 0.7709839862003265,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "poszacuj"
+        ],
+        "candidate": [
+          "oszacuj"
+        ],
+        "base_conf": [
+          {
+            "min": 0.5074451565742493,
+            "geo": 0.8404347251535641
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.26004987955093384,
+            "geo": 0.712254701723541
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-25-en",
+    "condition": "relevant",
+    "reference": "Please reopen the merge request in GitLab when the checks turn green.",
+    "off": "Please reopen the merge request in GitLab when the checks turn green.",
+    "source": "Please reopen the merge request in GitLab when the checks turn green",
+    "source_geo": 0.9216058810775817,
+    "off_geo": 0.9173865793088101,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-25-en",
+    "condition": "distractor",
+    "reference": "Please reopen the merge request in GitLab when the checks turn green.",
+    "off": "Please reopen the merge request in GitLab when the checks turn green.",
+    "source": "Please reopen the merge request in GitLab when the checks turn green",
+    "source_geo": 0.9203684029328282,
+    "off_geo": 0.9173865793088101,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-25-mixed",
+    "condition": "relevant",
+    "reference": "Reopen the request in GitLab, kiedy testy będą zielone.",
+    "off": "Reopen the regvesting bitlab, kiedy testy będą zielone.",
+    "source": "reopen the regvesting GitLab, kiedy testy będą zielone.",
+    "source_geo": 0.6886479379314513,
+    "off_geo": 0.6190043118038874,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "bitlab"
+        ],
+        "candidate": [
+          "gitlab"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1811695247888565,
+            "geo": 0.23058907976960402
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.4652760922908783,
+            "geo": 0.6808461326573106
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-28-en",
+    "condition": "relevant",
+    "reference": "I wrote a short note about Mistral on the second page of the proposal.",
+    "off": "I wrote a short note about Mistral on the second page of the proposal.",
+    "source": "I wrote a short note about Mistral on the second page of the proposal",
+    "source_geo": 0.9858968135332117,
+    "off_geo": 0.9827580971889862,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-29-pl",
+    "condition": "relevant",
+    "reference": "Zadanie na Modal powinno skończyć się przed porannym autobusem.",
+    "off": "Zadania na modal powinno skrącić się przed porannym autobusem.",
+    "source": "Zadania na Modal powinno skrączyć się przed porannym autobusem.",
+    "source_geo": 0.8255431955910211,
+    "off_geo": 0.8334584359434243,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "skrącić"
+        ],
+        "candidate": [
+          "skrączyć"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3898349404335022,
+            "geo": 0.5705228448921869
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.40984848141670227,
+            "geo": 0.6103138004169419
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-29-pl",
+    "condition": "distractor",
+    "reference": "Zadanie na Modal powinno skończyć się przed porannym autobusem.",
+    "off": "Zadania na modal powinno skrącić się przed porannym autobusem.",
+    "source": "Zadania na modal powinno skrączyć się przed porannym autobusem.",
+    "source_geo": 0.8259016262721635,
+    "off_geo": 0.8334584359434243,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "skrącić"
+        ],
+        "candidate": [
+          "skrączyć"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3898349404335022,
+            "geo": 0.5705228448921869
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.3663707971572876,
+            "geo": 0.5757926483973479
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-29-mixed",
+    "condition": "relevant",
+    "reference": "The Modal job kończy się rano, więc zostaw komputer włączony.",
+    "off": "The model will be in the morning, so leave the computer in the morning.",
+    "source": "Modal i obciąć się rano, więc zostaw komputer włączony.",
+    "source_geo": 0.8054714881085462,
+    "off_geo": 0.38150336414209185,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "the",
+          "model",
+          "will",
+          "be",
+          "in",
+          "the",
+          "morning",
+          "so",
+          "leave",
+          "the",
+          "computer",
+          "in",
+          "the",
+          "morning"
+        ],
+        "candidate": [
+          "modal",
+          "i",
+          "obciąć",
+          "się",
+          "rano",
+          "więc",
+          "zostaw",
+          "komputer",
+          "włączony"
+        ],
+        "base_conf": [
+          {
+            "min": 0.30266204476356506,
+            "geo": 0.3026620447635651
+          },
+          {
+            "min": 0.4848003685474396,
+            "geo": 0.4848003685474396
+          },
+          {
+            "min": 0.06731296330690384,
+            "geo": 0.06731296330690384
+          },
+          {
+            "min": 0.202842116355896,
+            "geo": 0.20284211635589602
+          },
+          {
+            "min": 0.0664278119802475,
+            "geo": 0.06642781198024751
+          },
+          {
+            "min": 0.7095648050308228,
+            "geo": 0.7095648050308228
+          },
+          {
+            "min": 0.4161926805973053,
+            "geo": 0.4161926805973053
+          },
+          {
+            "min": 0.7840441465377808,
+            "geo": 0.7840441465377808
+          },
+          {
+            "min": 0.2621996998786926,
+            "geo": 0.2621996998786926
+          },
+          {
+            "min": 0.4206474721431732,
+            "geo": 0.4206474721431732
+          },
+          {
+            "min": 0.9549039602279663,
+            "geo": 0.9549039602279663
+          },
+          {
+            "min": 0.2313915342092514,
+            "geo": 0.2313915342092514
+          },
+          {
+            "min": 0.6979227662086487,
+            "geo": 0.6979227662086487
+          },
+          {
+            "min": 0.6319980621337891,
+            "geo": 0.6319980621337891
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.41252991557121277,
+            "geo": 0.6387310793309124
+          },
+          {
+            "min": 0.2199104279279709,
+            "geo": 0.21991042792797086
+          },
+          {
+            "min": 0.7469695210456848,
+            "geo": 0.7639117498040168
+          },
+          {
+            "min": 0.953624427318573,
+            "geo": 0.953624427318573
+          },
+          {
+            "min": 0.8969611525535583,
+            "geo": 0.9460034069888603
+          },
+          {
+            "min": 0.9588671922683716,
+            "geo": 0.9588671922683716
+          },
+          {
+            "min": 0.9825857877731323,
+            "geo": 0.9894686375989242
+          },
+          {
+            "min": 0.9297613501548767,
+            "geo": 0.9633176123068454
+          },
+          {
+            "min": 0.9901893734931946,
+            "geo": 0.9932385177975297
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-29-mixed",
+    "condition": "distractor",
+    "reference": "The Modal job kończy się rano, więc zostaw komputer włączony.",
+    "off": "The model will be in the morning, so leave the computer in the morning.",
+    "source": "Bemowali obciąć się rano, więc zostaw komputer włączony.",
+    "source_geo": 0.7884703275342648,
+    "off_geo": 0.38150336414209185,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "the",
+          "model",
+          "will",
+          "be",
+          "in",
+          "the",
+          "morning",
+          "so",
+          "leave",
+          "the",
+          "computer",
+          "in",
+          "the",
+          "morning"
+        ],
+        "candidate": [
+          "bemowali",
+          "obciąć",
+          "się",
+          "rano",
+          "więc",
+          "zostaw",
+          "komputer",
+          "włączony"
+        ],
+        "base_conf": [
+          {
+            "min": 0.30266204476356506,
+            "geo": 0.3026620447635651
+          },
+          {
+            "min": 0.4848003685474396,
+            "geo": 0.4848003685474396
+          },
+          {
+            "min": 0.06731296330690384,
+            "geo": 0.06731296330690384
+          },
+          {
+            "min": 0.202842116355896,
+            "geo": 0.20284211635589602
+          },
+          {
+            "min": 0.0664278119802475,
+            "geo": 0.06642781198024751
+          },
+          {
+            "min": 0.7095648050308228,
+            "geo": 0.7095648050308228
+          },
+          {
+            "min": 0.4161926805973053,
+            "geo": 0.4161926805973053
+          },
+          {
+            "min": 0.7840441465377808,
+            "geo": 0.7840441465377808
+          },
+          {
+            "min": 0.2621996998786926,
+            "geo": 0.2621996998786926
+          },
+          {
+            "min": 0.4206474721431732,
+            "geo": 0.4206474721431732
+          },
+          {
+            "min": 0.9549039602279663,
+            "geo": 0.9549039602279663
+          },
+          {
+            "min": 0.2313915342092514,
+            "geo": 0.2313915342092514
+          },
+          {
+            "min": 0.6979227662086487,
+            "geo": 0.6979227662086487
+          },
+          {
+            "min": 0.6319980621337891,
+            "geo": 0.6319980621337891
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.13162772357463837,
+            "geo": 0.3856232177242639
+          },
+          {
+            "min": 0.6732513308525085,
+            "geo": 0.7206579812194155
+          },
+          {
+            "min": 0.9588397741317749,
+            "geo": 0.9588397741317749
+          },
+          {
+            "min": 0.9493569135665894,
+            "geo": 0.9733232368572612
+          },
+          {
+            "min": 0.9651645421981812,
+            "geo": 0.9651645421981812
+          },
+          {
+            "min": 0.9872926473617554,
+            "geo": 0.9924232864805561
+          },
+          {
+            "min": 0.9281737804412842,
+            "geo": 0.9624388409691956
+          },
+          {
+            "min": 0.9896852374076843,
+            "geo": 0.9939277023500509
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-30-mixed",
+    "condition": "relevant",
+    "reference": "Deployment on Railway wymaga nowej zmiennej, please check the spelling.",
+    "off": "Deployment on Railway wymaga nowej zmiennej. Pleas against the spelling.",
+    "source": "deployment on Railway wymaga nowej zmiennej, place against the spelling.",
+    "source_geo": 0.6823796660363151,
+    "off_geo": 0.724226577266641,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pleas"
+        ],
+        "candidate": [
+          "place"
+        ],
+        "base_conf": [
+          {
+            "min": 0.5047245025634766,
+            "geo": 0.512582553716764
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.12188658118247986,
+            "geo": 0.12188658118247987
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-30-mixed",
+    "condition": "distractor",
+    "reference": "Deployment on Railway wymaga nowej zmiennej, please check the spelling.",
+    "off": "Deployment on Railway wymaga nowej zmiennej. Pleas against the spelling.",
+    "source": "deployment on Railway wymaga nowej zmiennej, plasechensk de spelling.",
+    "source_geo": 0.5703173111197921,
+    "off_geo": 0.724226577266641,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pleas",
+          "against",
+          "the"
+        ],
+        "candidate": [
+          "plasechensk",
+          "de"
+        ],
+        "base_conf": [
+          {
+            "min": 0.5047245025634766,
+            "geo": 0.512582553716764
+          },
+          {
+            "min": 0.07366062700748444,
+            "geo": 0.07366062700748442
+          },
+          {
+            "min": 0.8005372881889343,
+            "geo": 0.8005372881889343
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.11179550737142563,
+            "geo": 0.2412543271639234
+          },
+          {
+            "min": 0.250556617975235,
+            "geo": 0.250556617975235
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-31-en",
+    "condition": "relevant",
+    "reference": "The demonstration runs on Fly.io with a single small machine.",
+    "off": "The demonstration runs on Fly.io with a single small machine.",
+    "source": "The demonstration runs on Fly.io with a single small machine",
+    "source_geo": 0.9367722616462723,
+    "off_geo": 0.7860525682077792,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-31-en",
+    "condition": "distractor",
+    "reference": "The demonstration runs on Fly.io with a single small machine.",
+    "off": "The demonstration runs on Fly.io with a single small machine.",
+    "source": "The demonstration runs on flight audio with a single small machine",
+    "source_geo": 0.8259267105995961,
+    "off_geo": 0.7860525682077792,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "fly",
+          "io"
+        ],
+        "candidate": [
+          "flight",
+          "audio"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2583250403404236,
+            "geo": 0.2583250403404236
+          },
+          {
+            "min": 0.35000577569007874,
+            "geo": 0.35000577569007874
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.3244169354438782,
+            "geo": 0.3244169354438782
+          },
+          {
+            "min": 0.6204050779342651,
+            "geo": 0.6204050779342651
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-32-mixed",
+    "condition": "relevant",
+    "reference": "Image from Replicate jest przykładowy, keep the public file w katalogu.",
+    "off": "Image from replica to jest przykładowy, keb de public file w katalogu.",
+    "source": "Image from Replicate jest przykładowy, keep the public file w katalogu.",
+    "source_geo": 0.8263167605259194,
+    "off_geo": 0.677116721965282,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "replica",
+          "to"
+        ],
+        "candidate": [
+          "replicate"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4273295998573303,
+            "geo": 0.4273295998573303
+          },
+          {
+            "min": 0.19904744625091553,
+            "geo": 0.19904744625091556
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.882948100566864,
+            "geo": 0.9240985188771765
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "keb",
+          "de"
+        ],
+        "candidate": [
+          "keep",
+          "the"
+        ],
+        "base_conf": [
+          {
+            "min": 0.34790918231010437,
+            "geo": 0.4492352479741395
+          },
+          {
+            "min": 0.31176653504371643,
+            "geo": 0.31176653504371643
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.6433203220367432,
+            "geo": 0.6433203220367432
+          },
+          {
+            "min": 0.9397732615470886,
+            "geo": 0.9397732615470886
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-32-mixed",
+    "condition": "distractor",
+    "reference": "Image from Replicate jest przykładowy, keep the public file w katalogu.",
+    "off": "Image from replica to jest przykładowy, keb de public file w katalogu.",
+    "source": "Image from Replica.t jest przykładowy, keep the public file w katalogu.",
+    "source_geo": 0.6867840028745616,
+    "off_geo": 0.677116721965282,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "to"
+        ],
+        "candidate": [
+          "t"
+        ],
+        "base_conf": [
+          {
+            "min": 0.19904744625091553,
+            "geo": 0.19904744625091556
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.19292432069778442,
+            "geo": 0.19292432069778442
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "keb",
+          "de"
+        ],
+        "candidate": [
+          "keep",
+          "the"
+        ],
+        "base_conf": [
+          {
+            "min": 0.34790918231010437,
+            "geo": 0.4492352479741395
+          },
+          {
+            "min": 0.31176653504371643,
+            "geo": 0.31176653504371643
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.44927147030830383,
+            "geo": 0.44927147030830383
+          },
+          {
+            "min": 0.9300176501274109,
+            "geo": 0.9300176501274109
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-33-en",
+    "condition": "relevant",
+    "reference": "Can we reserve a small budget for Together AI during the next sprint?",
+    "off": "Can we reserve a small budget for Together AI during the next sprint?",
+    "source": "Can we reserve a small budget for Together, AI, during the next sprint?",
+    "source_geo": 0.9048939187896019,
+    "off_geo": 0.9463952444691879,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-36-pl",
+    "condition": "relevant",
+    "reference": "Lokalna pamięć używa SQLite, ponieważ baza mieści się w jednym pliku.",
+    "off": "Lokalna pamięć używa SQLite, ponieważ baza mieści się w jednym pliku.",
+    "source": "Lokalna pamięć używa SQLite, ponieważ baza mieści się w jednym pliku",
+    "source_geo": 0.9568829622164384,
+    "off_geo": 0.9287693859315073,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-38-en",
+    "condition": "relevant",
+    "reference": "The laptop running NixOS needs a reboot after the package update.",
+    "off": "The laptop running the XOS needs a reboot after the parker jumped it.",
+    "source": "The laptop running the XOS needs a reboot after the parker jumped it",
+    "source_geo": 0.7044421673472021,
+    "off_geo": 0.7424571998086271,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-38-en",
+    "condition": "distractor",
+    "reference": "The laptop running NixOS needs a reboot after the package update.",
+    "off": "The laptop running the XOS needs a reboot after the parker jumped it.",
+    "source": "The laptop running the XOS needs a reboot after the parker jumped it",
+    "source_geo": 0.7282489736650112,
+    "off_geo": 0.7424571998086271,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-38-mixed",
+    "condition": "relevant",
+    "reference": "Laptop with NixOS needs a restart, zanim zaczniemy prezentację.",
+    "off": "Laptop, wysznik, z OSN, a restart. Na nim naćniemy prezentacja.",
+    "source": "laptop, bisnix, OSN, a restart, na nim naćniemy prezentacja.",
+    "source_geo": 0.4874133433890048,
+    "off_geo": 0.5016108082411135,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "wysznik",
+          "z"
+        ],
+        "candidate": [
+          "bisnix"
+        ],
+        "base_conf": [
+          {
+            "min": 0.0570446141064167,
+            "geo": 0.17958659768191443
+          },
+          {
+            "min": 0.21745704114437103,
+            "geo": 0.21745704114437103
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.0723591148853302,
+            "geo": 0.22446672996844802
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-38-mixed",
+    "condition": "distractor",
+    "reference": "Laptop with NixOS needs a restart, zanim zaczniemy prezentację.",
+    "off": "Laptop, wysznik, z OSN, a restart. Na nim naćniemy prezentacja.",
+    "source": "Laptop, Visnik, OSN, A, Restart, na nim naćniemy prezentacja.",
+    "source_geo": 0.5046544759774764,
+    "off_geo": 0.5016108082411135,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "wysznik",
+          "z"
+        ],
+        "candidate": [
+          "visnik"
+        ],
+        "base_conf": [
+          {
+            "min": 0.0570446141064167,
+            "geo": 0.17958659768191443
+          },
+          {
+            "min": 0.21745704114437103,
+            "geo": 0.21745704114437103
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.17304480075836182,
+            "geo": 0.1994384945012506
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-40-mixed",
+    "condition": "relevant",
+    "reference": "Search uses Elastic, ale dokumenty zapisujemy w osobnym miejscu.",
+    "off": "Searchus eselastit, ale dokumenty napisujemy w osobnym miejscu.",
+    "source": "searchus eselastit, ale dokumenty napisujemy w osobnym miejscu.",
+    "source_geo": 0.757508480543617,
+    "off_geo": 0.8235955747855633,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-40-mixed",
+    "condition": "distractor",
+    "reference": "Search uses Elastic, ale dokumenty zapisujemy w osobnym miejscu.",
+    "off": "Searchus eselastit, ale dokumenty napisujemy w osobnym miejscu.",
+    "source": "Searchus Eselastit, ale dokumenty napisujemy w osobnym miejscu.",
+    "source_geo": 0.7623430108994318,
+    "off_geo": 0.8235955747855633,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "name-41-pl",
+    "condition": "relevant",
+    "reference": "Dołącz ślad błędu z Sentry do raportu o awarii.",
+    "off": "Do one schlap wendu, sentry do raportu o avali.",
+    "source": "to on ślad, wnioski, sentry, do raportu o avali.",
+    "source_geo": 0.4186780517128745,
+    "off_geo": 0.4073192327872586,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "do",
+          "one",
+          "schlap",
+          "wendu"
+        ],
+        "candidate": [
+          "to",
+          "on",
+          "ślad",
+          "wnioski"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3405672311782837,
+            "geo": 0.34056723117828375
+          },
+          {
+            "min": 0.12916523218154907,
+            "geo": 0.12916523218154907
+          },
+          {
+            "min": 0.12691526114940643,
+            "geo": 0.22271645040204618
+          },
+          {
+            "min": 0.21009911596775055,
+            "geo": 0.4103620024358086
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.07538007944822311,
+            "geo": 0.07538007944822311
+          },
+          {
+            "min": 0.30499759316444397,
+            "geo": 0.30499759316444397
+          },
+          {
+            "min": 0.08708727359771729,
+            "geo": 0.2778262598646206
+          },
+          {
+            "min": 0.25153595209121704,
+            "geo": 0.6205225521230305
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-41-pl",
+    "condition": "distractor",
+    "reference": "Dołącz ślad błędu z Sentry do raportu o awarii.",
+    "off": "Do one schlap wendu, sentry do raportu o avali.",
+    "source": "Do onch, lad, wendu, sentry do raportu o avali.",
+    "source_geo": 0.36996249169237183,
+    "off_geo": 0.4073192327872586,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "one",
+          "schlap"
+        ],
+        "candidate": [
+          "onch",
+          "lad"
+        ],
+        "base_conf": [
+          {
+            "min": 0.12916523218154907,
+            "geo": 0.12916523218154907
+          },
+          {
+            "min": 0.12691526114940643,
+            "geo": 0.22271645040204618
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.15141186118125916,
+            "geo": 0.17223155977172291
+          },
+          {
+            "min": 0.07601836323738098,
+            "geo": 0.07601836323738097
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-41-mixed",
+    "condition": "relevant",
+    "reference": "Trace from Sentry jest w załączniku, read it before the call.",
+    "off": "Trace from sentry jest to małończyku, reatidbe forever call.",
+    "source": "trace from Sentry, yes, to Małączyku, created before the call.",
+    "source_geo": 0.4249615571605233,
+    "off_geo": 0.45747113398840833,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "jest"
+        ],
+        "candidate": [
+          "yes"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2523166537284851,
+            "geo": 0.2523166537284851
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1398799866437912,
+            "geo": 0.1398799866437912
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "małończyku",
+          "reatidbe",
+          "forever"
+        ],
+        "candidate": [
+          "małączyku",
+          "created",
+          "before",
+          "the"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2818422019481659,
+            "geo": 0.5233207762490649
+          },
+          {
+            "min": 0.2562319040298462,
+            "geo": 0.34271262919087125
+          },
+          {
+            "min": 0.521037757396698,
+            "geo": 0.521037757396698
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2000211626291275,
+            "geo": 0.3530084301176458
+          },
+          {
+            "min": 0.20031438767910004,
+            "geo": 0.20031438767910006
+          },
+          {
+            "min": 0.3426205515861511,
+            "geo": 0.3426205515861511
+          },
+          {
+            "min": 0.2947779893875122,
+            "geo": 0.2947779893875122
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "name-41-mixed",
+    "condition": "distractor",
+    "reference": "Trace from Sentry jest w załączniku, read it before the call.",
+    "off": "Trace from sentry jest to małończyku, reatidbe forever call.",
+    "source": "Trace from Sentry, yes to Małączyku, created by forever cold.",
+    "source_geo": 0.40618907974971896,
+    "off_geo": 0.45747113398840833,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "jest"
+        ],
+        "candidate": [
+          "yes"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2523166537284851,
+            "geo": 0.2523166537284851
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.09550423920154572,
+            "geo": 0.09550423920154572
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "małończyku",
+          "reatidbe"
+        ],
+        "candidate": [
+          "małączyku",
+          "created",
+          "by"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2818422019481659,
+            "geo": 0.5233207762490649
+          },
+          {
+            "min": 0.2562319040298462,
+            "geo": 0.34271262919087125
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2580844759941101,
+            "geo": 0.3991217674098089
+          },
+          {
+            "min": 0.13113842904567719,
+            "geo": 0.13113842904567719
+          },
+          {
+            "min": 0.33672216534614563,
+            "geo": 0.33672216534614563
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "call"
+        ],
+        "candidate": [
+          "cold"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1943134367465973,
+            "geo": 0.1943134367465973
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.4972061812877655,
+            "geo": 0.4972061812877655
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-00-pl",
+    "condition": "relevant",
+    "reference": "Mam dziwne pojęcie o chmurach, a słowo notion jest zwykłym rzeczownikiem.",
+    "off": "Mam inne pojęcia o chmurach, a słowo nocjon jest zwykłym rzeczownikiem.",
+    "source": "Mam inne pojęcia o chmurach, a słowo Notion jest zwykłym rzeczownikiem.",
+    "source_geo": 0.9162486174807338,
+    "off_geo": 0.8707200103917405,
+    "false": [],
+    "case": [
+      "Notion"
+    ],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "nocjon"
+        ],
+        "candidate": [
+          "notion"
+        ],
+        "base_conf": [
+          {
+            "min": 0.361136794090271,
+            "geo": 0.4864809525475591
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8542415499687195,
+            "geo": 0.9241822506351104
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-00-pl",
+    "condition": "distractor",
+    "reference": "Mam dziwne pojęcie o chmurach, a słowo notion jest zwykłym rzeczownikiem.",
+    "off": "Mam inne pojęcia o chmurach, a słowo nocjon jest zwykłym rzeczownikiem.",
+    "source": "Mam inne pojęcia o chmurach, a słowo Notion jest zwykłym rzeczownikiem.",
+    "source_geo": 0.920567063907002,
+    "off_geo": 0.8707200103917405,
+    "false": [],
+    "case": [
+      "Notion"
+    ],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "nocjon"
+        ],
+        "candidate": [
+          "notion"
+        ],
+        "base_conf": [
+          {
+            "min": 0.361136794090271,
+            "geo": 0.4864809525475591
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.7623184323310852,
+            "geo": 0.8730393746838984
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-01-en",
+    "condition": "relevant",
+    "reference": "Move the cursor slowly to the left edge of the empty box.",
+    "off": "Move the cursor slowly to the left end of the empty box.",
+    "source": "Move the cursor slowly to the left end of the empty box",
+    "source_geo": 0.9579580021943624,
+    "off_geo": 0.9351014642588076,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-01-en",
+    "condition": "distractor",
+    "reference": "Move the cursor slowly to the left edge of the empty box.",
+    "off": "Move the cursor slowly to the left end of the empty box.",
+    "source": "Move the cursor slowly to the left end of the empty box",
+    "source_geo": 0.9739281680046089,
+    "off_geo": 0.9351014642588076,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-01-mixed",
+    "condition": "relevant",
+    "reference": "Przesuń cursor to the left, a potem kliknij puste pole.",
+    "off": "Przesuń cursor to the left, a potem kliknij puste pole.",
+    "source": "przesuń Cursor to the left, a potem kliknij puste pole.",
+    "source_geo": 0.842955218789564,
+    "off_geo": 0.8920851816665751,
+    "false": [],
+    "case": [
+      "Cursor"
+    ],
+    "edits": []
+  },
+  {
+    "id": "control-01-mixed",
+    "condition": "distractor",
+    "reference": "Przesuń cursor to the left, a potem kliknij puste pole.",
+    "off": "Przesuń cursor to the left, a potem kliknij puste pole.",
+    "source": "przesuń Cursor to the left, a potem kliknij puste pole.",
+    "source_geo": 0.8427858829189292,
+    "off_geo": 0.8920851816665751,
+    "false": [],
+    "case": [
+      "Cursor"
+    ],
+    "edits": []
+  },
+  {
+    "id": "control-03-en",
+    "condition": "relevant",
+    "reference": "The anthropic principle appears in the final chapter about cosmology.",
+    "off": "The anthropic principle appears in the final chapter about cosmology.",
+    "source": "The Anthropic Principle appears in the final chapter about cosmology",
+    "source_geo": 0.9246404156182522,
+    "off_geo": 0.9354122725073466,
+    "false": [],
+    "case": [
+      "Anthropic"
+    ],
+    "edits": []
+  },
+  {
+    "id": "control-03-en",
+    "condition": "distractor",
+    "reference": "The anthropic principle appears in the final chapter about cosmology.",
+    "off": "The anthropic principle appears in the final chapter about cosmology.",
+    "source": "The Anthropic Principle appears in the final chapter about cosmology.",
+    "source_geo": 0.8809182442687173,
+    "off_geo": 0.9354122725073466,
+    "false": [],
+    "case": [
+      "Anthropic"
+    ],
+    "edits": []
+  },
+  {
+    "id": "control-04-en",
+    "condition": "relevant",
+    "reference": "Her perplexity was obvious when she opened the empty envelope.",
+    "off": "Her perplexity was obvious when she opened them to envelope.",
+    "source": "Her perplexity was obvious when she opened them to envelope",
+    "source_geo": 0.8976772914568167,
+    "off_geo": 0.9204647547153839,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-04-en",
+    "condition": "distractor",
+    "reference": "Her perplexity was obvious when she opened the empty envelope.",
+    "off": "Her perplexity was obvious when she opened them to envelope.",
+    "source": "Her perplexity was obvious when she opened them to envelope",
+    "source_geo": 0.9339220483626448,
+    "off_geo": 0.9204647547153839,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-05-en",
+    "condition": "relevant",
+    "reference": "The doctor described a cerebral artery in the drawing on the wall.",
+    "off": "The doctor described a cerebral artery in the drawing on the wall.",
+    "source": "The doctor described a cerebral artery in the drawing on the wall",
+    "source_geo": 0.8953416273766889,
+    "off_geo": 0.9195320425994103,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-05-en",
+    "condition": "distractor",
+    "reference": "The doctor described a cerebral artery in the drawing on the wall.",
+    "off": "The doctor described a cerebral artery in the drawing on the wall.",
+    "source": "The doctor described a cerebral artery in the drawing on the wall",
+    "source_geo": 0.909085826960776,
+    "off_geo": 0.9195320425994103,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-05-pl",
+    "condition": "relevant",
+    "reference": "Lekarz opisał tętnicę mózgową na rysunku wiszącym na ścianie.",
+    "off": "Lekarz opisał tętnicę mu zdolną na wysunku wiszącym na wczanie.",
+    "source": "lekarz opisał tętnicę mu zdolną na wysunku wiszącym na wczanie.",
+    "source_geo": 0.7794453905482516,
+    "off_geo": 0.7968965050217138,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-05-pl",
+    "condition": "distractor",
+    "reference": "Lekarz opisał tętnicę mózgową na rysunku wiszącym na ścianie.",
+    "off": "Lekarz opisał tętnicę mu zdolną na wysunku wiszącym na wczanie.",
+    "source": "lekarz opisał tętnicę mu zdolną na wysunku wiszącym na wczanie.",
+    "source_geo": 0.7846786263577017,
+    "off_geo": 0.7968965050217138,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-06-en",
+    "condition": "relevant",
+    "reference": "Shade the upper right quadrant of the circle with a soft pencil.",
+    "off": "Shade the upper right quadrant of the circle with a soft pencil.",
+    "source": "Shade the upper right quadrant of the circle with a soft pencil",
+    "source_geo": 0.9355053250470378,
+    "off_geo": 0.9567728035573264,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-06-en",
+    "condition": "distractor",
+    "reference": "Shade the upper right quadrant of the circle with a soft pencil.",
+    "off": "Shade the upper right quadrant of the circle with a soft pencil.",
+    "source": "Shade the upper right quadrant of the circle with a soft pencil",
+    "source_geo": 0.9656049994516392,
+    "off_geo": 0.9567728035573264,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-07-mixed",
+    "condition": "relevant",
+    "reference": "Read the second verse, a potem przewróć stronę powoli.",
+    "off": "Read bez zesąd mersa, a potem się wróć w stronie pomoli.",
+    "source": "read the session verse, a potem, she mruć strone pomoli.",
+    "source_geo": 0.3715134547027035,
+    "off_geo": 0.45855414843102793,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "bez",
+          "zesąd",
+          "mersa"
+        ],
+        "candidate": [
+          "the",
+          "session",
+          "verse"
+        ],
+        "base_conf": [
+          {
+            "min": 0.08551058918237686,
+            "geo": 0.08551058918237688
+          },
+          {
+            "min": 0.13010451197624207,
+            "geo": 0.21293090125454756
+          },
+          {
+            "min": 0.1608351469039917,
+            "geo": 0.46779924941383577
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.6622613072395325,
+            "geo": 0.6622613072395325
+          },
+          {
+            "min": 0.23126710951328278,
+            "geo": 0.2312671095132828
+          },
+          {
+            "min": 0.22227996587753296,
+            "geo": 0.222279965877533
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "się",
+          "wróć",
+          "w",
+          "stronie"
+        ],
+        "candidate": [
+          "she",
+          "mruć",
+          "strone"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2020900398492813,
+            "geo": 0.20209003984928128
+          },
+          {
+            "min": 0.5946932435035706,
+            "geo": 0.6575072759645915
+          },
+          {
+            "min": 0.5231284499168396,
+            "geo": 0.5231284499168396
+          },
+          {
+            "min": 0.6926916241645813,
+            "geo": 0.7764924701833678
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.12960679829120636,
+            "geo": 0.1296067982912064
+          },
+          {
+            "min": 0.21445779502391815,
+            "geo": 0.28708746554356523
+          },
+          {
+            "min": 0.41982951760292053,
+            "geo": 0.5896923195493757
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-07-mixed",
+    "condition": "distractor",
+    "reference": "Read the second verse, a potem przewróć stronę powoli.",
+    "off": "Read bez zesąd mersa, a potem się wróć w stronie pomoli.",
+    "source": "Read, Desec, Ond, Merce, a potem, Psem, Rúcz, Trone, Pomoli.",
+    "source_geo": 0.44178654886677365,
+    "off_geo": 0.45855414843102793,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "bez",
+          "zesąd",
+          "mersa"
+        ],
+        "candidate": [
+          "desec",
+          "ond",
+          "merce"
+        ],
+        "base_conf": [
+          {
+            "min": 0.08551058918237686,
+            "geo": 0.08551058918237688
+          },
+          {
+            "min": 0.13010451197624207,
+            "geo": 0.21293090125454756
+          },
+          {
+            "min": 0.1608351469039917,
+            "geo": 0.46779924941383577
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.10759598016738892,
+            "geo": 0.4089226634678567
+          },
+          {
+            "min": 0.3937056362628937,
+            "geo": 0.3937056362628937
+          },
+          {
+            "min": 0.32132795453071594,
+            "geo": 0.4145426324447252
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "się",
+          "wróć",
+          "w",
+          "stronie"
+        ],
+        "candidate": [
+          "psem",
+          "rúcz",
+          "trone"
+        ],
+        "base_conf": [
+          {
+            "min": 0.2020900398492813,
+            "geo": 0.20209003984928128
+          },
+          {
+            "min": 0.5946932435035706,
+            "geo": 0.6575072759645915
+          },
+          {
+            "min": 0.5231284499168396,
+            "geo": 0.5231284499168396
+          },
+          {
+            "min": 0.6926916241645813,
+            "geo": 0.7764924701833678
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.15877559781074524,
+            "geo": 0.24159035438102347
+          },
+          {
+            "min": 0.21587242186069489,
+            "geo": 0.319281843473343
+          },
+          {
+            "min": 0.3179783523082733,
+            "geo": 0.5117541722414469
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-11-pl",
+    "condition": "relevant",
+    "reference": "Balon przesyłał dane telemetryczne podczas całego krótkiego lotu.",
+    "off": "A lomb przesyłał dane telemetryczne podczas całego krótkiego lotu.",
+    "source": "Malon przesyłał dane telemetryczne podczas całego krótkiego lotu.",
+    "source_geo": 0.867079525448621,
+    "off_geo": 0.8834401154067492,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "a",
+          "lomb"
+        ],
+        "candidate": [
+          "malon"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3019421696662903,
+            "geo": 0.3019421696662903
+          },
+          {
+            "min": 0.53488689661026,
+            "geo": 0.5922606398882291
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1428835391998291,
+            "geo": 0.3442350646980627
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-12-pl",
+    "condition": "relevant",
+    "reference": "Kliknij ikonę domku raz i poczekaj na pojawienie się mapy.",
+    "off": "Kliknij ikonę domku raz i poczekaj na pojawienie się mapy.",
+    "source": "Clicknij ikonę domku raz i poczekaj na pojawienie się mapy",
+    "source_geo": 0.8076141028758785,
+    "off_geo": 0.9109223313469418,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "kliknij"
+        ],
+        "candidate": [
+          "clicknij"
+        ],
+        "base_conf": [
+          {
+            "min": 0.7344930768013,
+            "geo": 0.8832127760872007
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.18413041532039642,
+            "geo": 0.4653109945090809
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-12-mixed",
+    "condition": "relevant",
+    "reference": "Click the house icon, potem poczekaj chwilę na mapę.",
+    "off": "Click the logs i fix it. Potem poczekaj chwilę na mapę.",
+    "source": "Click the host, it's on, potem poczekaj chwilę na mapę.",
+    "source_geo": 0.7116669329580054,
+    "off_geo": 0.7150222556734345,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "logs",
+          "i",
+          "fix"
+        ],
+        "candidate": [
+          "host"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4152209758758545,
+            "geo": 0.4152209758758545
+          },
+          {
+            "min": 0.5170565247535706,
+            "geo": 0.5170565247535706
+          },
+          {
+            "min": 0.33548521995544434,
+            "geo": 0.33548521995544434
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.20481257140636444,
+            "geo": 0.20481257140636444
+          }
+        ]
+      },
+      {
+        "op": "insert",
+        "baseline": [],
+        "candidate": [
+          "s",
+          "on"
+        ],
+        "base_conf": [],
+        "candidate_conf": [
+          {
+            "min": 0.9686760306358337,
+            "geo": 0.9686760306358337
+          },
+          {
+            "min": 0.6469836235046387,
+            "geo": 0.6469836235046387
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-12-mixed",
+    "condition": "distractor",
+    "reference": "Click the house icon, potem poczekaj chwilę na mapę.",
+    "off": "Click the logs i fix it. Potem poczekaj chwilę na mapę.",
+    "source": "Click the house i co? Potem poczekaj chwilę na mapę.",
+    "source_geo": 0.7421790460722953,
+    "off_geo": 0.7150222556734345,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "logs"
+        ],
+        "candidate": [
+          "house"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4152209758758545,
+            "geo": 0.4152209758758545
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.16915524005889893,
+            "geo": 0.3829987853749708
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "fix",
+          "it"
+        ],
+        "candidate": [
+          "co"
+        ],
+        "base_conf": [
+          {
+            "min": 0.33548521995544434,
+            "geo": 0.33548521995544434
+          },
+          {
+            "min": 0.35805144906044006,
+            "geo": 0.3580514490604401
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.12988068163394928,
+            "geo": 0.1298806816339493
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-13-pl",
+    "condition": "relevant",
+    "reference": "Ryba ma szeroki ogon i jedną luźną łuskę przy płetwie.",
+    "off": "Ryba ma szeroki odron i jedną, luźną łuskę przy płecie.",
+    "source": "ryba ma szeroki odron i jedną, luźną łuskę przy płytnie.",
+    "source_geo": 0.6639183852728091,
+    "off_geo": 0.694483499757111,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "płecie"
+        ],
+        "candidate": [
+          "płytnie"
+        ],
+        "base_conf": [
+          {
+            "min": 0.14772707223892212,
+            "geo": 0.39810103692140125
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.14597955346107483,
+            "geo": 0.3731906232238205
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-13-pl",
+    "condition": "distractor",
+    "reference": "Ryba ma szeroki ogon i jedną luźną łuskę przy płetwie.",
+    "off": "Ryba ma szeroki odron i jedną, luźną łuskę przy płecie.",
+    "source": "Ryba ma szeroki odron i jedną, luźną łuskę przy płytnie.",
+    "source_geo": 0.6566856009983325,
+    "off_geo": 0.694483499757111,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "płecie"
+        ],
+        "candidate": [
+          "płytnie"
+        ],
+        "base_conf": [
+          {
+            "min": 0.14772707223892212,
+            "geo": 0.39810103692140125
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1474766582250595,
+            "geo": 0.369044303098772
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-13-mixed",
+    "condition": "relevant",
+    "reference": "Ryba has a broad tail, a jedna scale leży na piasku.",
+    "off": "Ryba hasa pro atail, a jedna zcale leży na plasku.",
+    "source": "ryba has a bro at tail, a jedna zcale leży na plasku.",
+    "source_geo": 0.743771436191592,
+    "off_geo": 0.7697018987455317,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "hasa",
+          "pro",
+          "atail"
+        ],
+        "candidate": [
+          "has",
+          "a",
+          "bro",
+          "at",
+          "tail"
+        ],
+        "base_conf": [
+          {
+            "min": 0.7898800373077393,
+            "geo": 0.8578062177963295
+          },
+          {
+            "min": 0.3549284338951111,
+            "geo": 0.3549284338951111
+          },
+          {
+            "min": 0.223610520362854,
+            "geo": 0.3407940122565781
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.9190660119056702,
+            "geo": 0.9190660119056702
+          },
+          {
+            "min": 0.7408364415168762,
+            "geo": 0.7408364415168762
+          },
+          {
+            "min": 0.2553096413612366,
+            "geo": 0.2553096413612366
+          },
+          {
+            "min": 0.4657417833805084,
+            "geo": 0.4657417833805084
+          },
+          {
+            "min": 0.564262330532074,
+            "geo": 0.564262330532074
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-13-mixed",
+    "condition": "distractor",
+    "reference": "Ryba has a broad tail, a jedna scale leży na piasku.",
+    "off": "Ryba hasa pro atail, a jedna zcale leży na plasku.",
+    "source": "Ryba has a pro at tail, a jedna zcale leży na plasku.",
+    "source_geo": 0.7248800829709535,
+    "off_geo": 0.7697018987455317,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "hasa"
+        ],
+        "candidate": [
+          "has",
+          "a"
+        ],
+        "base_conf": [
+          {
+            "min": 0.7898800373077393,
+            "geo": 0.8578062177963295
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.8555925488471985,
+            "geo": 0.8555925488471985
+          },
+          {
+            "min": 0.7890962958335876,
+            "geo": 0.7890962958335876
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "atail"
+        ],
+        "candidate": [
+          "at",
+          "tail"
+        ],
+        "base_conf": [
+          {
+            "min": 0.223610520362854,
+            "geo": 0.3407940122565781
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.41301095485687256,
+            "geo": 0.41301095485687256
+          },
+          {
+            "min": 0.45421069860458374,
+            "geo": 0.45421069860458374
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-14-en",
+    "condition": "relevant",
+    "reference": "A dry pinecone rolled under the garden bench after the wind picked up.",
+    "off": "A dry pine cone rolled under the garden bench after the wind picked up.",
+    "source": "a dry pine cone rolled under the garden bench after the wind picked up",
+    "source_geo": 0.8976707543992278,
+    "off_geo": 0.96923958309006,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-19-mixed",
+    "condition": "relevant",
+    "reference": "Please replicate ten wzór na większej kartce przed lekcją.",
+    "off": "Pleasereplica te ten vurna większej kartce przeflexią.",
+    "source": "Placere, pliczate ten vurna większej kartce przeflexią.",
+    "source_geo": 0.44193370201495963,
+    "off_geo": 0.4379918265296191,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pleasereplica",
+          "te"
+        ],
+        "candidate": [
+          "placere",
+          "pliczate"
+        ],
+        "base_conf": [
+          {
+            "min": 0.17500898241996765,
+            "geo": 0.28439123287363155
+          },
+          {
+            "min": 0.23175129294395447,
+            "geo": 0.23175129294395447
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.09871358424425125,
+            "geo": 0.32985254091995164
+          },
+          {
+            "min": 0.2322068065404892,
+            "geo": 0.37266691755038345
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-19-mixed",
+    "condition": "distractor",
+    "reference": "Please replicate ten wzór na większej kartce przed lekcją.",
+    "off": "Pleasereplica te ten vurna większej kartce przeflexią.",
+    "source": "Place, Replica, Tebura, Większej, Kart, Cep, Cep, Leccio.",
+    "source_geo": 0.49179743716794244,
+    "off_geo": 0.4379918265296191,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pleasereplica",
+          "te",
+          "ten",
+          "vurna"
+        ],
+        "candidate": [
+          "place",
+          "replica",
+          "tebura"
+        ],
+        "base_conf": [
+          {
+            "min": 0.17500898241996765,
+            "geo": 0.28439123287363155
+          },
+          {
+            "min": 0.23175129294395447,
+            "geo": 0.23175129294395447
+          },
+          {
+            "min": 0.12596170604228973,
+            "geo": 0.12596170604228973
+          },
+          {
+            "min": 0.24031445384025574,
+            "geo": 0.4224775376049588
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.13194367289543152,
+            "geo": 0.13194367289543152
+          },
+          {
+            "min": 0.4488367736339569,
+            "geo": 0.6344468058439685
+          },
+          {
+            "min": 0.133989155292511,
+            "geo": 0.18388257354840615
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "kartce",
+          "przeflexią"
+        ],
+        "candidate": [
+          "kart",
+          "cep",
+          "cep",
+          "leccio"
+        ],
+        "base_conf": [
+          {
+            "min": 0.811983048915863,
+            "geo": 0.8248564539744514
+          },
+          {
+            "min": 0.5327929258346558,
+            "geo": 0.590126075889405
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.45053374767303467,
+            "geo": 0.45053374767303467
+          },
+          {
+            "min": 0.5512447953224182,
+            "geo": 0.6810123539938754
+          },
+          {
+            "min": 0.31061846017837524,
+            "geo": 0.5320489307060232
+          },
+          {
+            "min": 0.38627979159355164,
+            "geo": 0.6060107788220502
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-21-en",
+    "condition": "relevant",
+    "reference": "It took me a while to grok the meaning of that unusual joke.",
+    "off": "It took me a while to rock the meaning of that unusual joke.",
+    "source": "It took me a while to rock the meaning of that unusual joke",
+    "source_geo": 0.9387365644563428,
+    "off_geo": 0.9742889400514015,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-21-mixed",
+    "condition": "relevant",
+    "reference": "Nie mogę grok that joke, wyjaśnij mi go jeszcze raz.",
+    "off": "Nie mogę grog tatyoke, wyjaśnij mi go jeszcze raz.",
+    "source": "Nie mogę groq tatjoke, wyjaśnij mi go jeszcze raz.",
+    "source_geo": 0.7901485168948998,
+    "off_geo": 0.8023220936734532,
+    "false": [
+      "Groq"
+    ],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "grog",
+          "tatyoke"
+        ],
+        "candidate": [
+          "groq",
+          "tatjoke"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3345829248428345,
+            "geo": 0.5465633912922498
+          },
+          {
+            "min": 0.3662198781967163,
+            "geo": 0.5009084996924014
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.6854937076568604,
+            "geo": 0.7451299811839345
+          },
+          {
+            "min": 0.24115656316280365,
+            "geo": 0.4345010949527486
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-21-mixed",
+    "condition": "distractor",
+    "reference": "Nie mogę grok that joke, wyjaśnij mi go jeszcze raz.",
+    "off": "Nie mogę grog tatyoke, wyjaśnij mi go jeszcze raz.",
+    "source": "Nie mogę groqtać oke, wyjaśnij mi go jeszcze raz.",
+    "source_geo": 0.7394761590134159,
+    "off_geo": 0.8023220936734532,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "grog",
+          "tatyoke"
+        ],
+        "candidate": [
+          "groqtać",
+          "oke"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3345829248428345,
+            "geo": 0.5465633912922498
+          },
+          {
+            "min": 0.3662198781967163,
+            "geo": 0.5009084996924014
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2408173382282257,
+            "geo": 0.5470659102949148
+          },
+          {
+            "min": 0.26803621649742126,
+            "geo": 0.27267550846839395
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-22-en",
+    "condition": "relevant",
+    "reference": "The illustrator drew a svelte figure wearing a long green coat.",
+    "off": "The illustrator drew a svelte figure wearing a long green coat.",
+    "source": "The illustrator drew a Svelt figure wearing a long green coat",
+    "source_geo": 0.8709932897210395,
+    "off_geo": 0.932041340771583,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "svelte"
+        ],
+        "candidate": [
+          "svelt"
+        ],
+        "base_conf": [
+          {
+            "min": 0.8778584003448486,
+            "geo": 0.9243709056273074
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.5419631004333496,
+            "geo": 0.6976310165085942
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-22-en",
+    "condition": "distractor",
+    "reference": "The illustrator drew a svelte figure wearing a long green coat.",
+    "off": "The illustrator drew a svelte figure wearing a long green coat.",
+    "source": "The illustrator drew a svelte figure wearing a long green coat",
+    "source_geo": 0.883590233972557,
+    "off_geo": 0.932041340771583,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "control-22-mixed",
+    "condition": "relevant",
+    "reference": "Narysuj a svelte figure, ale zostaw płaszcz bez koloru.",
+    "off": "Narysuj asfaltę figurę, ale zostaw płaść bez koloru.",
+    "source": "Narysuj Asphalte figure, ale zostaw płaść bez koloru.",
+    "source_geo": 0.8167797114207752,
+    "off_geo": 0.8709322476750301,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "asfaltę",
+          "figurę"
+        ],
+        "candidate": [
+          "asphalte",
+          "figure"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3268877863883972,
+            "geo": 0.6211513126234682
+          },
+          {
+            "min": 0.7524914145469666,
+            "geo": 0.867226048327829
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.35544195771217346,
+            "geo": 0.5484584246349816
+          },
+          {
+            "min": 0.49444612860679626,
+            "geo": 0.49444612860679626
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-24-mixed",
+    "condition": "relevant",
+    "reference": "Ta elastic band snapped, zanim udało mi się zamknąć pudełko.",
+    "off": "Ta elastic band snap pad, zanim udało mi się zamknąć pudełko.",
+    "source": "Ta Elastic Band, Snap Pet, zanim udało mi się zamknąć pudełko.",
+    "source_geo": 0.6753898691079779,
+    "off_geo": 0.7604686263576718,
+    "false": [],
+    "case": [
+      "Elastic"
+    ],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pad"
+        ],
+        "candidate": [
+          "pet"
+        ],
+        "base_conf": [
+          {
+            "min": 0.20509423315525055,
+            "geo": 0.20509423315525055
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.347074419260025,
+            "geo": 0.347074419260025
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-24-mixed",
+    "condition": "distractor",
+    "reference": "Ta elastic band snapped, zanim udało mi się zamknąć pudełko.",
+    "off": "Ta elastic band snap pad, zanim udało mi się zamknąć pudełko.",
+    "source": "Ta Elastic Band, Snap Pet, zanim udało mi się zamknąć pudełko.",
+    "source_geo": 0.6803189315579744,
+    "off_geo": 0.7604686263576718,
+    "false": [],
+    "case": [
+      "Elastic"
+    ],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "pad"
+        ],
+        "candidate": [
+          "pet"
+        ],
+        "base_conf": [
+          {
+            "min": 0.20509423315525055,
+            "geo": 0.20509423315525055
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.3576214611530304,
+            "geo": 0.3576214611530304
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-25-pl",
+    "condition": "relevant",
+    "reference": "Zmęczony wartownik stał przy bramie zamku aż do dzwonu.",
+    "off": "Zmęczony warcownik stał przy bramie zamku aż do dzwonu.",
+    "source": "Zmęczony marcownik stał przy bramie zamku aż do dzwonu",
+    "source_geo": 0.8038375031105033,
+    "off_geo": 0.7989686630297015,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "warcownik"
+        ],
+        "candidate": [
+          "marcownik"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1754441261291504,
+            "geo": 0.40007800542600275
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2102147489786148,
+            "geo": 0.44138122306298944
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-25-pl",
+    "condition": "distractor",
+    "reference": "Zmęczony wartownik stał przy bramie zamku aż do dzwonu.",
+    "off": "Zmęczony warcownik stał przy bramie zamku aż do dzwonu.",
+    "source": "Zmęczony marcownik stał przy bramie zamku aż do dzwonu.",
+    "source_geo": 0.7854238769351765,
+    "off_geo": 0.7989686630297015,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "warcownik"
+        ],
+        "candidate": [
+          "marcownik"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1754441261291504,
+            "geo": 0.40007800542600275
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.20202240347862244,
+            "geo": 0.4328424949093295
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-26-mixed",
+    "condition": "relevant",
+    "reference": "Our dog przyniósł piłkę, please leave it beside the door.",
+    "off": "Orwok, czynustiuka, plęsele a veid bez ibebebor.",
+    "source": "Or, Vok, she must be okay, please, leave a very busy, be the door.",
+    "source_geo": 0.21761299369657663,
+    "off_geo": 0.3322060837486367,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "orwok",
+          "czynustiuka",
+          "plęsele"
+        ],
+        "candidate": [
+          "or",
+          "vok",
+          "she",
+          "must",
+          "be",
+          "okay",
+          "please",
+          "leave"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1123967319726944,
+            "geo": 0.20724377527837867
+          },
+          {
+            "min": 0.15746700763702393,
+            "geo": 0.32988339421643637
+          },
+          {
+            "min": 0.10201176255941391,
+            "geo": 0.2447338049268058
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1055077388882637,
+            "geo": 0.10550773888826372
+          },
+          {
+            "min": 0.08104763925075531,
+            "geo": 0.16868604856938701
+          },
+          {
+            "min": 0.11350059509277344,
+            "geo": 0.11350059509277345
+          },
+          {
+            "min": 0.09920717030763626,
+            "geo": 0.09920717030763627
+          },
+          {
+            "min": 0.2541620135307312,
+            "geo": 0.2541620135307312
+          },
+          {
+            "min": 0.1282258927822113,
+            "geo": 0.12822589278221128
+          },
+          {
+            "min": 0.3957308232784271,
+            "geo": 0.3957308232784271
+          },
+          {
+            "min": 0.20946910977363586,
+            "geo": 0.20946910977363586
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "veid",
+          "bez",
+          "ibebebor"
+        ],
+        "candidate": [
+          "very",
+          "busy",
+          "be",
+          "the",
+          "door"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3031613826751709,
+            "geo": 0.3814743301213755
+          },
+          {
+            "min": 0.4122239649295807,
+            "geo": 0.4122239649295807
+          },
+          {
+            "min": 0.2615870535373688,
+            "geo": 0.354843749680479
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.02748286724090576,
+            "geo": 0.027482867240905765
+          },
+          {
+            "min": 0.24312494695186615,
+            "geo": 0.24312494695186615
+          },
+          {
+            "min": 0.2213457226753235,
+            "geo": 0.2213457226753235
+          },
+          {
+            "min": 0.11957839131355286,
+            "geo": 0.11957839131355287
+          },
+          {
+            "min": 0.3326215445995331,
+            "geo": 0.3326215445995331
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-26-mixed",
+    "condition": "distractor",
+    "reference": "Our dog przyniósł piłkę, please leave it beside the door.",
+    "off": "Orwok, czynustiuka, plęsele a veid bez ibebebor.",
+    "source": "Overbox, she must be okay, please, leave a message, leave a door.",
+    "source_geo": 0.2510879258837588,
+    "off_geo": 0.3322060837486367,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "orwok",
+          "czynustiuka",
+          "plęsele"
+        ],
+        "candidate": [
+          "overbox",
+          "she",
+          "must",
+          "be",
+          "okay",
+          "please",
+          "leave"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1123967319726944,
+            "geo": 0.20724377527837867
+          },
+          {
+            "min": 0.15746700763702393,
+            "geo": 0.32988339421643637
+          },
+          {
+            "min": 0.10201176255941391,
+            "geo": 0.2447338049268058
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.13790257275104523,
+            "geo": 0.19149190875741817
+          },
+          {
+            "min": 0.08417901396751404,
+            "geo": 0.08417901396751405
+          },
+          {
+            "min": 0.11638959497213364,
+            "geo": 0.11638959497213365
+          },
+          {
+            "min": 0.3114078640937805,
+            "geo": 0.31140786409378046
+          },
+          {
+            "min": 0.13929611444473267,
+            "geo": 0.13929611444473267
+          },
+          {
+            "min": 0.31206193566322327,
+            "geo": 0.31206193566322327
+          },
+          {
+            "min": 0.2054726630449295,
+            "geo": 0.2054726630449295
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "veid",
+          "bez",
+          "ibebebor"
+        ],
+        "candidate": [
+          "message",
+          "leave",
+          "a",
+          "door"
+        ],
+        "base_conf": [
+          {
+            "min": 0.3031613826751709,
+            "geo": 0.3814743301213755
+          },
+          {
+            "min": 0.4122239649295807,
+            "geo": 0.4122239649295807
+          },
+          {
+            "min": 0.2615870535373688,
+            "geo": 0.354843749680479
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.030040696263313293,
+            "geo": 0.030040696263313297
+          },
+          {
+            "min": 0.08427182585000992,
+            "geo": 0.08427182585000993
+          },
+          {
+            "min": 0.9199034571647644,
+            "geo": 0.9199034571647644
+          },
+          {
+            "min": 0.4301939010620117,
+            "geo": 0.4301939010620117
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "control-27-en",
+    "condition": "relevant",
+    "reference": "A bright flare lit the cloudy sky above the boat for a moment.",
+    "off": "A bright flare lit the cloudy sky above the boat for a moment.",
+    "source": "A bright flare lit the cloudy sky above the boat for a moment",
+    "source_geo": 0.9041903816803469,
+    "off_geo": 0.9452920769962243,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-01-en",
+    "condition": "relevant",
+    "reference": "Do not delete the draft before Maria has checked the final paragraph.",
+    "off": "Do not delete the draft before Maria has checked the final paragraph.",
+    "source": "Do not delete the draft before Maria has checked the final paragraph",
+    "source_geo": 0.8876102999764923,
+    "off_geo": 0.9315567889837538,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-03-en",
+    "condition": "relevant",
+    "reference": "Tomorrow morning I will take the early train to the coast.",
+    "off": "Tomorrow morning I will take the early train to the coast.",
+    "source": "Tomorrow morning I will take the early train to the coast",
+    "source_geo": 0.9613112329202232,
+    "off_geo": 0.9385814416211683,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-03-en",
+    "condition": "distractor",
+    "reference": "Tomorrow morning I will take the early train to the coast.",
+    "off": "Tomorrow morning I will take the early train to the coast.",
+    "source": "Tomorrow morning I will take the early train to the coast",
+    "source_geo": 0.9590572193840078,
+    "off_geo": 0.9385814416211683,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-05-en",
+    "condition": "relevant",
+    "reference": "We should buy fresh bread and two apples on the way home.",
+    "off": "We should buy fresh bread and two apples on the way home.",
+    "source": "We should buy fresh bread and two apples on the way home",
+    "source_geo": 0.8521811636561144,
+    "off_geo": 0.9150161560461182,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-06-en",
+    "condition": "relevant",
+    "reference": "Keep the original numbers exactly as they appear in the table.",
+    "off": "Keep the original numbers exactly as they appear in the table.",
+    "source": "Keep the original numbers exactly as they appear in the table",
+    "source_geo": 0.9511193194141165,
+    "off_geo": 0.938431240635644,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-16-en",
+    "condition": "relevant",
+    "reference": "Add a little water to the pot and stir the soup slowly.",
+    "off": "Add a little water to the pot and stir the soup slowly.",
+    "source": "Add a little water to the pot, and stir the soup slowly",
+    "source_geo": 0.9327230994865623,
+    "off_geo": 0.9389051520865127,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-16-en",
+    "condition": "distractor",
+    "reference": "Add a little water to the pot and stir the soup slowly.",
+    "off": "Add a little water to the pot and stir the soup slowly.",
+    "source": "Add a little water to the pot, and stir the soup slowly.",
+    "source_geo": 0.9130221799870242,
+    "off_geo": 0.9389051520865127,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-17-en",
+    "condition": "relevant",
+    "reference": "His brother sent a postcard from a village near the mountain lake.",
+    "off": "His brother sent a postcard from a village near the mountain lake.",
+    "source": "His brother sent a postcard from a village near the mountain lake",
+    "source_geo": 0.9621762373810209,
+    "off_geo": 0.9588575519798758,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-03-pl",
+    "condition": "relevant",
+    "reference": "Jutro rano pojadę wczesnym pociągiem nad spokojne morze.",
+    "off": "Jutro rano pojadę wczesnym pociągiem nad pokole morze.",
+    "source": "jutro rano pojadę wczesnym pociągiem nad pokole morze.",
+    "source_geo": 0.8020687965200298,
+    "off_geo": 0.7968068680888307,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-03-pl",
+    "condition": "distractor",
+    "reference": "Jutro rano pojadę wczesnym pociągiem nad spokojne morze.",
+    "off": "Jutro rano pojadę wczesnym pociągiem nad pokole morze.",
+    "source": "jutro rano pojadę w ciesnym pociągiem nad pokole morze.",
+    "source_geo": 0.7863685222037944,
+    "off_geo": 0.7968068680888307,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "wczesnym"
+        ],
+        "candidate": [
+          "w",
+          "ciesnym"
+        ],
+        "base_conf": [
+          {
+            "min": 0.1961793452501297,
+            "geo": 0.4727539079798211
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.9733450412750244,
+            "geo": 0.9733450412750244
+          },
+          {
+            "min": 0.16221952438354492,
+            "geo": 0.4958559863778194
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-15-pl",
+    "condition": "relevant",
+    "reference": "Nikt nie wie, gdzie został zapasowy klucz po wczorajszym przyjęciu.",
+    "off": "Nikt nie wie, gdzie został napasowy klucz po wczorajszym przyjeńcu.",
+    "source": "nikt nie wie, gdzie został napasowy klucz po wczorajszym przyjeńcu.",
+    "source_geo": 0.8712075201405973,
+    "off_geo": 0.9073797419928867,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-04-mixed",
+    "condition": "relevant",
+    "reference": "Ten red bicycle należy do sąsiada z drugiej strony ulicy.",
+    "off": "Ten rębicycle należy do sąsiada z drugiej strony ulicy.",
+    "source": "Ten prędwicycle należy do sąsiada z drugiej strony ulicy.",
+    "source_geo": 0.796527526001277,
+    "off_geo": 0.8116661050579937,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "rębicycle"
+        ],
+        "candidate": [
+          "prędwicycle"
+        ],
+        "base_conf": [
+          {
+            "min": 0.17899200320243835,
+            "geo": 0.4090527652554713
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.1392364799976349,
+            "geo": 0.4708820261890509
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-04-mixed",
+    "condition": "distractor",
+    "reference": "Ten red bicycle należy do sąsiada z drugiej strony ulicy.",
+    "off": "Ten rębicycle należy do sąsiada z drugiej strony ulicy.",
+    "source": "Ten prędwicycle należy do sąsiada z drugiej strony ulicy.",
+    "source_geo": 0.7987347795082059,
+    "off_geo": 0.8116661050579937,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "rębicycle"
+        ],
+        "candidate": [
+          "prędwicycle"
+        ],
+        "base_conf": [
+          {
+            "min": 0.17899200320243835,
+            "geo": 0.4090527652554713
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.12021218240261078,
+            "geo": 0.46076740309893954
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-06-mixed",
+    "condition": "relevant",
+    "reference": "Keep the original numbers, nie zaokrąglaj żadnej wartości w tabeli.",
+    "off": "KMP Original Numbers nie zaoprądla ich żadnej marcości w tabeli.",
+    "source": "KMP Original Numbers, nie zaoprądla ich żadnej marcości w tabeli.",
+    "source_geo": 0.6154140833576032,
+    "off_geo": 0.5835198925161461,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-06-mixed",
+    "condition": "distractor",
+    "reference": "Keep the original numbers, nie zaokrąglaj żadnej wartości w tabeli.",
+    "off": "KMP Original Numbers nie zaoprądla ich żadnej marcości w tabeli.",
+    "source": "KMP Original Numbers, nie zaoprądla ich żadnej marcości w tabeli.",
+    "source_geo": 0.6261505080243004,
+    "off_geo": 0.5835198925161461,
+    "false": [],
+    "case": [],
+    "edits": []
+  },
+  {
+    "id": "neutral-07-mixed",
+    "condition": "relevant",
+    "reference": "Nigdy nie mówiłam the meeting is cancelled, tylko zmieniamy godzinę.",
+    "off": "Nigdy nie mówiłam w emetinki z kancelet, tylko zmieniamy godzinę.",
+    "source": "Nigdy nie mówiłam w emetinkis kancelet, tylko zmieniamy godzinę.",
+    "source_geo": 0.6674393252656731,
+    "off_geo": 0.7542918191311867,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "emetinki",
+          "z"
+        ],
+        "candidate": [
+          "emetinkis"
+        ],
+        "base_conf": [
+          {
+            "min": 0.29601073265075684,
+            "geo": 0.3125470989608968
+          },
+          {
+            "min": 0.965883731842041,
+            "geo": 0.965883731842041
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.27046477794647217,
+            "geo": 0.3011864433764291
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-07-mixed",
+    "condition": "distractor",
+    "reference": "Nigdy nie mówiłam the meeting is cancelled, tylko zmieniamy godzinę.",
+    "off": "Nigdy nie mówiłam w emetinki z kancelet, tylko zmieniamy godzinę.",
+    "source": "Nigdy nie mówiłam w emetinkis kancelet, tylko zmieniamy godzinę.",
+    "source_geo": 0.6742369302688169,
+    "off_geo": 0.7542918191311867,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "emetinki",
+          "z"
+        ],
+        "candidate": [
+          "emetinkis"
+        ],
+        "base_conf": [
+          {
+            "min": 0.29601073265075684,
+            "geo": 0.3125470989608968
+          },
+          {
+            "min": 0.965883731842041,
+            "geo": 0.965883731842041
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.2585564851760864,
+            "geo": 0.2962139234870961
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-16-mixed",
+    "condition": "relevant",
+    "reference": "Dolej a little water do garnka i powoli zamieszaj zupę.",
+    "off": "Dolej a litle mater do garnka i pomoli namieśaj zupe.",
+    "source": "Dolej a litre mater do garnka i pomoli namieśaj zupę.",
+    "source_geo": 0.7073521357290063,
+    "off_geo": 0.7439694561115116,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "litle"
+        ],
+        "candidate": [
+          "litre"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4822222888469696,
+            "geo": 0.6275117118279397
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.4353956878185272,
+            "geo": 0.5980790531734957
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "zupe"
+        ],
+        "candidate": [
+          "zupę"
+        ],
+        "base_conf": [
+          {
+            "min": 0.40137964487075806,
+            "geo": 0.5827999457671212
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.38689714670181274,
+            "geo": 0.7125011984073035
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-16-mixed",
+    "condition": "distractor",
+    "reference": "Dolej a little water do garnka i powoli zamieszaj zupę.",
+    "off": "Dolej a litle mater do garnka i pomoli namieśaj zupe.",
+    "source": "Dolej a litre mater do garnka i pomoli namieśaj zupę.",
+    "source_geo": 0.7258380925813381,
+    "off_geo": 0.7439694561115116,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "litle"
+        ],
+        "candidate": [
+          "litre"
+        ],
+        "base_conf": [
+          {
+            "min": 0.4822222888469696,
+            "geo": 0.6275117118279397
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.43818995356559753,
+            "geo": 0.5997717292978674
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "baseline": [
+          "zupe"
+        ],
+        "candidate": [
+          "zupę"
+        ],
+        "base_conf": [
+          {
+            "min": 0.40137964487075806,
+            "geo": 0.5827999457671212
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.3918350040912628,
+            "geo": 0.716052686273813
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-17-mixed",
+    "condition": "relevant",
+    "reference": "Brat sent a postcard z małej wsi nad górskim jeziorem.",
+    "off": "Rad sent a postzar z małej zina durskim jeżorem.",
+    "source": "Rad sent a post-sarts małej zina durskim jeżorem.",
+    "source_geo": 0.42483455941051584,
+    "off_geo": 0.5194868721397126,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "postzar",
+          "z"
+        ],
+        "candidate": [
+          "post",
+          "sarts"
+        ],
+        "base_conf": [
+          {
+            "min": 0.24874787032604218,
+            "geo": 0.4810948301679789
+          },
+          {
+            "min": 0.8868706226348877,
+            "geo": 0.8868706226348877
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.9229368567466736,
+            "geo": 0.9229368567466736
+          },
+          {
+            "min": 0.279347687959671,
+            "geo": 0.2832551012459283
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "neutral-17-mixed",
+    "condition": "distractor",
+    "reference": "Brat sent a postcard z małej wsi nad górskim jeziorem.",
+    "off": "Rad sent a postzar z małej zina durskim jeżorem.",
+    "source": "Rad sent a post-sarts małej zina durskim jeżorem.",
+    "source_geo": 0.4339288360855592,
+    "off_geo": 0.5194868721397126,
+    "false": [],
+    "case": [],
+    "edits": [
+      {
+        "op": "replace",
+        "baseline": [
+          "postzar",
+          "z"
+        ],
+        "candidate": [
+          "post",
+          "sarts"
+        ],
+        "base_conf": [
+          {
+            "min": 0.24874787032604218,
+            "geo": 0.4810948301679789
+          },
+          {
+            "min": 0.8868706226348877,
+            "geo": 0.8868706226348877
+          }
+        ],
+        "candidate_conf": [
+          {
+            "min": 0.9112513661384583,
+            "geo": 0.9112513661384583
+          },
+          {
+            "min": 0.2915927767753601,
+            "geo": 0.2933617221939003
+          }
+        ]
+      }
+    ]
+  }
+]

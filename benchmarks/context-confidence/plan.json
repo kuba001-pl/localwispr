@@ -1,0 +1,26 @@
+{
+  "created": "2026-11-03T07:56:19.863392+00:00",
+  "scope": "dev only; 93 speech and 3 acoustic; no heldout inference or per-case rule use",
+  "source": "benchmarks/recognition/frozen: original source, no parent silence/loop changes, equal across conditions",
+  "decode": "original Fast off/source relevant/source distractor; instrumentation only",
+  "families": [
+    "whole sentence baseline min or mean confidence conditional prompt decode",
+    "whole sentence protect all changed baseline words above confidence threshold",
+    "per-edit merge only prompt vocabulary replacements whose baseline confidence is low; preserve casing when same casefold token",
+    "optional candidate confidence floor / candidate-minus-baseline margin"
+  ],
+  "thresholds": [
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    0.95
+  ],
+  "requirements": "zero dev lexical control false substitutions, no increase case flags, retain >=90% source relevant incremental name gain (>=29/42) and >=90% pooled incremental gain (>=44/84), pooled word errors <=792; inspect sensitivity and mixed/long/quiet buckets; candidate must be frozen before heldout",
+  "scoring": "references/target/decoys used by scorer only; never gate inputs"
+}

@@ -1,0 +1,38 @@
+{"case":{"id":0,"raw":"Delete the tests, actually do not delete the tests."},"result":{"outcome":"Polished","text":"Delete the tests, actually, do not delete the tests."}}
+{"case":{"id":1,"raw":"Do not delete the tests, actually delete the tests."},"result":{"outcome":"Polished","text":"Do not delete the tests, actually delete the tests."}}
+{"case":{"id":2,"raw":"Dzisiaj naprawię deployment, potem check the logs i wracam do domu."},"result":{"outcome":"Rejected(Meaning)","text":"Dzisiaj naprawię deployment, potem check the logs i wracam do domu."}}
+{"case":{"id":3,"raw":"I do not think we should never delete the tests."},"result":{"outcome":"Rejected(Meaning)","text":"I do not think we should never delete the tests."}}
+{"case":{"id":4,"raw":"Keep this.\n\n  Keep that."},"result":{"outcome":"Rejected(Structure)","text":"Keep this.\n\n  Keep that."}}
+{"case":{"id":5,"raw":"Nie usuwaj tych testów, jednak usuń te testy."},"result":{"outcome":"Polished","text":"Nie usuwaj tych testów, jednak usuń te testy."}}
+{"case":{"id":6,"raw":"No i musimy wysłać raport jutro."},"result":{"outcome":"Polished","text":"No i musimy wysłać raport jutro."}}
+{"case":{"id":7,"raw":"Please ask Siobhan to renew the Q-DRANT deployment."},"result":{"outcome":"Polished","text":"Please ask Siobhan to renew the Q-DRANT deployment."}}
+{"case":{"id":8,"raw":"Please ask Siobhan to review the Qdrant deployment"},"result":{"outcome":"Polished","text":"Please ask Siobhan to review the Qdrant deployment."}}
+{"case":{"id":9,"raw":"Please do not delete the tests before the meeting."},"result":{"outcome":"Polished","text":"Please do not delete the tests before the meeting."}}
+{"case":{"id":10,"raw":"Please leave the small box beside the kitchen door"},"result":{"outcome":"Polished","text":"Please leave the small box beside the kitchen door."}}
+{"case":{"id":11,"raw":"Please leave the small box beside the kitchen door."},"result":{"outcome":"Polished","text":"Please leave the small box beside the kitchen door."}}
+{"case":{"id":12,"raw":"Proszę sprawdzić Kubernetes oraz PostgreSQL przed spotkaniem."},"result":{"outcome":"Polished","text":"Proszę sprawdzić Kubernetes oraz PostgreSQL przed spotkaniem."}}
+{"case":{"id":13,"raw":"Proszę sprawdzić kubernete oraz postreskuel przed spotkaniem."},"result":{"outcome":"Polished","text":"Proszę sprawdzić Kubernetes oraz postreskuel przed spotkaniem."}}
+{"case":{"id":14,"raw":"Proszę zostawić małe pubełko, przydźmiam do kuchni."},"result":{"outcome":"Polished","text":"Proszę zostawić małe pubełko, przydźmiam do kuchni."}}
+{"case":{"id":15,"raw":"Proszę zostawić małe pubełko, ślubi nam do kuchni."},"result":{"outcome":"Polished","text":"Proszę zostawić małe pubełko, ślubi nam do kuchni."}}
+{"case":{"id":16,"raw":"Set thickness to 10 mm and resolution to 5 um."},"result":{"outcome":"Polished","text":"Set thickness to 10 mm and resolution to 5 um."}}
+{"case":{"id":17,"raw":"The big new will configure open telemetry and click house tomorrow."},"result":{"outcome":"Polished","text":"The big new will configure open telemetry and click house tomorrow."}}
+{"case":{"id":18,"raw":"We should not delete the tests before the meeting"},"result":{"outcome":"Polished","text":"We should not delete the tests before the meeting."}}
+{"case":{"id":19,"raw":"We should not delete the tests before the meeting."},"result":{"outcome":"Polished","text":"We should not delete the tests before the meeting."}}
+{"case":{"id":20,"raw":"We use Kubernetes and PostgreSQL for this project"},"result":{"outcome":"Polished","text":"We use Kubernetes and PostgreSQL for this project."}}
+{"case":{"id":21,"raw":"We use Kubernetes and PostgreSQL for this project."},"result":{"outcome":"Polished","text":"We use Kubernetes and PostgreSQL for this project."}}
+{"case":{"id":22,"raw":"We use kubernetes and post your sql for this project"},"result":{"outcome":"Rejected(NewWords { novel: 1, allowed: 0 })","text":"We use kubernetes and post your sql for this project"}}
+{"case":{"id":23,"raw":"Zbigniew i Małdozata przydotują raport na jutro."},"result":{"outcome":"Polished","text":"Zbigniew i Małdozata przydotują raport na jutro."}}
+{"case":{"id":24,"raw":"Zbigniew i Małgorzata się docują raport na jutro."},"result":{"outcome":"Polished","text":"Zbigniew i Małgorzata się docują, raport na jutro."}}
+{"case":{"id":25,"raw":"Zbigniew will configure OpenTelemetry and ClickHouse tomorrow"},"result":{"outcome":"Polished","text":"Zbigniew will configure OpenTelemetry and ClickHouse tomorrow."}}
+{"case":{"id":26,"raw":"Zbigniew zrobi co bereniew, a Maudoviata sprawi pull regmest."},"result":{"outcome":"Rejected(NewWords { novel: 1, allowed: 0 })","text":"Zbigniew zrobi co bereniew, a Maudoviata sprawi pull regmest."}}
+{"case":{"id":27,"raw":"Zbigniew zrobi co bereniew, a Małgorzata sprawi pull regmest."},"result":{"outcome":"Polished","text":"Zbigniew zrobi co Bereniew, a Małgorzata sprawi pull regmest."}}
+{"case":{"id":28,"raw":"Zbigniew zrobi co bereniew, a małdojata sprawi pull regmest."},"result":{"outcome":"Rejected(NewWords { novel: 1, allowed: 0 })","text":"Zbigniew zrobi co bereniew, a małdojata sprawi pull regmest."}}
+{"case":{"id":29,"raw":"Zbigniew zrobi code review, a Małgorzata sprawdzi pull request."},"result":{"outcome":"Polished","text":"Zbigniew zrobi code review, a Małgorzata sprawdzi pull request."}}
+{"case":{"id":30,"raw":"Zebignew will configure open telemetry and click house tomorrow"},"result":{"outcome":"Polished","text":"Zebignew will configure open telemetry and click house tomorrow."}}
+{"case":{"id":31,"raw":"dzisiaj naprawię deployment, potem check the logs i wracam do domu."},"result":{"outcome":"Rejected(NewWords { novel: 1, allowed: 0 })","text":"dzisiaj naprawię deployment, potem check the logs i wracam do domu."}}
+{"case":{"id":32,"raw":"um please keep [value] and (x) here."},"result":{"outcome":"Polished","text":"Please keep [value] and (x) here."}}
+{"case":{"id":33,"raw":"um \"hello\""},"result":{"outcome":"TooShort","text":"\"Hello\""}}
+{"case":{"id":34,"raw":"Set um = true"},"result":{"outcome":"Polished","text":"Set um = true"}}
+{"case":{"id":35,"raw":"Use [the um value] and (the uh value)."},"result":{"outcome":"Rejected(Structure)","text":"Use [the um value] and (the uh value)."}}
+{"case":{"id":36,"raw":"Need the er diagram"},"result":{"outcome":"Polished","text":"Need the ER diagram."}}
+{"case":{"id":37,"raw":"Do not delete those tests, actually delete all those tests right now."},"result":{"outcome":"Polished","text":"Do not delete those tests, actually delete all those tests right now."}}

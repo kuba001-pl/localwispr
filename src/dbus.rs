@@ -221,7 +221,42 @@ pub trait Shell {
         restore: bool,
         restore_delay_ms: u32,
     ) -> zbus::Result<bool>;
+    /// Request-scoped insertion; dropping the local call must also cancel it
+    /// in Shell. Optional on older extensions.
+    fn inject_cancellable(
+        &self,
+        request_id: &str,
+        text: &str,
+        chord: &str,
+        restore: bool,
+        restore_delay_ms: u32,
+    ) -> zbus::Result<bool>;
+    /// Insert only into the focus/range held by GetInsertionContext. A stale
+    /// token is an error; callers must never retry adapted text unbound.
+    fn inject_bound(
+        &self,
+        request_id: &str,
+        context_token: &str,
+        text: &str,
+        chord: &str,
+        restore: bool,
+        restore_delay_ms: u32,
+    ) -> zbus::Result<bool>;
+    fn cancel_inject(&self, request_id: &str) -> zbus::Result<()>;
     fn version(&self) -> zbus::Result<String>;
+
+    /// Optional compositor input-method context: (status, before, after,
+    /// is_replacement). Status is available | empty | unavailable | protected |
+    /// changed | timeout | denied | terminal. Only available/empty contain text, bounded
+    /// to 256 Unicode characters per side, excluding any selection. Requires
+    /// the current daemon's unique bus owner; older extensions lack this method.
+    fn get_cursor_context(&self) -> zbus::Result<(String, String, String, bool)>;
+
+    /// Additive insertion-only handoff: same bounded context plus a short-lived,
+    /// single-use token. Shell keeps focus/caret invalidation through clipboard
+    /// preparation and rechecks bounded text/range before submitting keys.
+    /// Recognition must keep using the read-only method above.
+    fn get_insertion_context(&self) -> zbus::Result<(String, String, String, bool, String)>;
 }
 
 #[cfg(test)]

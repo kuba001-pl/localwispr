@@ -18,16 +18,97 @@ use zbus::object_server::SignalEmitter;
 
 use crate::audio::{self, AudioHandle, SAMPLE_RATE};
 use crate::cleanup::{self, LlmClient, Outcome, Pass};
-use crate::config::{Config, FrontendChoice, PttMode};
+use crate::config::{Config, FrontendChoice, PttMode, Transcription};
 use crate::dbus::{self, DaemonIface, Request, Status};
 use crate::desktop::Capabilities;
 use crate::hotkey::{self, Action, Matcher, RawKey};
 use crate::inject::{Injector, Route};
+use crate::insertion::{self, SurroundingText};
 use crate::models::{self, ModelKind, ModelRef};
 use crate::stt::{SttWorker, Transcript};
 
 /// Partial previews look at most this far back (Whisper's window is 30 s).
 const PREVIEW_WINDOW: usize = 28 * SAMPLE_RATE as usize;
+const CONTEXT_TIMEOUT: Duration = Duration::from_millis(300);
+
+/// One recording-start snapshot, shared by previews and the final pass. The
+/// deadline starts when queued, rather than when the final pass asks for it.
+struct ContextCapture {
+    task: tokio::task::JoinHandle<()>,
+    result: oneshot::Receiver<Option<SurroundingText>>,
+    deadline: tokio::time::Instant,
+    snapshot: Option<SurroundingText>,
+    complete: bool,
+}
+
+impl ContextCapture {
+    fn spawn(
+        read: impl std::future::Future<Output = Option<SurroundingText>> + Send + 'static,
+    ) -> Self {
+        let deadline = tokio::time::Instant::now() + CONTEXT_TIMEOUT;
+        let (reply, result) = oneshot::channel();
+        let task = tokio::spawn(async move {
+            let context = if tokio::time::Instant::now() >= deadline {
+                None
+            } else {
+                tokio::time::timeout_at(deadline, read).await.ok().flatten()
+            };
+            let _ = reply.send(context);
+        });
+        Self {
+            task,
+            result,
+            deadline,
+            snapshot: None,
+            complete: false,
+        }
+    }
+
+    fn snapshot(&mut self) -> Option<&SurroundingText> {
+        if !self.complete {
+            match self.result.try_recv() {
+                Ok(context) => {
+                    self.snapshot = context;
+                    self.complete = true;
+                }
+                Err(oneshot::error::TryRecvError::Closed) => self.complete = true,
+                Err(oneshot::error::TryRecvError::Empty) => {}
+            }
+        }
+        self.snapshot.as_ref()
+    }
+
+    async fn finish(mut self) -> Option<SurroundingText> {
+        self.snapshot();
+        if self.complete {
+            return self.snapshot.take();
+        }
+        tokio::time::timeout_at(self.deadline, &mut self.result)
+            .await
+            .ok()
+            .and_then(Result::ok)
+            .flatten()
+    }
+}
+
+impl Drop for ContextCapture {
+    fn drop(&mut self) {
+        // JoinHandle::drop would detach a read from a cancelled utterance.
+        self.task.abort();
+    }
+}
+
+fn transcription_with_context(
+    configured: &Transcription,
+    context: Option<&SurroundingText>,
+) -> Transcription {
+    let mut settings = configured.clone();
+    settings.initial_prompt = insertion::recognition_prompt(
+        &configured.initial_prompt,
+        context.filter(|_| configured.context_aware),
+    );
+    settings
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LoadKey {
@@ -50,6 +131,12 @@ struct Processing {
 }
 
 enum Event {
+    ContextRead {
+        utterance: u64,
+        phase: &'static str,
+        status: &'static str,
+        source: &'static str,
+    },
     Processed {
         utterance: u64,
         llm_key: Option<LoadKey>,
@@ -174,6 +261,7 @@ pub struct Engine {
     partial_in_flight: bool,
     last_partial_samples: usize,
     live_polish: LivePolish,
+    recognition_context: Option<ContextCapture>,
     capture_reply: Option<oneshot::Sender<Vec<String>>>,
 
     loading_stt: Option<LoadKey>,
@@ -392,6 +480,7 @@ impl Drop for Engine {
         // Dropping a JoinHandle alone detaches it. Shutdown must also prevent
         // a processing task from inserting its eventual result.
         self.abort_processing();
+        self.recognition_context = None;
         if let Some(audio) = &self.audio {
             audio.send(audio::Cmd::Cancel);
         }
@@ -439,6 +528,7 @@ impl Engine {
             partial_in_flight: false,
             last_partial_samples: 0,
             live_polish: LivePolish::default(),
+            recognition_context: None,
             capture_reply: None,
             loading_stt: None,
             unloading_stt: false,
@@ -649,6 +739,18 @@ impl Engine {
                     }
                 }
             }
+            Event::ContextRead {
+                utterance,
+                phase,
+                status,
+                source,
+            } => {
+                if utterance == self.utterance {
+                    let mut current = self.status.lock().unwrap();
+                    current.insert(format!("{phase}_context"), status.into());
+                    current.insert(format!("{phase}_context_source"), source.into());
+                }
+            }
             Event::Notice(level, message) => self.notice(level, &message).await,
         }
         self.publish_status();
@@ -750,8 +852,48 @@ impl Engine {
             return;
         };
         audio.send(audio::Cmd::Start);
-        stt.new_utterance();
+        // Start the microphone first; accessibility must never delay input or
+        // hold the engine's event loop while an application responds.
         self.utterance += 1;
+        let utterance = self.utterance;
+        {
+            let mut status = self.status.lock().unwrap();
+            status.insert(
+                "recognition_context".into(),
+                if self.cfg.transcription.context_aware {
+                    "pending"
+                } else {
+                    "disabled"
+                }
+                .into(),
+            );
+            status.insert(
+                "insertion_context".into(),
+                if self.cfg.output.cursor_aware {
+                    "pending"
+                } else {
+                    "disabled"
+                }
+                .into(),
+            );
+            status.remove("recognition_context_source");
+            status.remove("insertion_context_source");
+        }
+        self.recognition_context = self.cfg.transcription.context_aware.then(|| {
+            let conn = self.conn.clone();
+            let events = self.events.clone();
+            ContextCapture::spawn(async move {
+                let report = crate::cursor_context::read_report(&conn).await;
+                let _ = events.send(Event::ContextRead {
+                    utterance,
+                    phase: "recognition",
+                    status: report.status,
+                    source: report.source,
+                });
+                report.context
+            })
+        });
+        stt.new_utterance();
         self.last_partial_samples = 0;
         self.partial_in_flight = false;
         self.live_polish = LivePolish::default();
@@ -764,6 +906,7 @@ impl Engine {
     async fn cancel_recording(&mut self) {
         self.utterance += 1;
         self.partial_in_flight = false;
+        self.recognition_context = None;
         self.cancel_live_polish().await;
         if let Some(a) = &self.audio {
             a.send(audio::Cmd::Cancel);
@@ -773,6 +916,9 @@ impl Engine {
             // loading a replacement. No detached task may later inject text.
             let _ = task.await;
         }
+        // A blocking chord that committed before cancellation must finish
+        // before idle acknowledges cancellation; queued jobs recheck the flag.
+        self.injector.lock().await.wait_for_keyboard_idle().await;
         if let Some(s) = &self.stt {
             // Join cancellation first: the task must not submit a final job
             // just after this abort, for example while Stop is being flushed.
@@ -825,7 +971,12 @@ impl Engine {
         }
         self.last_partial_samples = captured;
         self.partial_in_flight = true;
-        let rx = stt.submit(snap, true, &self.cfg.transcription, None);
+        let context = self
+            .recognition_context
+            .as_mut()
+            .and_then(ContextCapture::snapshot);
+        let settings = transcription_with_context(&self.cfg.transcription, context);
+        let rx = stt.submit(snap, true, &settings, None);
         let ev = self.events.clone();
         let utterance = self.utterance;
         tokio::spawn(async move {
@@ -925,6 +1076,7 @@ impl Engine {
         let mut llm = self.llm.take();
         let llm_key = llm.as_ref().and(self.loaded_llm.clone());
         let cfg = self.cfg.clone();
+        let recognition_context = self.recognition_context.take();
         let conn = self.conn.clone();
         let shell = self.shell_present.clone();
         let modifiers = self.matcher.modifiers_held();
@@ -951,7 +1103,16 @@ impl Engine {
                     !task_cancelled.load(Ordering::Acquire),
                     "dictation cancelled"
                 );
-                let rx = stt.submit(samples, false, &cfg.transcription, vad);
+                let context = match recognition_context {
+                    Some(capture) => capture.finish().await,
+                    None => None,
+                };
+                anyhow::ensure!(
+                    !task_cancelled.load(Ordering::Acquire),
+                    "dictation cancelled"
+                );
+                let settings = transcription_with_context(&cfg.transcription, context.as_ref());
+                let rx = stt.submit(samples, false, &settings, vad);
                 drop(stt);
                 let transcript = match rx.await {
                     Ok(r) => r?,
@@ -969,7 +1130,7 @@ impl Engine {
                 );
                 let reused =
                     cleanup::reuse_preview_polish(preview_polish, &transcript.text, &cfg.cleanup);
-                let (mut text, outcome) = match reused {
+                let (text, outcome) = match reused {
                     Some(polished) => {
                         tracing::debug!(
                             "final transcript matches the last preview; reusing its polish"
@@ -987,12 +1148,15 @@ impl Engine {
                         llm = None;
                     }
                 }
-                // The overlay ends on exactly what is inserted.
+                // Show the cleaned words before dismissal. Cursor-dependent
+                // punctuation and spacing are finalized only once focus is
+                // back in the destination, without reopening the overlay.
+                anyhow::ensure!(
+                    !task_cancelled.load(Ordering::Acquire),
+                    "dictation cancelled"
+                );
                 if show_final_text {
                     let _ = DaemonIface::partial_text(&emitter, &text).await;
-                }
-                if cfg.output.append_space && !text.ends_with(char::is_whitespace) {
-                    text.push(' ');
                 }
                 let mut injector = injector.lock().await;
                 // Both frontends dissolve within 70 ms. Keep consuming input
@@ -1019,7 +1183,37 @@ impl Engine {
                     "dictation cancelled"
                 );
                 match route {
-                    Some(route) => {
+                    Some(mut route) => {
+                        // This is deliberately a fresh read, after the HUD
+                        // disappears and modifiers are released: the caret
+                        // may have moved since recording began.
+                        let context = if cfg.output.cursor_aware {
+                            let report = if let Route::Gnome(shell) = &route {
+                                let (report, token) =
+                                    crate::cursor_context::read_gnome_insertion_report(shell).await;
+                                if let Some(token) = token {
+                                    route = Route::GnomeBound(shell.clone(), token);
+                                }
+                                report
+                            } else {
+                                crate::cursor_context::read_report(&conn).await
+                            };
+                            let _ = events.send(Event::ContextRead {
+                                utterance,
+                                phase: "insertion",
+                                status: report.status,
+                                source: report.source,
+                            });
+                            report.context
+                        } else {
+                            None
+                        };
+                        anyhow::ensure!(
+                            !task_cancelled.load(Ordering::Acquire),
+                            "dictation cancelled"
+                        );
+                        let text =
+                            insertion::format(&text, context.as_ref(), cfg.output.append_space);
                         injector
                             .inject(
                                 &text,
@@ -1060,6 +1254,7 @@ impl Engine {
     }
 
     async fn finish_idle(&mut self) {
+        self.recognition_context = None;
         self.phase = Phase::Idle;
         let _ = DaemonIface::state_changed(&self.emitter, "idle").await;
     }
@@ -1109,6 +1304,7 @@ impl Engine {
                 || self.cfg.audio != new.audio
                 || self.cfg.transcription != new.transcription
                 || self.cfg.cleanup != new.cleanup
+                || self.cfg.output != new.output
                 || self.cfg.hud.bands != new.hud.bands)
         {
             self.cancel_recording().await;
@@ -1419,6 +1615,20 @@ impl Engine {
 
     fn publish_status(&self) {
         let mut s = self.status.lock().unwrap();
+        for (phase, enabled) in [
+            ("recognition", self.cfg.transcription.context_aware),
+            ("insertion", self.cfg.output.cursor_aware),
+        ] {
+            let key = format!("{phase}_context");
+            if enabled {
+                if s.get(&key).is_none_or(|value| value == "disabled") {
+                    s.insert(key, "not-captured".into());
+                }
+            } else {
+                s.insert(key, "disabled".into());
+                s.remove(&format!("{phase}_context_source"));
+            }
+        }
         let phase = match self.phase {
             Phase::Idle if self.stt.is_none() => "loading",
             Phase::Idle => "idle",
@@ -1521,6 +1731,109 @@ pub async fn provision(cfg: &Config) -> Result<()> {
 mod tests {
     use super::*;
     use tokio::io::{AsyncBufReadExt, BufReader};
+
+    fn surrounding(before: &str) -> SurroundingText {
+        SurroundingText {
+            before: before.into(),
+            after: String::new(),
+            is_replacement: false,
+        }
+    }
+
+    #[test]
+    fn recognition_settings_preserve_configuration_and_respect_opt_out() {
+        let mut configured = Transcription {
+            initial_prompt: "Manual vocabulary: Kubernetes.".into(),
+            context_aware: true,
+            ..Transcription::default()
+        };
+        let original = configured.clone();
+        let context = surrounding("We use PostgreSQL and Tokio in localwispr.");
+        let settings = transcription_with_context(&configured, Some(&context));
+        assert_eq!(configured, original);
+        assert_eq!(
+            settings.initial_prompt,
+            insertion::recognition_prompt(&configured.initial_prompt, Some(&context))
+        );
+        assert!(settings.initial_prompt.contains(&configured.initial_prompt));
+        assert_eq!(
+            transcription_with_context(&configured, None).initial_prompt,
+            configured.initial_prompt
+        );
+        configured.context_aware = false;
+        assert_eq!(
+            transcription_with_context(&configured, Some(&context)),
+            configured
+        );
+    }
+
+    #[tokio::test]
+    async fn context_preview_never_waits_and_final_reuses_the_same_snapshot() {
+        let (reply, result) = oneshot::channel();
+        let mut capture = ContextCapture::spawn(async move { result.await.ok() });
+        assert_eq!(capture.snapshot(), None);
+        let expected = surrounding("Tokio and PostgreSQL");
+        reply.send(expected.clone()).unwrap();
+        (&mut capture.task).await.unwrap();
+        assert_eq!(capture.snapshot(), Some(&expected));
+        assert_eq!(capture.snapshot(), Some(&expected));
+        assert_eq!(capture.finish().await, Some(expected));
+    }
+
+    #[tokio::test]
+    async fn final_context_can_finish_a_capture_that_was_unavailable_to_preview() {
+        let (reply, result) = oneshot::channel();
+        let mut capture = ContextCapture::spawn(async move { result.await.ok() });
+        assert_eq!(capture.snapshot(), None);
+        let expected = surrounding("Whisper");
+        reply.send(expected.clone()).unwrap();
+        assert_eq!(capture.finish().await, Some(expected));
+    }
+
+    #[tokio::test]
+    async fn final_context_wait_uses_the_recording_start_deadline() {
+        let (dropped, done) = oneshot::channel();
+        let guard = NotifyDrop(Some(dropped));
+        let capture = ContextCapture::spawn(async move {
+            let _guard = guard;
+            std::future::pending().await
+        });
+        // Most of the read budget has elapsed before release. A fresh 250 ms
+        // timeout here would fail this remaining-budget bound.
+        tokio::time::sleep(CONTEXT_TIMEOUT - Duration::from_millis(50)).await;
+        assert_eq!(
+            tokio::time::timeout(Duration::from_millis(150), capture.finish())
+                .await
+                .unwrap(),
+            None
+        );
+        tokio::time::timeout(Duration::from_secs(1), done)
+            .await
+            .unwrap()
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn dropping_a_capture_cancels_its_read_and_cannot_reuse_its_snapshot() {
+        let (dropped, done) = oneshot::channel();
+        let guard = NotifyDrop(Some(dropped));
+        let capture = ContextCapture::spawn(async move {
+            let _guard = guard;
+            std::future::pending().await
+        });
+        drop(capture);
+        tokio::time::timeout(Duration::from_secs(1), done)
+            .await
+            .unwrap()
+            .unwrap();
+        let expected = surrounding("New utterance vocabulary");
+        let mut next = ContextCapture::spawn({
+            let expected = expected.clone();
+            async move { Some(expected) }
+        });
+        (&mut next.task).await.unwrap();
+        assert_eq!(next.finish().await, Some(expected));
+    }
 
     #[test]
     fn insertion_uses_current_extension_state_and_available_fallback() {
@@ -1700,6 +2013,53 @@ mod tests {
         (engine, bus)
     }
 
+    #[tokio::test]
+    async fn context_status_reports_current_capture_and_ignores_cancelled_utterances() {
+        let (mut engine, _bus) = engine().await;
+        engine.utterance = 7;
+        engine
+            .handle(Event::ContextRead {
+                utterance: 7,
+                phase: "recognition",
+                status: "available",
+                source: "gnome-input-method",
+            })
+            .await;
+        assert_eq!(
+            engine.status.lock().unwrap()["recognition_context"],
+            "available"
+        );
+        assert_eq!(
+            engine.status.lock().unwrap()["recognition_context_source"],
+            "gnome-input-method"
+        );
+        engine
+            .handle(Event::ContextRead {
+                utterance: 6,
+                phase: "recognition",
+                status: "no-active-window",
+                source: "at-spi",
+            })
+            .await;
+        assert_eq!(
+            engine.status.lock().unwrap()["recognition_context"],
+            "available"
+        );
+        engine.cfg.transcription.context_aware = false;
+        engine.publish_status();
+        assert_eq!(
+            engine.status.lock().unwrap()["recognition_context"],
+            "disabled"
+        );
+        assert!(
+            !engine
+                .status
+                .lock()
+                .unwrap()
+                .contains_key("recognition_context_source")
+        );
+    }
+
     fn llm_key(generation: u64, gpu_layers: u32) -> LoadKey {
         LoadKey {
             path: "/nonexistent/localwispr-test-model.gguf".into(),
@@ -1768,22 +2128,35 @@ mod tests {
         let (mut engine, _bus) = engine().await;
         let (audio, commands) = AudioHandle::test_handle();
         engine.audio = Some(audio);
-        for change in 0..4 {
+        for change in 0..6 {
             engine.phase = Phase::Recording {
                 since: Instant::now(),
             };
+            let (dropped, done) = oneshot::channel();
+            let guard = NotifyDrop(Some(dropped));
+            engine.recognition_context = Some(ContextCapture::spawn(async move {
+                let _guard = guard;
+                std::future::pending().await
+            }));
             let utterance = engine.utterance;
             let mut new = engine.cfg.clone();
             match change {
                 0 => new.hotkeys.push_to_talk = vec!["KEY_F13".into()],
                 1 => new.hotkeys.mode = PttMode::Toggle,
                 2 => new.transcription.use_gpu = !new.transcription.use_gpu,
-                _ => new.transcription.model = "/nonexistent/replacement-model.bin".into(),
+                3 => new.transcription.model = "/nonexistent/replacement-model.bin".into(),
+                4 => new.transcription.context_aware = !new.transcription.context_aware,
+                _ => new.output.cursor_aware = !new.output.cursor_aware,
             }
             engine.apply_config(new).await;
             assert_eq!(engine.phase, Phase::Idle);
             assert_eq!(engine.utterance, utterance + 1);
             assert!(matches!(commands.try_recv(), Ok(audio::Cmd::Cancel)));
+            assert!(engine.recognition_context.is_none());
+            tokio::time::timeout(Duration::from_secs(1), done)
+                .await
+                .unwrap()
+                .unwrap();
         }
         engine.phase = Phase::Recording {
             since: Instant::now(),
@@ -1802,6 +2175,7 @@ mod tests {
         engine.phase = Phase::Recording {
             since: Instant::now() - Duration::from_secs(1),
         };
+        engine.recognition_context = Some(ContextCapture::spawn(std::future::pending()));
         // Withhold the capture reply: stopping a missing-worker recording must
         // still queue Stop, without blocking the event loop for the buffer.
         tokio::time::timeout(Duration::from_secs(1), engine.finish_recording())
@@ -1810,6 +2184,7 @@ mod tests {
         assert!(matches!(commands.try_recv(), Ok(audio::Cmd::Stop(_))));
         assert_eq!(engine.phase, Phase::Idle);
         assert!(engine.processing.is_none());
+        assert!(engine.recognition_context.is_none());
     }
 
     struct NotifyDrop(Option<oneshot::Sender<()>>);
@@ -1824,6 +2199,12 @@ mod tests {
         let (mut engine, _bus) = engine().await;
         let (dropped_tx, dropped_rx) = oneshot::channel();
         let guard = NotifyDrop(Some(dropped_tx));
+        let (context_dropped, context_done) = oneshot::channel();
+        let context_guard = NotifyDrop(Some(context_dropped));
+        let capture = ContextCapture::spawn(async move {
+            let _guard = context_guard;
+            std::future::pending().await
+        });
         let key = llm_key(0, 999);
         let cancelled = Arc::new(AtomicBool::new(false));
         engine.loaded_llm = Some(key.clone());
@@ -1832,12 +2213,17 @@ mod tests {
             cancelled: cancelled.clone(),
             task: tokio::spawn(async move {
                 let _guard = guard;
+                let _capture = capture;
                 std::future::pending::<()>().await;
             }),
             llm_key: Some(key),
         });
         engine.cancel_recording().await;
         assert!(dropped_rx.await.is_ok());
+        tokio::time::timeout(Duration::from_secs(1), context_done)
+            .await
+            .unwrap()
+            .unwrap();
         assert!(cancelled.load(Ordering::Acquire));
         assert_eq!(engine.phase, Phase::Idle);
         assert!(engine.processing.is_none());

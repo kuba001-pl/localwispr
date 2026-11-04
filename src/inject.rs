@@ -10,7 +10,7 @@
 
 use std::io::Read;
 use std::os::fd::AsRawFd;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -90,7 +90,139 @@ type Backup = std::result::Result<Saved, String>;
 
 pub enum Route {
     Gnome(ShellProxy<'static>),
+    GnomeBound(ShellProxy<'static>, String),
     DataControl,
+}
+
+/// A D-Bus method keeps executing remotely when its caller future is dropped.
+/// Explicitly revoke this request when processing is aborted. The request ID
+/// prevents a late cancellation from affecting the next utterance.
+struct ShellCancellation {
+    shell: ShellProxy<'static>,
+    request_id: String,
+    armed: bool,
+}
+
+impl Drop for ShellCancellation {
+    fn drop(&mut self) {
+        if self.armed {
+            let shell = self.shell.clone();
+            let request_id = self.request_id.clone();
+            if let Ok(runtime) = tokio::runtime::Handle::try_current() {
+                runtime.spawn(async move {
+                    let _ = tokio::time::timeout(
+                        Duration::from_secs(1),
+                        shell.cancel_inject(&request_id),
+                    )
+                    .await;
+                });
+            }
+        }
+    }
+}
+
+fn unknown_method(error: &zbus::Error) -> bool {
+    matches!(error, zbus::Error::MethodError(name, _, _)
+        if name.as_str() == "org.freedesktop.DBus.Error.UnknownMethod")
+        || matches!(error, zbus::Error::FDO(inner)
+            if matches!(inner.as_ref(), zbus::fdo::Error::UnknownMethod(_)))
+}
+
+async fn shell_inject(shell: &ShellProxy<'static>, text: &str, cfg: &Output) -> zbus::Result<bool> {
+    shell_inject_with_handoff(shell, None, text, cfg).await
+}
+
+async fn shell_inject_with_handoff(
+    shell: &ShellProxy<'static>,
+    token: Option<&str>,
+    text: &str,
+    cfg: &Output,
+) -> zbus::Result<bool> {
+    static NEXT_REQUEST: AtomicU64 = AtomicU64::new(1);
+    let mut cancellation = ShellCancellation {
+        shell: shell.clone(),
+        request_id: NEXT_REQUEST.fetch_add(1, Ordering::Relaxed).to_string(),
+        armed: true,
+    };
+    let result = if let Some(token) = token {
+        // A bound request may fail stale/unsupported; never replay adapted text
+        // through the unbound legacy methods against a different range.
+        shell
+            .inject_bound(
+                &cancellation.request_id,
+                token,
+                text,
+                chord_name(cfg.paste_chord),
+                cfg.restore_clipboard,
+                cfg.restore_delay_ms,
+            )
+            .await
+    } else {
+        shell
+            .inject_cancellable(
+                &cancellation.request_id,
+                text,
+                chord_name(cfg.paste_chord),
+                cfg.restore_clipboard,
+                cfg.restore_delay_ms,
+            )
+            .await
+    };
+    cancellation.armed = result
+        .as_ref()
+        .err()
+        .is_some_and(|error| !unknown_method(error));
+    match result {
+        Err(ref error) if token.is_none() && unknown_method(error) => {
+            // Keep old installed extensions usable until the next login loads
+            // the update. They cannot provide remote cancellation guarantees.
+            static REPORTED: AtomicBool = AtomicBool::new(false);
+            if !REPORTED.swap(true, Ordering::Relaxed) {
+                tracing::warn!(
+                    "GNOME extension lacks cancellable insertion; update it and log in again"
+                );
+            }
+            shell
+                .inject(
+                    text,
+                    chord_name(cfg.paste_chord),
+                    cfg.restore_clipboard,
+                    cfg.restore_delay_ms,
+                )
+                .await
+        }
+        result => result,
+    }
+}
+
+// Cancellation and keyboard submission serialize on the keyboard mutex. The
+// final flag check is the commit point; cancellation acknowledgment also waits
+// for this mutex, so an already-committed chord finishes before we report idle.
+async fn press_when_current<T, F>(
+    keyboard: Arc<std::sync::Mutex<T>>,
+    cancelled: Arc<AtomicBool>,
+    paste_done: tokio::sync::oneshot::Sender<()>,
+    press: F,
+) -> Result<()>
+where
+    T: Send + 'static,
+    F: FnOnce(&mut T) -> Result<()> + Send + 'static,
+{
+    tokio::task::spawn_blocking(move || {
+        let mut keyboard = keyboard.lock().unwrap();
+        anyhow::ensure!(!cancelled.load(Ordering::Acquire), "dictation cancelled");
+        let result = press(&mut keyboard);
+        drop(paste_done);
+        result
+    })
+    .await?
+}
+
+async fn wait_for_keyboard<T: Send + 'static>(keyboard: Arc<std::sync::Mutex<T>>) {
+    let _ = tokio::task::spawn_blocking(move || {
+        drop(keyboard.lock().unwrap());
+    })
+    .await;
 }
 
 pub struct Injector {
@@ -121,6 +253,12 @@ impl Injector {
         self.uinput.is_some()
     }
 
+    pub async fn wait_for_keyboard_idle(&self) {
+        if let Some(keyboard) = &self.uinput {
+            wait_for_keyboard(keyboard.clone()).await;
+        }
+    }
+
     pub async fn inject(
         &mut self,
         text: &str,
@@ -130,19 +268,17 @@ impl Injector {
         warn: impl Fn(String),
     ) -> Result<()> {
         match route {
-            Route::Gnome(shell) => {
+            Route::Gnome(shell) | Route::GnomeBound(shell, _) => {
                 crate::hotkey::wait_for_modifiers(input.0, input.1, Duration::ZERO).await?;
                 // A D-Bus error means nothing was inserted; `false` means the
                 // text was pasted but the clipboard could not be preserved.
-                let preserved = shell
-                    .inject(
-                        text,
-                        chord_name(cfg.paste_chord),
-                        cfg.restore_clipboard,
-                        cfg.restore_delay_ms,
-                    )
-                    .await
-                    .context("GNOME Shell extension")?;
+                let preserved = match route {
+                    Route::GnomeBound(_, token) => {
+                        shell_inject_with_handoff(shell, Some(token), text, cfg).await
+                    }
+                    _ => shell_inject(shell, text, cfg).await,
+                }
+                .context("GNOME Shell extension")?;
                 if !preserved && cfg.restore_clipboard {
                     warn("the previous clipboard could not be fully restored (too large, unreadable, or changed meanwhile)".into());
                 }
@@ -234,12 +370,10 @@ impl Injector {
                     // Restoration waits for `paste_done`, which the blocking
                     // task holds until the keys are pressed: aborting this
                     // future cannot stop a chord already being sent.
-                    tokio::task::spawn_blocking(move || {
-                        let result = uinput.lock().unwrap().press_chord(keys);
-                        drop(paste_done);
-                        result
+                    press_when_current(uinput, input.1.clone(), paste_done, move |keyboard| {
+                        keyboard.press_chord(keys)
                     })
-                    .await?
+                    .await
                 }
                 .await
             }
@@ -481,9 +615,263 @@ fn restore_clipboard(selection: paste::ClipboardType, saved: Saved, owned: &Owne
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn queued_keyboard_work_cannot_paste_after_cancellation() {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .max_blocking_threads(1)
+            .build()
+            .unwrap();
+        rt.block_on(async {
+            let keyboard = Arc::new(std::sync::Mutex::new(0usize));
+            let cancelled = Arc::new(AtomicBool::new(false));
+            let (release, blocked) = std::sync::mpsc::channel();
+            let (entered, ready) = tokio::sync::oneshot::channel();
+            let blocker = tokio::task::spawn_blocking(move || {
+                entered.send(()).unwrap();
+                blocked.recv().unwrap();
+            });
+            ready.await.unwrap();
+            let (paste_done, _pasted) = tokio::sync::oneshot::channel();
+            let (queued, has_queued) = tokio::sync::oneshot::channel();
+            let task_keyboard = keyboard.clone();
+            let task_cancelled = cancelled.clone();
+            let task = tokio::spawn(async move {
+                queued.send(()).unwrap();
+                press_when_current(task_keyboard, task_cancelled, paste_done, |presses| {
+                    *presses += 1;
+                    Ok(())
+                })
+                .await
+            });
+            has_queued.await.unwrap();
+            cancelled.store(true, Ordering::Release);
+            task.abort();
+            assert!(task.await.unwrap_err().is_cancelled());
+            release.send(()).unwrap();
+            blocker.await.unwrap();
+            wait_for_keyboard(keyboard.clone()).await;
+            assert_eq!(*keyboard.lock().unwrap(), 0);
+        });
+    }
+
+    #[tokio::test]
+    async fn cancellation_acknowledgment_waits_for_an_already_committed_chord() {
+        let keyboard = Arc::new(std::sync::Mutex::new(0usize));
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let (paste_done, _pasted) = tokio::sync::oneshot::channel();
+        let (release, blocked) = std::sync::mpsc::channel();
+        let (entered, ready) = tokio::sync::oneshot::channel();
+        let task = tokio::spawn(press_when_current(
+            keyboard.clone(),
+            cancelled.clone(),
+            paste_done,
+            move |presses| {
+                entered.send(()).unwrap();
+                blocked.recv().unwrap();
+                *presses += 1;
+                Ok(())
+            },
+        ));
+        ready.await.unwrap();
+        cancelled.store(true, Ordering::Release);
+        task.abort();
+        let _ = task.await;
+        let acknowledgment = wait_for_keyboard(keyboard.clone());
+        tokio::pin!(acknowledgment);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(20), &mut acknowledgment)
+                .await
+                .is_err()
+        );
+        release.send(()).unwrap();
+        acknowledgment.await;
+        assert_eq!(*keyboard.lock().unwrap(), 1);
+    }
+
     use super::*;
     use std::io::Write;
     use std::os::unix::net::UnixStream;
+
+    #[tokio::test]
+    async fn aborting_shell_injection_revokes_only_its_remote_request() {
+        use std::io::{BufRead, BufReader};
+        use std::process::{Command, Stdio};
+        use tokio::sync::{Notify, mpsc};
+
+        struct Bus(std::process::Child);
+        impl Drop for Bus {
+            fn drop(&mut self) {
+                let _ = self.0.kill();
+                let _ = self.0.wait();
+            }
+        }
+        struct Shell {
+            started: mpsc::UnboundedSender<String>,
+            cancelled: mpsc::UnboundedSender<String>,
+            release: Arc<Notify>,
+        }
+        #[zbus::interface(name = "org.localwispr.Shell1")]
+        impl Shell {
+            async fn inject_cancellable(
+                &self,
+                request_id: String,
+                _text: &str,
+                _chord: &str,
+                _restore: bool,
+                _delay: u32,
+            ) -> bool {
+                self.started.send(request_id).unwrap();
+                self.release.notified().await;
+                true
+            }
+            async fn inject_bound(
+                &self,
+                request_id: String,
+                token: &str,
+                text: &str,
+                chord: &str,
+                restore: bool,
+                delay: u32,
+            ) -> zbus::fdo::Result<bool> {
+                match token {
+                    "unsupported" => {
+                        return Err(zbus::fdo::Error::UnknownMethod("InjectBound".into()));
+                    }
+                    "stale" => return Err(zbus::fdo::Error::Failed("stale context".into())),
+                    "handoff-token" => {}
+                    _ => panic!("wrong context token"),
+                }
+                Ok(self
+                    .inject_cancellable(request_id, text, chord, restore, delay)
+                    .await)
+            }
+            fn cancel_inject(&self, request_id: String) {
+                self.cancelled.send(request_id).unwrap();
+                self.release.notify_one();
+            }
+        }
+        let mut process = Command::new("dbus-daemon")
+            .args(["--session", "--nofork", "--print-address=1"])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .unwrap();
+        let mut address = String::new();
+        BufReader::new(process.stdout.take().unwrap())
+            .read_line(&mut address)
+            .unwrap();
+        let _bus = Bus(process);
+        let (started, mut starts) = mpsc::unbounded_channel();
+        let (cancelled, mut cancels) = mpsc::unbounded_channel();
+        let release = Arc::new(Notify::new());
+        let _server = zbus::connection::Builder::address(address.trim())
+            .name("org.localwispr.Shell")
+            .serve_at(
+                "/org/localwispr/Shell",
+                Shell {
+                    started,
+                    cancelled,
+                    release: release.clone(),
+                },
+            )
+            .build()
+            .await
+            .unwrap();
+        let client = zbus::connection::Builder::address(address.trim())
+            .build()
+            .await
+            .unwrap();
+        let shell = ShellProxy::new(&client).await.unwrap();
+        let task =
+            tokio::spawn(
+                async move { shell_inject(&shell, "cancel me", &Output::default()).await },
+            );
+        let id = tokio::time::timeout(Duration::from_secs(2), starts.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        task.abort();
+        assert!(task.await.unwrap_err().is_cancelled());
+        let revoked = tokio::time::timeout(Duration::from_secs(2), cancels.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(id, revoked);
+
+        let shell = ShellProxy::new(&client).await.unwrap();
+        let next =
+            tokio::spawn(async move { shell_inject(&shell, "keep me", &Output::default()).await });
+        let next_id = tokio::time::timeout(Duration::from_secs(2), starts.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_ne!(id, next_id);
+        release.notify_one();
+        assert!(next.await.unwrap().unwrap());
+        tokio::task::yield_now().await;
+        assert!(cancels.try_recv().is_err());
+
+        let shell = ShellProxy::new(&client).await.unwrap();
+        let error =
+            shell_inject_with_handoff(&shell, Some("unsupported"), "adapted", &Output::default())
+                .await
+                .unwrap_err();
+        assert!(unknown_method(&error));
+        assert!(
+            starts.try_recv().is_err(),
+            "bound insertion must never retry through an unbound method"
+        );
+
+        let bound = tokio::spawn(async move {
+            shell_inject_with_handoff(&shell, Some("handoff-token"), "bound", &Output::default())
+                .await
+        });
+        let bound_id = tokio::time::timeout(Duration::from_secs(2), starts.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        bound.abort();
+        assert!(bound.await.unwrap_err().is_cancelled());
+        assert_eq!(
+            tokio::time::timeout(Duration::from_secs(2), cancels.recv())
+                .await
+                .unwrap()
+                .unwrap(),
+            bound_id
+        );
+
+        let shell = ShellProxy::new(&client).await.unwrap();
+        let completed = tokio::spawn(async move {
+            shell_inject_with_handoff(&shell, Some("handoff-token"), "bound", &Output::default())
+                .await
+        });
+        let completed_id = tokio::time::timeout(Duration::from_secs(2), starts.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_ne!(bound_id, completed_id);
+        release.notify_one();
+        assert!(completed.await.unwrap().unwrap());
+        assert!(cancels.try_recv().is_err());
+
+        let shell = ShellProxy::new(&client).await.unwrap();
+        assert!(
+            shell_inject_with_handoff(&shell, Some("stale"), "adapted", &Output::default())
+                .await
+                .is_err()
+        );
+        assert!(
+            starts.try_recv().is_err(),
+            "stale context must never retry through an unbound method"
+        );
+        // The best-effort revocation on an errored call is request-scoped too.
+        let stale_id = tokio::time::timeout(Duration::from_secs(2), cancels.recv())
+            .await
+            .unwrap()
+            .unwrap();
+        assert_ne!(stale_id, completed_id);
+    }
 
     fn owned(taken: bool) -> Option<Owned> {
         Some(Arc::new(AtomicBool::new(taken)))
@@ -550,8 +938,23 @@ mod tests {
                 .contains("time limit")
         );
         assert!(start.elapsed() < Duration::from_secs(1));
-        // The caller still holds the source, but the expired read FD is gone.
-        assert!(writer.write_all(b"more").is_err());
+        // Parallel tests may fork dbus-daemon while this socket exists. Its
+        // pre-exec child can briefly inherit the descriptor until CLOEXEC.
+        // Verify eventual peer closure without a scheduler-dependent instant.
+        writer.set_nonblocking(true).unwrap();
+        let closure_deadline = Instant::now() + Duration::from_secs(1);
+        loop {
+            match writer.write_all(b"more") {
+                Err(error) if error.kind() != std::io::ErrorKind::WouldBlock => break,
+                _ => {
+                    assert!(
+                        Instant::now() < closure_deadline,
+                        "expired reader remained open"
+                    );
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+            }
+        }
     }
 
     #[test]

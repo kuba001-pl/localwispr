@@ -1,0 +1,240 @@
+{
+  "metrics": {
+    "off": {
+      "words": 1150,
+      "errors": 51,
+      "clips": 73,
+      "wer": 0.04434782608695652
+    },
+    "distractor": {
+      "words": 1150,
+      "errors": 54,
+      "clips": 73,
+      "wer": 0.04695652173913043
+    }
+  },
+  "paired": {
+    "equal_errors": 66,
+    "regressed": 5,
+    "improved": 2
+  },
+  "changes": [
+    {
+      "id": "1272-128104-0002",
+      "reference": "HE TELLS US THAT AT THIS FESTIVE SEASON OF THE YEAR WITH CHRISTMAS AND ROAST BEEF LOOMING BEFORE US SIMILES DRAWN FROM EATING AND ITS RESULTS OCCUR MOST READILY TO THE MIND",
+      "off": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+      "distractor": "He tells us that at this festive season of the year with Christmas and roast beef looming before us similes drawn from eating and its results occur most readily to the mind",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-128104-0004",
+      "reference": "LINNELL'S PICTURES ARE A SORT OF UP GUARDS AND AT EM PAINTINGS AND MASON'S EXQUISITE IDYLLS ARE AS NATIONAL AS A JINGO POEM MISTER BIRKET FOSTER'S LANDSCAPES SMILE AT ONE MUCH IN THE SAME WAY THAT MISTER CARKER USED TO FLASH HIS TEETH AND MISTER JOHN COLLIER GIVES HIS SITTER A CHEERFUL SLAP ON THE BACK BEFORE HE SAYS LIKE A SHAMPOOER IN A TURKISH BATH NEXT MAN",
+      "off": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Birkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth. And Mr. John Collier gives his sitter a cheerful slap on the back before he says, like a shampooer in a Turkish bath, Next man!",
+      "distractor": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Burkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth and Mr. John Collier gives his sitter a cheerful slap on the back before he says like a shampooer in a Turkish bath, next man.",
+      "off_errors": 7,
+      "distractor_errors": 7
+    },
+    {
+      "id": "1272-128104-0007",
+      "reference": "PAINTING HE TELLS US IS OF A DIFFERENT QUALITY TO MATHEMATICS AND FINISH IN ART IS ADDING MORE FACT",
+      "off": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+      "distractor": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-128104-0009",
+      "reference": "HE LAMENTS MOST BITTERLY THE DIVORCE THAT HAS BEEN MADE BETWEEN DECORATIVE ART AND WHAT WE USUALLY CALL PICTURES MAKES THE CUSTOMARY APPEAL TO THE LAST JUDGMENT AND REMINDS US THAT IN THE GREAT DAYS OF ART MICHAEL ANGELO WAS THE FURNISHING UPHOLSTERER",
+      "off": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+      "distractor": "He laments most bitterly the divorce that has been made between decorative art and what we usually call pictures, makes a customary appeal to the last judgment and reminds us that in the great days of art Michelangelo was the furnishing upholsterer.",
+      "off_errors": 3,
+      "distractor_errors": 3
+    },
+    {
+      "id": "1272-128104-0011",
+      "reference": "IN FACT HE IS QUITE SEVERE ON MISTER RUSKIN FOR NOT RECOGNISING THAT A PICTURE SHOULD DENOTE THE FRAILTY OF MAN AND REMARKS WITH PLEASING COURTESY AND FELICITOUS GRACE THAT MANY PHASES OF FEELING",
+      "off": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+      "distractor": "In fact, he is quite severe on Mr. Ruskin for not recognizing that a picture should denote the frailty of man, and remarks with pleasing courtesy in Felicitas Grace that many phases of feeling",
+      "off_errors": 2,
+      "distractor_errors": 4
+    },
+    {
+      "id": "1272-135031-0001",
+      "reference": "HE HAS GONE AND GONE FOR GOOD ANSWERED POLYCHROME WHO HAD MANAGED TO SQUEEZE INTO THE ROOM BESIDE THE DRAGON AND HAD WITNESSED THE OCCURRENCES WITH MUCH INTEREST",
+      "off": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+      "distractor": "He has gone, and gone for good, answered Polychrome, who had managed to squeeze into the room beside the dragon, and had witnessed the occurrences with much interest.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-135031-0002",
+      "reference": "I HAVE REMAINED A PRISONER ONLY BECAUSE I WISHED TO BE ONE AND WITH THIS HE STEPPED FORWARD AND BURST THE STOUT CHAINS AS EASILY AS IF THEY HAD BEEN THREADS",
+      "off": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+      "distractor": "I have remained a prisoner only because I wish to be one. And with this he stepped forward and burst the stout chains as easily as if they had been threads.",
+      "off_errors": 0,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-135031-0009",
+      "reference": "HE DOESN'T WORK AT ALL",
+      "off": "He doesn't work at all.",
+      "distractor": "He doesn't work at all",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-135031-0010",
+      "reference": "IN FACT THERE IS NOTHING HE CAN DO IN THESE DOMINIONS AS WELL AS OUR NOMES WHOSE NUMBERS ARE SO GREAT THAT IT WORRIES US TO KEEP THEM ALL BUSY",
+      "off": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+      "distractor": "In fact, there is nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+      "off_errors": 3,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-135031-0011",
+      "reference": "NOT EXACTLY RETURNED KALIKO",
+      "off": "Not exactly, returned Calico.",
+      "distractor": "Not exactly, returned Calico",
+      "off_errors": 1,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-135031-0013",
+      "reference": "INQUIRED SHAGGY IN THE METAL FOREST",
+      "off": "Inquired Shaggy in the metal forest.",
+      "distractor": "Inquired Shaggy, In the Metal Forest",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-135031-0015",
+      "reference": "THE METAL FOREST IS IN THE GREAT DOMED CAVERN THE LARGEST IN ALL OUR DOMINIONS REPLIED KALIKO",
+      "off": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+      "distractor": "The metal forest is in the great domed cavern, the largest in all our dominions, replied Calico.",
+      "off_errors": 1,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-135031-0016",
+      "reference": "KALIKO HESITATED",
+      "off": "Calico hesitated.",
+      "distractor": "Calico hesitated",
+      "off_errors": 1,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-135031-0021",
+      "reference": "I DO NOT KNOW CONFESSED SHAGGY",
+      "off": "I do not know, confessed Shaggy.",
+      "distractor": "I do not know, confessed Shaggy",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0002",
+      "reference": "THE CUT ON HIS CHEST STILL DRIPPING BLOOD THE ACHE OF HIS OVERSTRAINED EYES EVEN THE SOARING ARENA AROUND HIM WITH THE THOUSANDS OF SPECTATORS WERE TRIVIALITIES NOT WORTH THINKING ABOUT",
+      "off": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+      "distractor": "the cut on his chest still dripping blood, the ache of his overstrained eyes, even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0003",
+      "reference": "HIS INSTANT OF PANIC WAS FOLLOWED BY A SMALL SHARP BLOW HIGH ON HIS CHEST",
+      "off": "His instant panic was followed by a small sharp blow high on his chest.",
+      "distractor": "His instant panic was followed by a small sharp blow high on his chest",
+      "off_errors": 1,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-141231-0004",
+      "reference": "ONE MINUTE A VOICE SAID AND THE TIME BUZZER SOUNDED",
+      "off": "One minute, a voice said, and the time buzzer sounded.",
+      "distractor": "One minute, a voice said, and a time buzzer sounded.",
+      "off_errors": 0,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-141231-0006",
+      "reference": "THE BUZZER'S WHIRR TRIGGERED HIS MUSCLES INTO COMPLETE RELAXATION",
+      "off": "The buzzer of swirr triggered his muscles into complete relaxation.",
+      "distractor": "The buzzer or swir triggered his muscles into complete relaxation.",
+      "off_errors": 3,
+      "distractor_errors": 3
+    },
+    {
+      "id": "1272-141231-0010",
+      "reference": "PARTICULARLY SO ON THIS LAST NIGHT WHEN ONLY TWO OF THE LITTLE CUBICLES WERE OCCUPIED THE THOUSANDS OF OTHERS STANDING WITH DARK EMPTY DOORS",
+      "off": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+      "distractor": "Particularly so on this last night when only two of the little cubicles were occupied, the thousands of others standing with dark empty doors.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0012",
+      "reference": "I'M HERE BECAUSE THE MATTER IS OF UTMOST IMPORTANCE AND BRANDD IS THE ONE I MUST SEE NOW STAND ASIDE",
+      "off": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+      "distractor": "I'm here because the matter is of utmost importance, and Brand is the one I must see. Now stand aside!",
+      "off_errors": 1,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-141231-0013",
+      "reference": "THE TWENTIES",
+      "off": "the twenties",
+      "distractor": "to Twenties,",
+      "off_errors": 0,
+      "distractor_errors": 1
+    },
+    {
+      "id": "1272-141231-0014",
+      "reference": "HE MUST HAVE DRAWN HIS GUN BECAUSE THE INTRUDER SAID QUICKLY PUT THAT AWAY YOU'RE BEING A FOOL OUT",
+      "off": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+      "distractor": "He must have drawn his gun, because the intruder said quickly, Put that away, you're being a fool. Out.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0016",
+      "reference": "TEN SECONDS",
+      "off": "10 seconds.",
+      "distractor": "Ten seconds",
+      "off_errors": 1,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0023",
+      "reference": "THE STRENGTH THAT ENABLES SOMEONE IN A TRANCE TO HOLD HIS BODY STIFF AND UNSUPPORTED EXCEPT AT TWO POINTS THE HEAD AND HEELS",
+      "off": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+      "distractor": "The strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0025",
+      "reference": "OTHERS HAD DIED BEFORE DURING THE TWENTIES AND DEATH DURING THE LAST ROUND WAS IN SOME WAYS EASIER THAN DEFEAT",
+      "off": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+      "distractor": "Others had died before during the twenties, and death during the last round was in some ways easier than defeat.",
+      "off_errors": 0,
+      "distractor_errors": 0
+    },
+    {
+      "id": "1272-141231-0028",
+      "reference": "IROLG LOOKED AMAZED AT THE SUDDEN FURY OF THE ATTACK THEN SMILED",
+      "off": "I rolled and looked amazed at the sudden fury of the attack, then smiled.",
+      "distractor": "I rolled and clicked amazed at the sudden fury of the attack, then smiled.",
+      "off_errors": 3,
+      "distractor_errors": 4
+    },
+    {
+      "id": "1272-141231-0032",
+      "reference": "THEN THE POWERFUL TWIST THAT THRUST IT ASIDE IN AND UNDER THE GUARD",
+      "off": "then the powerful twist that thrust it aside in and under the guard",
+      "distractor": "Then the powerful twist that thrust it aside, in and under the guard,",
+      "off_errors": 0,
+      "distractor_errors": 0
+    }
+  ],
+  "limitation": "73 clean read-English clips from one speaker; no general population accuracy claim"
+}

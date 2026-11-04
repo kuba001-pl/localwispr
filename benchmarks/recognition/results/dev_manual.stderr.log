@@ -1,0 +1,246 @@
+whisper_init_from_file_with_params_no_state: loading model from '/home/kuba001/.local/share/localwispr/models/ggml-large-v3-turbo.bin'
+whisper_init_with_params_no_state: use gpu    = 1
+whisper_init_with_params_no_state: flash attn = 1
+whisper_init_with_params_no_state: gpu_device = 0
+whisper_init_with_params_no_state: dtw        = 0
+ggml_cuda_init: found 1 CUDA devices:
+  Device 0: NVIDIA GeForce RTX 3080, compute capability 8.6, VMM: yes
+whisper_init_with_params_no_state: devices    = 2
+whisper_init_with_params_no_state: backends   = 2
+whisper_model_load: loading model
+whisper_model_load: n_vocab       = 51866
+whisper_model_load: n_audio_ctx   = 1500
+whisper_model_load: n_audio_state = 1280
+whisper_model_load: n_audio_head  = 20
+whisper_model_load: n_audio_layer = 32
+whisper_model_load: n_text_ctx    = 448
+whisper_model_load: n_text_state  = 1280
+whisper_model_load: n_text_head   = 20
+whisper_model_load: n_text_layer  = 4
+whisper_model_load: n_mels        = 128
+whisper_model_load: ftype         = 1
+whisper_model_load: qntvr         = 0
+whisper_model_load: type          = 5 (large v3)
+whisper_model_load: adding 1609 extra tokens
+whisper_model_load: n_langs       = 100
+whisper_model_load:        CUDA0 total size =  1623.92 MB
+whisper_model_load: model size    = 1623.92 MB
+whisper_backend_init_gpu: device 0: CUDA0 (type: 1)
+whisper_backend_init_gpu: found GPU device 0: CUDA0 (type: 1, cnt: 0)
+whisper_backend_init_gpu: using CUDA0 backend
+whisper_init_state: kv self size  =   10.49 MB
+whisper_init_state: kv cross size =   31.46 MB
+whisper_init_state: kv pad  size  =    7.86 MB
+whisper_init_state: compute buffer (conv)   =   37.69 MB
+whisper_init_state: compute buffer (encode) =   55.35 MB
+whisper_init_state: compute buffer (cross)  =    9.27 MB
+whisper_init_state: compute buffer (decode) =  100.04 MB
+whisper_vad_init_from_file_with_params: loading VAD model from '/home/kuba001/.local/share/localwispr/models/ggml-silero-v6.2.0.bin'
+whisper_vad_init_with_params: model type: silero-16k
+whisper_vad_init_with_params: model version: 6.2.0
+whisper_vad_init_with_params: n_encoder_layers = 4
+whisper_vad_init_with_params: encoder_in_channels[0] = 129
+whisper_vad_init_with_params: encoder_in_channels[1] = 128
+whisper_vad_init_with_params: encoder_in_channels[2] = 64
+whisper_vad_init_with_params: encoder_in_channels[3] = 64
+whisper_vad_init_with_params: encoder_out_channels[0] = 128
+whisper_vad_init_with_params: encoder_out_channels[1] = 64
+whisper_vad_init_with_params: encoder_out_channels[2] = 64
+whisper_vad_init_with_params: encoder_out_channels[3] = 128
+whisper_vad_init_with_params: lstm_input_size = 128
+whisper_vad_init_with_params: lstm_hidden_size = 128
+whisper_vad_init_with_params: final_conv_in = 128
+whisper_vad_init_with_params: final_conv_out = 1
+whisper_vad_init_with_params:          CPU total size =     0.88 MB
+whisper_vad_init_with_params: model size    =    0.88 MB
+whisper_backend_init_gpu: no GPU found
+whisper_vad_init_context: compute buffer (VAD)   =    1.60 MB
+whisper_vad_segments_from_samples: detecting speech timestamps in 75893 samples
+whisper_vad_detect_speech: detecting speech in 75893 samples
+whisper_vad_detect_speech: n_chunks: 149
+whisper_vad_detect_speech: props size: 149
+whisper_vad_detect_speech: chunk_len: 117 < n_window: 512
+whisper_vad_detect_speech: vad time = 16.22 ms processing 75893 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 149 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.77 (duration: 4.77)
+whisper_vad_segments_from_samples: detecting speech timestamps in 75893 samples
+whisper_vad_detect_speech: detecting speech in 75893 samples
+whisper_vad_detect_speech: n_chunks: 149
+whisper_vad_detect_speech: props size: 149
+whisper_vad_detect_speech: chunk_len: 117 < n_window: 512
+whisper_vad_detect_speech: vad time = 32.04 ms processing 75893 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 149 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.77 (duration: 4.77)
+whisper_vad_segments_from_samples: detecting speech timestamps in 75893 samples
+whisper_vad_detect_speech: detecting speech in 75893 samples
+whisper_vad_detect_speech: n_chunks: 149
+whisper_vad_detect_speech: props size: 149
+whisper_vad_detect_speech: chunk_len: 117 < n_window: 512
+whisper_vad_detect_speech: vad time = 49.15 ms processing 75893 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 149 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.77 (duration: 4.77)
+whisper_vad_segments_from_samples: detecting speech timestamps in 85501 samples
+whisper_vad_detect_speech: detecting speech in 85501 samples
+whisper_vad_detect_speech: n_chunks: 167
+whisper_vad_detect_speech: props size: 167
+whisper_vad_detect_speech: chunk_len: 509 < n_window: 512
+whisper_vad_detect_speech: vad time = 67.49 ms processing 85501 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 167 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 5.34 (duration: 5.34)
+whisper_vad_segments_from_samples: detecting speech timestamps in 85501 samples
+whisper_vad_detect_speech: detecting speech in 85501 samples
+whisper_vad_detect_speech: n_chunks: 167
+whisper_vad_detect_speech: props size: 167
+whisper_vad_detect_speech: chunk_len: 509 < n_window: 512
+whisper_vad_detect_speech: vad time = 85.84 ms processing 85501 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 167 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 5.34 (duration: 5.34)
+whisper_vad_segments_from_samples: detecting speech timestamps in 85501 samples
+whisper_vad_detect_speech: detecting speech in 85501 samples
+whisper_vad_detect_speech: n_chunks: 167
+whisper_vad_detect_speech: props size: 167
+whisper_vad_detect_speech: chunk_len: 509 < n_window: 512
+whisper_vad_detect_speech: vad time = 103.33 ms processing 85501 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 167 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 5.34 (duration: 5.34)
+whisper_vad_segments_from_samples: detecting speech timestamps in 75253 samples
+whisper_vad_detect_speech: detecting speech in 75253 samples
+whisper_vad_detect_speech: n_chunks: 147
+whisper_vad_detect_speech: props size: 147
+whisper_vad_detect_speech: chunk_len: 501 < n_window: 512
+whisper_vad_detect_speech: vad time = 118.91 ms processing 75253 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 147 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.70 (duration: 4.70)
+whisper_vad_segments_from_samples: detecting speech timestamps in 75253 samples
+whisper_vad_detect_speech: detecting speech in 75253 samples
+whisper_vad_detect_speech: n_chunks: 147
+whisper_vad_detect_speech: props size: 147
+whisper_vad_detect_speech: chunk_len: 501 < n_window: 512
+whisper_vad_detect_speech: vad time = 139.27 ms processing 75253 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 147 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.70 (duration: 4.70)
+whisper_vad_segments_from_samples: detecting speech timestamps in 75253 samples
+whisper_vad_detect_speech: detecting speech in 75253 samples
+whisper_vad_detect_speech: n_chunks: 147
+whisper_vad_detect_speech: props size: 147
+whisper_vad_detect_speech: chunk_len: 501 < n_window: 512
+whisper_vad_detect_speech: vad time = 160.21 ms processing 75253 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 147 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.70 (duration: 4.70)
+whisper_vad_segments_from_samples: detecting speech timestamps in 65325 samples
+whisper_vad_detect_speech: detecting speech in 65325 samples
+whisper_vad_detect_speech: n_chunks: 128
+whisper_vad_detect_speech: props size: 128
+whisper_vad_detect_speech: chunk_len: 301 < n_window: 512
+whisper_vad_detect_speech: vad time = 173.45 ms processing 65325 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 128 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.10 (duration: 4.10)
+whisper_vad_segments_from_samples: detecting speech timestamps in 65325 samples
+whisper_vad_detect_speech: detecting speech in 65325 samples
+whisper_vad_detect_speech: n_chunks: 128
+whisper_vad_detect_speech: props size: 128
+whisper_vad_detect_speech: chunk_len: 301 < n_window: 512
+whisper_vad_detect_speech: vad time = 188.36 ms processing 65325 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 128 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.10 (duration: 4.10)
+whisper_vad_segments_from_samples: detecting speech timestamps in 65325 samples
+whisper_vad_detect_speech: detecting speech in 65325 samples
+whisper_vad_detect_speech: n_chunks: 128
+whisper_vad_detect_speech: props size: 128
+whisper_vad_detect_speech: chunk_len: 301 < n_window: 512
+whisper_vad_detect_speech: vad time = 202.42 ms processing 65325 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 128 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.10 (duration: 4.10)
+whisper_vad_segments_from_samples: detecting speech timestamps in 64708 samples
+whisper_vad_detect_speech: detecting speech in 64708 samples
+whisper_vad_detect_speech: n_chunks: 127
+whisper_vad_detect_speech: props size: 127
+whisper_vad_detect_speech: chunk_len: 196 < n_window: 512
+whisper_vad_detect_speech: vad time = 216.05 ms processing 64708 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 127 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.06 (duration: 4.06)
+whisper_vad_segments_from_samples: detecting speech timestamps in 64708 samples
+whisper_vad_detect_speech: detecting speech in 64708 samples
+whisper_vad_detect_speech: n_chunks: 127
+whisper_vad_detect_speech: props size: 127
+whisper_vad_detect_speech: chunk_len: 196 < n_window: 512
+whisper_vad_detect_speech: vad time = 231.25 ms processing 64708 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 127 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.06 (duration: 4.06)
+whisper_vad_segments_from_samples: detecting speech timestamps in 64708 samples
+whisper_vad_detect_speech: detecting speech in 64708 samples
+whisper_vad_detect_speech: n_chunks: 127
+whisper_vad_detect_speech: props size: 127
+whisper_vad_detect_speech: chunk_len: 196 < n_window: 512
+whisper_vad_detect_speech: vad time = 246.23 ms processing 64708 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 127 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.06 (duration: 4.06)
+whisper_vad_segments_from_samples: detecting speech timestamps in 48994 samples
+whisper_vad_detect_speech: detecting speech in 48994 samples
+whisper_vad_detect_speech: n_chunks: 96
+whisper_vad_detect_speech: props size: 96
+whisper_vad_detect_speech: chunk_len: 354 < n_window: 512
+whisper_vad_detect_speech: vad time = 258.45 ms processing 48994 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 96 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 3.07 (duration: 3.07)
+whisper_vad_segments_from_samples: detecting speech timestamps in 48994 samples
+whisper_vad_detect_speech: detecting speech in 48994 samples
+whisper_vad_detect_speech: n_chunks: 96
+whisper_vad_detect_speech: props size: 96
+whisper_vad_detect_speech: chunk_len: 354 < n_window: 512
+whisper_vad_detect_speech: vad time = 269.43 ms processing 48994 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 96 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 3.07 (duration: 3.07)
+whisper_vad_segments_from_samples: detecting speech timestamps in 48994 samples
+whisper_vad_detect_speech: detecting speech in 48994 samples
+whisper_vad_detect_speech: n_chunks: 96
+whisper_vad_detect_speech: props size: 96
+whisper_vad_detect_speech: chunk_len: 354 < n_window: 512
+whisper_vad_detect_speech: vad time = 280.12 ms processing 48994 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 96 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 3.07 (duration: 3.07)
+whisper_vad_segments_from_samples: detecting speech timestamps in 79700 samples
+whisper_vad_detect_speech: detecting speech in 79700 samples
+whisper_vad_detect_speech: n_chunks: 156
+whisper_vad_detect_speech: props size: 156
+whisper_vad_detect_speech: chunk_len: 340 < n_window: 512
+whisper_vad_detect_speech: vad time = 295.88 ms processing 79700 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 156 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.99 (duration: 4.99)
+whisper_vad_segments_from_samples: detecting speech timestamps in 79700 samples
+whisper_vad_detect_speech: detecting speech in 79700 samples
+whisper_vad_detect_speech: n_chunks: 156
+whisper_vad_detect_speech: props size: 156
+whisper_vad_detect_speech: chunk_len: 340 < n_window: 512
+whisper_vad_detect_speech: vad time = 311.90 ms processing 79700 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 156 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.99 (duration: 4.99)
+whisper_vad_segments_from_samples: detecting speech timestamps in 79700 samples
+whisper_vad_detect_speech: detecting speech in 79700 samples
+whisper_vad_detect_speech: n_chunks: 156
+whisper_vad_detect_speech: props size: 156
+whisper_vad_detect_speech: chunk_len: 340 < n_window: 512
+whisper_vad_detect_speech: vad time = 327.72 ms processing 79700 samples
+whisper_vad_segments_from_probs: detecting speech timestamps using 156 probabilities
+whisper_vad_segments_from_probs: Final speech segments after filtering: 1
+whisper_vad_segments_from_probs: VAD segment 0: start = 0.00, end = 4.99 (duration: 4.99)

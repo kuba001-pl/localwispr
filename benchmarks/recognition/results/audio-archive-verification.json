@@ -1,0 +1,5 @@
+{
+  "fixtures": 278,
+  "matching": 278,
+  "method": "Lossless canonical archive extracted into a fresh temporary directory; all original float32 audio SHA256 hashes match."
+}

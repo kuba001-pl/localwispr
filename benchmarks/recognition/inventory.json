@@ -1,0 +1,9 @@
+{
+  "frozen_at_utc": "2026-11-03T07:25:40.848730+00:00",
+  "synthetic": true,
+  "gpu": "NVIDIA GeForce RTX 3080, 615.78.08",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+  "model_dir": "/home/kuba001/.local/share/localwispr/models",
+  "prior_harness": "/tmp/localwispr-independent-verification-recognition",
+  "source": "frozen working tree, not HEAD; no production modifications by benchmark agent"
+}

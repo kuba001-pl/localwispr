@@ -1,0 +1,17 @@
+{
+  "shortlist4": {
+    "errors": 52,
+    "words": 1150,
+    "clips": 73
+  },
+  "explicit_vocabulary": {
+    "errors": 54,
+    "words": 1150,
+    "clips": 73
+  },
+  "no_context": {
+    "errors": 51,
+    "words": 1150,
+    "clips": 73
+  }
+}

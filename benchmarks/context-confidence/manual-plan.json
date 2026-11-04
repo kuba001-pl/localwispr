@@ -1,0 +1,7 @@
+{
+  "created": "2026-11-03T08:01:11.858932+00:00",
+  "policy": "only when original configured prompt token length exceeds native available budget after multilingual reservation: collapse exact adjacent case-sensitive whitespace token phrase repeats >=4 repetitions, widths1..32, left to right shortest width first; retain first copy, surrounding exact text and unique suffix; no collapse_word, spelling/case/punctuation normalization; then original suffix token-budget rule",
+  "scope": "dev7 original long_manual fixtures all3 conditions; original frozen recognizer identical in both, only prompt normalization differs",
+  "selection": "useful only dev no sentence WER regressions, improves total errors, no target recall loss; freeze same policy then once-only heldout long hints if qualifies; no threshold tuning",
+  "references": "scoring only"
+}

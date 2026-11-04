@@ -1,0 +1,39 @@
+CHECK "Do not delete the logs, and do not delete the backups, actually do not delete the cache either" -> "Do not delete the cache either.": current=Err(Meaning), HEAD=Err(LengthDrift { raw_words: 18, out_words: 6 })
+CHECK "I I think we should send the report" -> "I think we should send the report.": current=Ok(()), HEAD=Ok(())
+CHECK "Please send send the report tomorrow" -> "Please send the report tomorrow.": current=Ok(()), HEAD=Ok(())
+CHECK "We need to we need to update the server" -> "We need to update the server.": current=Ok(()), HEAD=Ok(())
+CHECK "jutro jutro wyślę raport klientowi" -> "Jutro wyślę raport klientowi.": current=Ok(()), HEAD=Ok(())
+CHECK "Send ten files to Alice tomorrow" -> "Send 10 files to Alice tomorrow.": current=Err(NewWords { novel: 1, allowed: 0 }), HEAD=Ok(())
+CHECK "Send one hundred and ten files tomorrow" -> "Send 110 files tomorrow.": current=Err(NewWords { novel: 1, allowed: 0 }), HEAD=Ok(())
+CHECK "Ship thirty one packages today" -> "Ship 31 packages today.": current=Ok(()), HEAD=Ok(())
+CHECK "Ship thirty first packages today" -> "Ship 31 packages today.": current=Ok(()), HEAD=Ok(())
+CHECK "He finished in twenty first place" -> "He finished in 21st place.": current=Err(NewWords { novel: 1, allowed: 0 }), HEAD=Ok(())
+CHECK "Send the first and second files" -> "Send the 1st and 2nd files.": current=Err(NewWords { novel: 2, allowed: 0 }), HEAD=Err(NewWords { novel: 2, allowed: 1 })
+CHECK "I have one, two hundred boxes" -> "I have 300 boxes.": current=Err(NewWords { novel: 1, allowed: 0 }), HEAD=Ok(())
+CHECK "The code is one zero five" -> "The code is 105.": current=Err(NewWords { novel: 1, allowed: 0 }), HEAD=Ok(())
+CHECK "Jutro wyślę raport do klienta" -> "Jutro wyślą raport do klienta.": current=Ok(()), HEAD=Ok(())
+CHECK "Do not delete the logs, actually do not delete the cache either" -> "Do not delete the cache either.": current=Err(Meaning), HEAD=Ok(())
+CHECK "Please send the report and keep the backups, actually send the report tomorrow" -> "Send the report tomorrow.": current=Err(Meaning), HEAD=Err(LengthDrift { raw_words: 13, out_words: 4 })
+CHECK "Please delete only the temporary files, actually delete every file" -> "Delete every file.": current=Ok(()), HEAD=Err(LengthDrift { raw_words: 10, out_words: 3 })
+CHECK "I like, the address" -> "I, the address.": current=Err(Meaning), HEAD=Ok(())
+CHECK "Like, the address matters here" -> "The address matters here.": current=Ok(()), HEAD=Ok(())
+CHECK "No, jutro nie możemy tego zrobić" -> "Jutro nie możemy tego zrobić.": current=Ok(()), HEAD=Ok(())
+TEXT "Use [Music] as the field name.": stt="Use as the field name.", filler="Use [Music] as the field name."
+TEXT "The response is [Music].": stt="The response is", filler="The response is [Music]."
+TEXT "Thank you for watching!": stt="", filler="Thank you for watching!"
+TEXT "um, good morning": stt="um, good morning", filler="Good morning"
+TEXT "Hello, um, world.": stt="Hello, um, world.", filler="Hello, world."
+TEXT "Hello, um. Next.": stt="Hello, um. Next.", filler="Hello. Next."
+TEXT "uh um\n  hi there": stt="uh um\n  hi there", filler="\n  Hi there"
+TEXT "um 2 mm thick": stt="um 2 mm thick", filler="2 mm thick"
+TEXT "um iPhone works": stt="um iPhone works", filler="IPhone works"
+TEXT "Use x = um;": stt="Use x = um;", filler="Use x ="
+TEXT "Use 5 μm dimensions": stt="Use 5 μm dimensions", filler="Use 5 μm dimensions"
+TEXT "go go go go go right now.": stt="go go go go go right now.", filler="go go go go go right now."
+PROMPT "Please speak with Will": "speak"
+PROMPT "Please speak with Alice": "speak, Alice"
+PROMPT "We listen to The Who": "listen"
+PROMPT "Use C++ and .NET": "C++, .NET"
+FALLBACK "Please send send the report tomorrow": "Please send send the report tomorrow"
+FALLBACK "um iPhone works": "IPhone works"
+FALLBACK "Use x = um;": "Use x ="

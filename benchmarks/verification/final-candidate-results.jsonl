@@ -1,0 +1,6 @@
+{"case":{"id":2,"raw":"Dzisiaj naprawię deployment, potem check the logs i wracam do domu."},"result":{"accepted":false,"candidate":"Dzisiaj naprawię deployment, potem sprawdzę logs i wracam do domu.","guard":"Err(NewWords { novel: 1, allowed: 0 })"}}
+{"case":{"id":6,"raw":"No i musimy wysłać raport jutro."},"result":{"accepted":true,"candidate":"No i musimy wysłać raport jutro.","guard":"Ok(())"}}
+{"case":{"id":31,"raw":"dzisiaj naprawię deployment, potem check the logs i wracam do domu."},"result":{"accepted":true,"candidate":"Dzisiaj naprawię deployment, potem check the logs i wracam do domu.","guard":"Ok(())"}}
+{"case":{"id":33,"raw":"um \"hello\""},"result":{"accepted":false,"candidate":"hello","guard":"Err(Structure)"}}
+{"case":{"id":35,"raw":"Use [the um value] and (the uh value)."},"result":{"accepted":false,"candidate":"Use the value and the value.","guard":"Err(Structure)"}}
+{"case":{"id":36,"raw":"Need the er diagram"},"result":{"accepted":true,"candidate":"Need the ER diagram.","guard":"Ok(())"}}

@@ -1,0 +1,7 @@
+{
+  "frozen_at": "2026-11-03T08:02:26.585404+00:00",
+  "qualifies": true,
+  "policy_sha256": "f0756ad754ce066e80063465f8abdc2e7ce97f8f8530968c80a291a8fc2d6e36",
+  "dev_results_sha256": "a156b7f8e76d1d65f3bc8ec5655c1ec6a53d2e28e6458bf5058a1c4b3ebe9478",
+  "heldout": "once-only same exact rule on existing14 long-hint speech fixtures, all3 contexts; no retuning"
+}

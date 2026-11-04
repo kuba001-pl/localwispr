@@ -14,6 +14,10 @@ locally.
 - **Overlay:** a click-through capsule with a live waveform and the transcript
   as you speak — via layer-shell or a GNOME Shell extension
 - **Rust daemon** on whisper.cpp and llama.cpp; no Python, no Electron, no X11
+- **Context-aware recognition:** nearby accessible text supplies local Whisper
+  vocabulary hints for names, jargon, and technical terms
+- **Smarter insertion:** match boundary spacing, common sentence-starter casing,
+  and punctuation to the text around the cursor
 
 ## Desktop integration and testing
 
@@ -205,6 +209,102 @@ by the saved clipboard. To avoid this restore race, turn off **Settings →
 Output → Restore clipboard** (or set `restore_clipboard = false` under
 `[output]` in `config.toml`). The dictated text then remains on the clipboard.
 
+### Context-aware dictation
+
+Two independent switches in **Settings → Output** are enabled by default:
+
+- **Context-aware recognition** captures nearby text when recording starts and
+  supplies bounded vocabulary hints to Whisper, for live previews and the final
+  transcript. Whisper's tokenizer enforces the model's prompt budget, reserving
+  its bilingual hint and prioritizing nearby terms and your configured vocabulary
+  prompt over distant terms. Hints can help recognition; they do not guarantee a
+  particular spelling.
+- **Smarter text insertion** requests cursor context again before pasting. It adds
+  spaces between words, avoids extra spaces beside existing whitespace or closing
+  punctuation, and suppresses redundant final periods before sentence
+  continuations. Sentence starts capitalize lowercase words; common English and
+  Polish starters can become lowercase mid-sentence. Likely multiword names,
+  acronyms, and mixed-case identifiers keep their casing.
+
+These use shared desktop interfaces, with no application-name rules. On GNOME,
+the companion extension first requests the compositor's committed surrounding
+text through its input method; AT-SPI accessibility provides a second route for
+recognition and for insertion on other desktops. GNOME insertion uses an
+extension-issued token to keep the formatting snapshot bound to the focused
+field and selection through clipboard preparation. Only a small window around
+the focused editable field is returned. Requests exclude the
+validated selection and reject protected/password fields. Focus and selection
+are rechecked, and detected changes discard the snapshot; concurrent edits can
+still race because context inspection and clipboard paste are not atomic.
+On Wayland, the compositor can replay its most recently committed text when
+queried, so the response is not proof of a new application-level snapshot.
+Context stays in memory locally, is not saved to configuration or
+sent to the cleanup model, and expires with the dictation. Context reads have a
+short timeout and never use select/copy keystrokes or change global accessibility
+settings. Focus lookup uses the application's Collection interface when available,
+with a bounded tree walk as fallback, so it need not inspect every node in large
+documents. You can disable recognition hints with `[transcription]
+context_aware = false` and insertion adaptation with `[output] cursor_aware = false`.
+
+After dictating, `localwispr status` reports `recognition_context` and
+`insertion_context`, plus their `_source` fields. `available` means usable
+context, `empty-field` means the editor was readable but supplied no surrounding
+text, and fixed failure labels such as `no-active-window`, `no-focused-editor`,
+`terminal-field`, or `timeout` explain the fallback. These labels never include document contents.
+This avoids mistaking ordinary dictation for working cursor awareness.
+
+The compositor route requires the updated GNOME extension to be loaded; older
+extensions continue to paste normally. Recognition can still use AT-SPI, while
+GNOME cursor formatting falls back to plain insertion with `unbound-extension`
+status until the new handoff methods are loaded. Installing updated Shell
+extension code takes effect after a fresh login. Neither route can inspect an
+editor that exposes no surrounding-text or accessibility interface. Terminals,
+inaccessible browser/editor fields, ambiguous selections, and unavailable
+desktop services fall back to ordinary
+dictation. Inside words and recognizable URLs, paths, and email addresses,
+insertion preserves literal transcript text without adding separator spaces.
+Clipboard paste still follows application behavior; context inspection and paste
+are separate operations, so keep the intended field focused until insertion.
+The updated GNOME extension cancels pending paste when the daemon cancels that
+request or disappears, and rejects focus changes detected while preparing paste.
+Cancellation after the paste keys have been sent cannot undo inserted text;
+clipboard restoration still waits through the configured consumption delay so a
+queued paste does not receive the previous clipboard. Cancelling before any keys
+restores available backups and clears injected sources that have no backup,
+provided a newer user copy has not taken ownership.
+Older extensions still support ordinary dictation but lack remote cancellation;
+load the updated extension at the next login to enable that guarantee.
+
+Vocabulary extraction prioritizes names and identifiers over common prose.
+Cleanup preserves paragraph boundaries, indentation, code spans, recognized
+assignment syntax, and bracketed arguments. Its default guard checks names, numeric values,
+negation anchors, and content-word retention before accepting model rewrites.
+It can decline a useful spelling repair rather than accept an unsupported
+word substitution; explicit custom rewrite instructions keep their existing
+behavior. These checks do not establish arbitrary semantic equivalence.
+Formatting preserves code fences, inline code, and recognizable unfenced syntax. It adjusts the inserted
+fragment; it does not remove a period already in the destination to merge a
+previous dictation into the current sentence. Single-token selections inside a
+word preserve the word join. Without the selected text, replacing a word fragment
+and replacing selected separator spaces can be ambiguous; the formatter cannot
+always distinguish them. Recognition skips digital silence even when VAD is off,
+and repeated decoder sentences are collapsed without reflowing paragraphs/code.
+
+Reproducible quality checks live in `benchmarks/`: the frozen recognition corpus
+has 270 unique synthetic sentences, 42 company/product names, misleading-context
+and ordinary-word controls, and separate development/held-out sentence sets.
+A public 73-clip, one-speaker natural-speech negative-control set complements it.
+The reports retain regressions alongside gains; neither corpus establishes
+compatibility with every app or accuracy for every speaker.
+
+For a local smoke test, try a GTK text field with `We use Kubernetes and
+PostgreSQL.`, place the cursor in nearby prose, and dictate those terms. Then
+test inserting `the new API` between `We use ` and ` daily.`, replacing a selected
+phrase, dictating after a sentence-ending period, and inserting before a comma
+or closing bracket. Compare with each switch disabled. Desktop/app behavior
+requires real-session testing; automated fixtures do not establish compatibility
+with every editor.
+
 CLI:
 
 ```sh
@@ -313,6 +413,8 @@ this repository.
   Settings) are Apache-2.0.
 
 ## Development
+
+For the context-recognition and insertion changes, see the [verification report](benchmarks/verification/REPORT.md), including benchmark results, known limitations, and local acceptance steps.
 
 ```sh
 cargo test --workspace                       # unit tests (DSP, resampler, guard, hotkeys, config…)

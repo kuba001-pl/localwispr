@@ -1,0 +1,2286 @@
+[
+  {
+    "params": {
+      "kind": "off",
+      "t": 1.0
+    },
+    "word_errors": 49,
+    "words": 1169,
+    "wer": 0.041916167664670656,
+    "changed_clips": 0,
+    "extra_decodes": 0,
+    "latency_p50": 109,
+    "latency_p95": 177,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Birkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth. And Mr. John Collier gives his sitter a cheerful slap on the back before he says, like a shampooer in a Turkish bath, Next man!",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy in the metal forest.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and the time buzzer sounded.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer of swirr triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "the twenties",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "10 seconds.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and looked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "then the powerful twist that thrust it aside in and under the guard",
+        "word_errors": 0
+      }
+    ]
+  },
+  {
+    "params": {
+      "kind": "source",
+      "t": 1.0
+    },
+    "word_errors": 53,
+    "words": 1169,
+    "wer": 0.045337895637296836,
+    "changed_clips": 27,
+    "extra_decodes": 0,
+    "latency_p50": 114,
+    "latency_p95": 185,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year with Christmas and roast beef looming before us similes drawn from eating and its results occur most readily to the mind",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Burkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth and Mr. John Collier gives his sitter a cheerful slap on the back before he says like a shampooer in a Turkish bath, next man.",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "He laments most bitterly the divorce that has been made between decorative art and what we usually call pictures, makes a customary appeal to the last judgment and reminds us that in the great days of art Michelangelo was the furnishing upholsterer.",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "In fact, he is quite severe on Mr. Ruskin for not recognizing that a picture should denote the frailty of man, and remarks with pleasing courtesy in Felicitas Grace that many phases of feeling",
+        "word_errors": 4
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "He has gone, and gone for good, answered Polychrome, who had managed to squeeze into the room beside the dragon, and had witnessed the occurrences with much interest.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "I have remained a prisoner only because I wish to be one. And with this he stepped forward and burst the stout chains as easily as if they had been threads.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there is nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy, In the Metal Forest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "The metal forest is in the great domed cavern, the largest in all our dominions, replied Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood, the ache of his overstrained eyes, even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and a time buzzer sounded.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer or swir triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied, the thousands of others standing with dark empty doors.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "I'm here because the matter is of utmost importance, and Brand is the one I must see. Now stand aside!",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "to Twenties,",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away, you're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "Ten seconds",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "The strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was in some ways easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and clicked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 4
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "Then the powerful twist that thrust it aside, in and under the guard,",
+        "word_errors": 0
+      }
+    ]
+  },
+  {
+    "params": {
+      "kind": "conditional_geo",
+      "t": 0.8
+    },
+    "word_errors": 49,
+    "words": 1169,
+    "wer": 0.041916167664670656,
+    "changed_clips": 4,
+    "extra_decodes": 4,
+    "latency_p50": 115,
+    "latency_p95": 195,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Birkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth. And Mr. John Collier gives his sitter a cheerful slap on the back before he says, like a shampooer in a Turkish bath, Next man!",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy, In the Metal Forest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and the time buzzer sounded.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer or swir triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "to Twenties,",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "Ten seconds",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and looked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "then the powerful twist that thrust it aside in and under the guard",
+        "word_errors": 0
+      }
+    ]
+  },
+  {
+    "params": {
+      "kind": "conditional_min",
+      "t": 0.3
+    },
+    "word_errors": 50,
+    "words": 1169,
+    "wer": 0.0427715996578272,
+    "changed_clips": 3,
+    "extra_decodes": 3,
+    "latency_p50": 111,
+    "latency_p95": 208,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Burkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth and Mr. John Collier gives his sitter a cheerful slap on the back before he says like a shampooer in a Turkish bath, next man.",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy in the metal forest.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and the time buzzer sounded.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer or swir triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "the twenties",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "10 seconds.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and clicked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 4
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "then the powerful twist that thrust it aside in and under the guard",
+        "word_errors": 0
+      }
+    ]
+  },
+  {
+    "params": {
+      "kind": "whole",
+      "t": 0.95,
+      "metric": "min",
+      "vocab": true
+    },
+    "word_errors": 49,
+    "words": 1169,
+    "wer": 0.041916167664670656,
+    "changed_clips": 0,
+    "extra_decodes": 73,
+    "latency_p50": 223,
+    "latency_p95": 362,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Birkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth. And Mr. John Collier gives his sitter a cheerful slap on the back before he says, like a shampooer in a Turkish bath, Next man!",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy in the metal forest.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and the time buzzer sounded.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer of swirr triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "the twenties",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "10 seconds.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and looked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "then the powerful twist that thrust it aside in and under the guard",
+        "word_errors": 0
+      }
+    ]
+  },
+  {
+    "params": {
+      "kind": "merge",
+      "t": 0.95,
+      "metric": "min",
+      "vocab": true
+    },
+    "word_errors": 49,
+    "words": 1169,
+    "wer": 0.041916167664670656,
+    "changed_clips": 0,
+    "extra_decodes": 73,
+    "latency_p50": 223,
+    "latency_p95": 362,
+    "outputs": [
+      {
+        "id": "1272-128104-0000",
+        "hypothesis": "Mr. Quilter is the apostle of the middle classes and we are glad to welcome his gospel.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0001",
+        "hypothesis": "Nor is Mr. Quilter's manner less interesting than his matter.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0002",
+        "hypothesis": "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0003",
+        "hypothesis": "He has grave doubts whether Sir Frederick Layton's work is really Greek after all and can discover in it but little of rocky Ithaca.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0004",
+        "hypothesis": "Linnell's pictures are a sort of Up Guards and Adam paintings and Mason's exquisite idles are as national as a jingo poem. Mr. Birkett Foster's landscapes smile at one much in the same way that Mr. Carker used to flash his teeth. And Mr. John Collier gives his sitter a cheerful slap on the back before he says, like a shampooer in a Turkish bath, Next man!",
+        "word_errors": 7
+      },
+      {
+        "id": "1272-128104-0005",
+        "hypothesis": "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate an expression.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0006",
+        "hypothesis": "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0007",
+        "hypothesis": "Painting, he tells us, is of a different quality to mathematics and finish in art is adding more fact.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0008",
+        "hypothesis": "As for etchings, they are of two kinds, British and foreign.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0009",
+        "hypothesis": "he laments most bitterly the divorce that has been made between decorative art and what we usually call pictures makes a customary appeal to the last judgment and reminds us that in the great days of art michelangelo was the furnishing upholsterer",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-128104-0010",
+        "hypothesis": "near the fire and the ornaments Fred brought home from India on the mantel board.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0011",
+        "hypothesis": "in fact he is quite severe on mr ruskin for not recognizing that a picture should denote the frailty of man and remarks with pleasing courtesy and felicitous grace that many phases of feeling",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-128104-0012",
+        "hypothesis": "Only, unfortunately, his own work never does get good.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-128104-0013",
+        "hypothesis": "Mr. Quilter has missed his chance, for he has failed even to make himself the tupper of painting.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-128104-0014",
+        "hypothesis": "by Harry Quilter, M.A.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0000",
+        "hypothesis": "Because you were sleeping instead of conquering, the lovely Rose Princess has become a fiddle without a bow, while poor Shaggy sits there a cooing dove.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0001",
+        "hypothesis": "he has gone and gone for good answered polychrome who had managed to squeeze into the room beside the dragon and had witnessed the occurrences with much interest",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0002",
+        "hypothesis": "i have remained a prisoner only because i wished to be one and with this he stepped forward and burst the stout chains as easily as if they had been threads",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0003",
+        "hypothesis": "The little girl had been asleep, but she heard the raps and opened the door.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0004",
+        "hypothesis": "The king has fled a disgrace and your friends are asking for you.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0005",
+        "hypothesis": "I begged Ruggedo long ago to send him away but he would not do so.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0006",
+        "hypothesis": "I also offered to help your brother to escape, but he would not go.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0007",
+        "hypothesis": "He eats and sleeps very steadily, replied the new king.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0008",
+        "hypothesis": "I hope it doesn't work too hard said Shaggy",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0009",
+        "hypothesis": "He doesn't work at all.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0010",
+        "hypothesis": "In fact, there's nothing he can do in these dominions as well as our gnomes, whose numbers are so great that it worries us to keep them all busy.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0011",
+        "hypothesis": "Not exactly, returned Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0012",
+        "hypothesis": "Where is my brother now?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0013",
+        "hypothesis": "Inquired Shaggy in the metal forest.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0014",
+        "hypothesis": "Where is that?",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0015",
+        "hypothesis": "the metal forest is in the great domed cavern the largest in all our dominions replied calico",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0016",
+        "hypothesis": "Calico hesitated.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0017",
+        "hypothesis": "However, if we look sharp, we may be able to discover one of these secret ways.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0018",
+        "hypothesis": "Oh no, I'm quite sure he didn't.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0019",
+        "hypothesis": "That's funny, remarked Betsy thoughtfully.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0020",
+        "hypothesis": "I don't believe Anne knew any magic or she'd have worked it before.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0021",
+        "hypothesis": "I do not know, confessed Shaggy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-135031-0022",
+        "hypothesis": "True, agreed Calico.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-135031-0023",
+        "hypothesis": "Calico went to the big gong and pounded on it just as Virgato used to do, but no one answered the summons.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-135031-0024",
+        "hypothesis": "Having returned to the royal cavern, Calico first pounded the gong and then sat in the throne wearing Ruggedo's discarded ruby crown and holding in his hand the scepter which Ruggedo had so often thrown at his head.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0000",
+        "hypothesis": "A man said to the universe, Sir, I exist.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0001",
+        "hypothesis": "Sweat covered Brion's body, trickling into the tight loin cloth that was the only garment he wore.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0002",
+        "hypothesis": "the cut on his chest still dripping blood the ache of his overstrained eyes even the soaring arena around him with the thousands of spectators were trivialities not worth thinking about",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0003",
+        "hypothesis": "His instant panic was followed by a small sharp blow high on his chest.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0004",
+        "hypothesis": "One minute, a voice said, and the time buzzer sounded.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0005",
+        "hypothesis": "A minute is not a very large measure of time and his body needed every fraction of it.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0006",
+        "hypothesis": "The buzzer of swirr triggered his muscles into complete relaxation.",
+        "word_errors": 2
+      },
+      {
+        "id": "1272-141231-0007",
+        "hypothesis": "Only his heart and lungs worked on at a strong, measured rate.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0008",
+        "hypothesis": "He was in reverie, sliding along the borders of consciousness.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0009",
+        "hypothesis": "The contestants in the twenties needed undisturbed rest. Therefore, nights in the dormitories were as quiet as death.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0010",
+        "hypothesis": "Particularly so on this last night when only two of the little cubicles were occupied the thousands of others standing with dark empty doors",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0011",
+        "hypothesis": "The other voice snapped with a harsh urgency, clearly used to command.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0012",
+        "hypothesis": "i'm here because the matter is of utmost importance and brand is the one i must see now stand aside",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0013",
+        "hypothesis": "the twenties",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0014",
+        "hypothesis": "He must have drawn his gun, because the intruder said quickly, Put that away. You're being a fool. Out.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0015",
+        "hypothesis": "There was silence then, and, still wondering, Brienne was once more asleep.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0016",
+        "hypothesis": "10 seconds.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0017",
+        "hypothesis": "He asked the handler who was needing his aching muscles.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0018",
+        "hypothesis": "A red-haired mountain of a man with an apparently inexhaustible store of energy.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0019",
+        "hypothesis": "There could be little art in this last and final round of fencing.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0020",
+        "hypothesis": "Just thrust and parry and victory to the stronger.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0021",
+        "hypothesis": "Every man who entered the 20s had his own training tricks.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0022",
+        "hypothesis": "There appeared to be an immediate association with the death trauma as if the two were inextricably linked into one.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0023",
+        "hypothesis": "the strength that enables someone in a trance to hold his body stiff and unsupported except at two points, the head and heels.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0024",
+        "hypothesis": "This is physically impossible when conscious.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0025",
+        "hypothesis": "Others had died before during the twenties, and death during the last round was, in some ways, easier than defeat.",
+        "word_errors": 0
+      },
+      {
+        "id": "1272-141231-0026",
+        "hypothesis": "Breathing deeply, Breon softly spoke the auto-hypnotic phrases that triggered the process.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0027",
+        "hypothesis": "When the buzzer sounded, he pulled his foil from his second startled grasp and ran forward.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0028",
+        "hypothesis": "I rolled and looked amazed at the sudden fury of the attack, then smiled.",
+        "word_errors": 3
+      },
+      {
+        "id": "1272-141231-0029",
+        "hypothesis": "He thought it was the last burst of energy. He knew how close they both were to exhaustion.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0030",
+        "hypothesis": "Breon saw something close to panic on his opponent's face when the man finally recognized his error.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0031",
+        "hypothesis": "A wave of despair rolled out from Irolg. Brian sensed it and knew the fifth point was his.",
+        "word_errors": 1
+      },
+      {
+        "id": "1272-141231-0032",
+        "hypothesis": "then the powerful twist that thrust it aside in and under the guard",
+        "word_errors": 0
+      }
+    ]
+  }
+]

@@ -141,6 +141,8 @@ pub struct Transcription {
     pub accuracy: Accuracy,
     /// Vocabulary/context hint passed to Whisper (names, jargon…).
     pub initial_prompt: String,
+    /// Use nearby accessible text as a local vocabulary hint for this utterance.
+    pub context_aware: bool,
     pub use_gpu: bool,
     pub threads: u32,
 }
@@ -155,6 +157,7 @@ impl Default for Transcription {
             vad: true,
             accuracy: Accuracy::Balanced,
             initial_prompt: String::new(),
+            context_aware: true,
             use_gpu: true,
             threads: 4,
         }
@@ -223,6 +226,8 @@ pub struct Output {
     pub restore_delay_ms: u32,
     /// Append a trailing space so consecutive dictations join naturally.
     pub append_space: bool,
+    /// Adapt boundary casing, whitespace and punctuation using accessible text.
+    pub cursor_aware: bool,
 }
 
 impl Default for Output {
@@ -232,6 +237,7 @@ impl Default for Output {
             restore_clipboard: true,
             restore_delay_ms: 400,
             append_space: true,
+            cursor_aware: true,
         }
     }
 }
@@ -344,6 +350,17 @@ mod tests {
         let partial: Config = toml::from_str("[cleanup]\nenabled = false\n").unwrap();
         assert!(!partial.cleanup.enabled);
         assert_eq!(partial.transcription, Transcription::default());
+        assert!(partial.transcription.context_aware);
+        assert!(partial.output.cursor_aware);
+
+        let disabled: Config = toml::from_str(
+            "[transcription]\ncontext_aware = false\n[output]\ncursor_aware = false\n",
+        )
+        .unwrap();
+        assert!(!disabled.transcription.context_aware);
+        assert!(!disabled.output.cursor_aware);
+        let saved = toml::to_string(&disabled).unwrap();
+        assert_eq!(toml::from_str::<Config>(&saved).unwrap(), disabled);
     }
 
     #[test]

@@ -909,6 +909,20 @@ fn cleanup_page(ctx: &Shared) -> adw::PreferencesPage {
 fn output_page(ctx: &Shared) -> adw::PreferencesPage {
     let cfg = ctx.cfg.borrow().clone();
     let out = group("Text insertion", None);
+    out.add(&switch_row(
+        ctx,
+        "Context-aware recognition",
+        "Use nearby text locally to help recognize names and technical terms; requires surrounding-text or accessibility support",
+        |c| c.transcription.context_aware,
+        |c, v| c.transcription.context_aware = v,
+    ));
+    out.add(&switch_row(
+        ctx,
+        "Smarter text insertion",
+        "Match nearby capitalization, spacing and punctuation when the app exposes cursor context",
+        |c| c.output.cursor_aware,
+        |c, v| c.output.cursor_aware = v,
+    ));
     let chord = match cfg.output.paste_chord {
         PasteChord::ShiftInsert => 0,
         PasteChord::CtrlV => 1,
@@ -947,7 +961,7 @@ fn output_page(ctx: &Shared) -> adw::PreferencesPage {
     out.add(&switch_row(
         ctx,
         "Trailing space",
-        "So consecutive dictations join naturally",
+        "At the end of a field, or when cursor context is unavailable",
         |c| c.output.append_space,
         |c, v| c.output.append_space = v,
     ));
