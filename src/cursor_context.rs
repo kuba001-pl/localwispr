@@ -79,7 +79,9 @@ pub async fn read_insertion_report(session: &zbus::Connection) -> ReadReport {
 
 /// One accessibility-bus connection is reused across reads; a fresh
 /// connection's authentication handshake would be paid after every utterance.
-/// It is dropped whenever a read fails, so a restarted bus reconnects.
+/// It is dropped when the registry itself stops answering or a read times
+/// out, so a restarted bus reconnects. Ordinary "no usable field" results
+/// (terminals, password fields, inaccessible apps) keep it.
 static ACCESSIBILITY_BUS: tokio::sync::Mutex<Option<(String, zbus::Connection)>> =
     tokio::sync::Mutex::const_new(None);
 
@@ -111,6 +113,7 @@ async fn forget_accessibility_bus(address: &str) {
 async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> ReadReport {
     let mut status = "accessibility-bus-unavailable";
     let mut source = "at-spi";
+    let mut connected: Option<String> = None;
     let result = tokio::time::timeout(deadline, async {
         // The input-method route can work even when an application's
         // accessibility tree is disabled. Older extensions simply lack it.
@@ -143,13 +146,20 @@ async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> R
             return None;
         }
         let bus = accessibility_bus(&address).await?;
+        connected = Some(address.clone());
         let context = read_bus(&bus, &mut status).await;
-        if context.is_none() {
+        if context.is_none() && status == "accessibility-bus-unavailable" {
             forget_accessibility_bus(&address).await;
         }
         context
     })
     .await;
+    if result.is_err()
+        && let Some(address) = &connected
+    {
+        // A hung connection would otherwise time out every later read too.
+        forget_accessibility_bus(address).await;
+    }
     match result {
         Ok(Some(context)) => {
             let status = if context.before.is_empty() && context.after.is_empty() {
@@ -383,14 +393,19 @@ async fn children(bus: &zbus::Connection, object: &Object, limit: usize) -> Opti
     Some(children)
 }
 
-async fn active_window(bus: &zbus::Connection) -> Option<Object> {
+async fn active_window(bus: &zbus::Connection, status: &mut &'static str) -> Option<Object> {
     let desktop = (
         "org.a11y.atspi.Registry".into(),
         OwnedObjectPath::try_from(ROOT).ok()?,
     );
+    // The registry always answers a live bus; failing here means the
+    // connection or registry is gone, not that no window is active.
+    *status = "accessibility-bus-unavailable";
+    let apps = children(bus, &desktop, MAX_APPS).await?;
+    *status = "no-active-window";
     let mut active = None;
     let mut windows_left = MAX_WINDOWS;
-    for app in children(bus, &desktop, MAX_APPS).await? {
+    for app in apps {
         // Only inspect immediate application children to discover active windows.
         // Never descend into inactive application/window subtrees.
         for window in children(bus, &app, windows_left).await? {
@@ -629,8 +644,7 @@ async fn text_range(
 }
 
 async fn read_bus(bus: &zbus::Connection, status: &mut &'static str) -> Option<SurroundingText> {
-    *status = "no-active-window";
-    let window = active_window(bus).await?;
+    let window = active_window(bus, status).await?;
     *status = "no-focused-editor";
     let focus = find_focus(bus, window).await?;
     *status = "unsupported-or-protected-editor";

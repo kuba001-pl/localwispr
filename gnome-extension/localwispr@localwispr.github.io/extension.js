@@ -647,8 +647,8 @@ class ShellService {
         if (this._daemonOwner === owner)
             return;
         this._daemonOwner = owner;
+        this._cancelInjection(true);
         this._releaseHandoff();
-        this._cancelInjection();
         for (const finish of this._contextRequests)
             finish('denied');
     }
@@ -803,10 +803,7 @@ class ShellService {
             const watch = (object, signal, callback) => {
                 handoff.signals.push([object, object.connect(signal, callback)]);
             };
-            const invalidate = () => {
-                handoff.stale = true;
-                this._releaseHandoff(handoff);
-            };
+            const invalidate = () => this._releaseHandoff(handoff);
             const revalidate = () => {
                 if (!this._revalidateHandoff(handoff))
                     invalidate();
@@ -891,8 +888,8 @@ class ShellService {
     }
 
     destroy() {
+        this._cancelInjection(true);
         this._releaseHandoff();
-        this._cancelInjection();
         ++this._generation;
         for (const finish of this._contextRequests)
             finish('unavailable');
@@ -913,11 +910,15 @@ class ShellService {
         this._keyboard = null;
     }
 
-    _cancelInjection() {
+    _cancelInjection(explicit = false) {
         // Keys are queued, not acknowledged as consumed. Cancellation after
         // submission must not shorten the normal clipboard consumption grace.
         if (this._injection?.pasted)
             return;
+        // Explicit: the daemon cancelled, the daemon changed, or disable().
+        // Anything else that aborts before paste is a moved target.
+        if (explicit && this._injection)
+            this._injection.explicit = true;
         this._injection?.lifetime.destroy();
         this._restoreOwned(true);
     }
@@ -928,7 +929,7 @@ class ShellService {
             return;
         }
         if (this._injection?.requestId === requestId)
-            this._cancelInjection();
+            this._cancelInjection(true);
         invocation.return_value(new GLib.Variant('()', []));
     }
 
@@ -954,9 +955,6 @@ class ShellService {
             invocation.return_dbus_error('org.localwispr.Shell1.Error.StaleContext', 'Insertion context changed or expired');
             return;
         }
-        if (handoff.timeout)
-            GLib.Source.remove(handoff.timeout);
-        handoff.timeout = 0;
         return this.InjectAsync(params, invocation, requestId, handoff);
     }
 
@@ -1055,9 +1053,16 @@ class ShellService {
             invocation.return_dbus_error('org.localwispr.Shell1.Error.Busy', 'Another insertion is in progress');
             return;
         }
+        // A claimed token is no longer bounded by a clock: the watches below
+        // and the handoff's own watches decide whether its target still holds.
+        if (handoff?.timeout) {
+            GLib.Source.remove(handoff.timeout);
+            handoff.timeout = 0;
+        }
         const generation = ++this._generation;
         const operation = {
-            requestId, handoff, lifetime: new Lifetime(), pasted: false, signals: [], grace: null,
+            requestId, handoff, lifetime: new Lifetime(), pasted: false, explicit: false,
+            signals: [], grace: null,
             window: global.display.focus_window,
             keyFocus: global.stage.get_key_focus?.(),
             inputFocus: Main.inputMethod?.currentFocus,
@@ -1109,10 +1114,8 @@ class ShellService {
                 snapshots.push({type, saved, restorable, owner});
             }
             // Both selections are saved before either is overwritten.
-            if (handoff && !this._revalidateHandoff(handoff)) {
-                handoff.stale = true;
+            if (handoff && !this._revalidateHandoff(handoff))
                 throw new Error('Insertion context changed');
-            }
             if (snapshots.some(({type, owner}) => this._owners.get(type) !== owner))
                 throw new Error('Clipboard changed while saving');
             const installed = [];
@@ -1133,10 +1136,8 @@ class ShellService {
                 return;
             if (installed.some(({type, injected}) => this._owners.get(type) !== injected))
                 throw new Error('Clipboard ownership lost before paste');
-            if (handoff && !this._revalidateHandoff(handoff)) {
-                handoff.stale = true;
+            if (handoff && !this._revalidateHandoff(handoff))
                 throw new Error('Insertion context changed');
-            }
             // The commit point is immediately before the first queued key.
             // There is no atomic transaction with the application's later paste.
             operation.pasted = true;
@@ -1176,9 +1177,10 @@ class ShellService {
                 operation.lifetime.destroy();
                 this._injection = null;
             }
-            // Nothing was pasted because the bound target moved: the daemon
-            // can safely re-read context and retry instead of losing the text.
-            const stale = Boolean(handoff?.stale) && !this._pasted.has(invocation);
+            // A bound request that ended before its keys were queued, for any
+            // reason but explicit cancellation, pasted nothing: the daemon can
+            // safely re-read context and retry instead of losing the text.
+            const stale = Boolean(handoff) && !operation.explicit && !this._pasted.has(invocation);
             if (this._pending.delete(invocation))
                 settle(invocation, this._pasted.has(invocation), ok, failure, stale);
             this._pasted.delete(invocation);

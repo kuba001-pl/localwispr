@@ -245,6 +245,15 @@ async fn insert_adapted(
             });
             report.context
         } else {
+            if output.cursor_aware {
+                // Report the fallback, not the earlier attempt's "available".
+                let _ = events.send(Event::ContextRead {
+                    utterance,
+                    phase: "insertion",
+                    status: "changed-before-paste",
+                    source: "gnome-input-method",
+                });
+            }
             None
         };
         anyhow::ensure!(!cancelled.load(Ordering::Acquire), "dictation cancelled");
@@ -1336,25 +1345,33 @@ impl Engine {
     }
 
     async fn apply_config(&mut self, new: Config) {
-        if self.phase != Phase::Idle
-            && (self.phase == Phase::Processing
-                || self.cfg.hotkeys != new.hotkeys
-                || self.cfg.audio != new.audio
-                || self.cfg.transcription != new.transcription
-                || self.cfg.cleanup != new.cleanup
-                // Output settings are read only after recording ends, from the
-                // processing task's own copy; changing them never cancels.
-                || self.cfg.hud.bands != new.hud.bands)
-        {
+        let reloads_models = self.cfg.transcription.model != new.transcription.model
+            || self.cfg.transcription.use_gpu != new.transcription.use_gpu
+            || self.cfg.cleanup.model != new.cleanup.model
+            || self.cfg.cleanup.gpu_layers != new.cleanup.gpu_layers
+            || self.cfg.cleanup.enabled != new.cleanup.enabled;
+        // Input plumbing (hotkeys, capture, band count) is rebuilt below.
+        let rebuilds_input = self.cfg.hotkeys != new.hotkeys
+            || self.cfg.audio != new.audio
+            || self.cfg.hud.bands != new.hud.bands;
+        let cancel = match self.phase {
+            Phase::Idle => false,
+            // Processing runs on its own copy of the configuration; only an
+            // unloaded worker or rebuilt input can break it. Anything else
+            // (output, cleanup wording, languages) must not discard speech.
+            Phase::Processing => reloads_models || rebuilds_input,
+            // Output settings are read after recording ends; they never cancel.
+            Phase::Recording { .. } => {
+                rebuilds_input
+                    || self.cfg.transcription != new.transcription
+                    || self.cfg.cleanup != new.cleanup
+            }
+        };
+        if cancel {
             self.cancel_recording().await;
         }
         let old = std::mem::replace(&mut self.cfg, new);
-        if old.transcription.model != self.cfg.transcription.model
-            || old.transcription.use_gpu != self.cfg.transcription.use_gpu
-            || old.cleanup.model != self.cfg.cleanup.model
-            || old.cleanup.gpu_layers != self.cfg.cleanup.gpu_layers
-            || old.cleanup.enabled != self.cfg.cleanup.enabled
-        {
+        if reloads_models {
             self.model_generation += 1;
             self.unload_stt();
             self.llm = None;
@@ -1958,6 +1975,8 @@ mod tests {
     /// Bound insertions go stale `stale` times before any paste succeeds.
     struct StaleShell {
         stale: std::sync::Mutex<u32>,
+        /// Set (as a user cancel would) when a stale reply is sent.
+        cancel: Option<Arc<AtomicBool>>,
         pasted: std::sync::Mutex<Vec<(String, bool)>>,
         tokens: std::sync::Mutex<u32>,
     }
@@ -1989,6 +2008,9 @@ mod tests {
             let mut stale = self.0.stale.lock().unwrap();
             if *stale > 0 {
                 *stale -= 1;
+                if let Some(cancel) = &self.0.cancel {
+                    cancel.store(true, Ordering::Release);
+                }
                 return Err(ShellError::StaleContext("Insertion context changed".into()));
             }
             self.0.pasted.lock().unwrap().push((text.into(), true));
@@ -2020,6 +2042,7 @@ mod tests {
             let (engine, _bus) = engine().await;
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(stale),
+                cancel: None,
                 pasted: std::sync::Mutex::default(),
                 tokens: std::sync::Mutex::default(),
             });
@@ -2060,10 +2083,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn cancellation_stops_stale_insertion_retries() {
+    async fn cancellation_during_a_stale_attempt_stops_retries() {
         let (engine, _bus) = engine().await;
+        let cancelled = Arc::new(AtomicBool::new(false));
         let shell = Arc::new(StaleShell {
             stale: std::sync::Mutex::new(9),
+            cancel: Some(cancelled.clone()),
             pasted: std::sync::Mutex::default(),
             tokens: std::sync::Mutex::default(),
         });
@@ -2076,7 +2101,6 @@ mod tests {
         engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
         let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
         let held = AtomicBool::new(false);
-        let cancelled = Arc::new(AtomicBool::new(true));
         let (events, _rx) = mpsc::unbounded_channel();
         let result = insert_adapted(
             &mut Injector::new(false),
@@ -2091,6 +2115,33 @@ mod tests {
         .await;
         assert!(result.is_err());
         assert!(shell.pasted.lock().unwrap().is_empty());
+        // No second context read: a cancelled dictation never retries.
+        assert_eq!(*shell.tokens.lock().unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn settings_saved_while_processing_cancel_only_when_the_task_breaks() {
+        let (mut engine, _bus) = engine().await;
+        type Change = fn(&mut Config);
+        let changes: [(Change, bool); 5] = [
+            (|c| c.output.append_space = !c.output.append_space, false),
+            (|c| c.output.cursor_aware = !c.output.cursor_aware, false),
+            (
+                |c| c.cleanup.custom_instructions.push_str(" Be terse."),
+                false,
+            ),
+            (|c| c.transcription.languages.push("de".into()), false),
+            (|c| c.transcription.use_gpu = !c.transcription.use_gpu, true),
+        ];
+        for (change, cancels) in changes {
+            engine.phase = Phase::Processing;
+            let utterance = engine.utterance;
+            let mut new = engine.cfg.clone();
+            change(&mut new);
+            engine.apply_config(new).await;
+            assert_eq!(engine.phase == Phase::Idle, cancels);
+            assert_eq!(engine.utterance != utterance, cancels);
+        }
     }
 
     #[tokio::test]

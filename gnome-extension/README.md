@@ -15,9 +15,12 @@ context. Updated extension files require a fresh login to load on Wayland.
 `InjectBound` accepts that token and rejects focus, caret, selection, protection,
 or bounded surrounding-text changes before submitting keys. Watches persist
 across the response and clipboard preparation. An unclaimed token expires after
-two seconds; once `InjectBound` claims it, only observed changes invalidate it (a
-repeated, unchanged cursor rectangle does not). A bound request whose target
-changed before paste fails with `StaleContext` and pastes nothing; the daemon then
+two seconds; once `InjectBound` claims it, only observed changes invalidate it. Cursor
+rectangles are compared with the first one reported after the token was issued
+(Clutter exposes no public getter for the current one), so an unchanged rectangle
+that a client re-commits only triggers a recheck of the bound range. A bound
+request that ends before its keys are queued, for any reason except explicit
+cancellation, fails with `StaleContext` and pastes nothing; the daemon then
 re-reads context and retries once, and falls back to plain insertion rather than
 dropping the dictation. The clipboard-restore delay is capped at two seconds.
 Recognition continues using `GetCursorContext`. Old loaded extensions still

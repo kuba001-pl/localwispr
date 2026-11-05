@@ -250,7 +250,8 @@ After dictating, `localwispr status` reports `recognition_context` and
 `insertion_context`, plus their `_source` fields. `available` means usable
 context, `empty-field` means the editor was readable but supplied no surrounding
 text, and fixed failure labels such as `no-active-window`, `no-focused-editor`,
-`terminal-field`, or `timeout` explain the fallback. These labels never include document contents.
+`terminal-field`, `timeout`, or `changed-before-paste` (the field changed twice
+before paste, so the text went in unadapted) explain the fallback. These labels never include document contents.
 This avoids mistaking ordinary dictation for working cursor awareness.
 
 The compositor route requires the updated GNOME extension to be loaded; older

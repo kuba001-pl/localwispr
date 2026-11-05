@@ -1516,10 +1516,12 @@ test('independent: a cancelled token cannot be retried, including cancellation w
         if (phase === 'backup') h.selection.transfer_async = (_t, _m, _n, _o, cancel, callback) => {
             cancel.connect(() => queueMicrotask(() => callback(h.selection, {cancel})));
         };
-        const op = h.service.InjectBoundAsync(['first', token, 'ADAPTED', 'ctrl-v', true, 350], h.invocation());
+        const first = h.invocation();
+        const op = h.service.InjectBoundAsync(['first', token, 'ADAPTED', 'ctrl-v', true, 350], first);
         await h.flush();
         h.service.CancelInjectAsync(['first'], h.invocation());
         await op;
+        assert.deepEqual(first.replies, ['Failed'], 'explicit cancellation is not retryable');
         const retry = h.invocation();
         await h.service.InjectBoundAsync(['second', token, 'ADAPTED', 'ctrl-v', false, 350], retry);
         assert.deepEqual(retry.replies, ['StaleContext']);
@@ -1553,6 +1555,49 @@ test('independent: an unclaimed token expires, but a claimed one survives a slow
     await idle.service.InjectBoundAsync(['late', unused, 'ADAPTED', 'ctrl-v', true, 350], late);
     assert.deepEqual(late.replies, ['StaleContext']);
     assertNoContextWatches(idle); idle.service.destroy();
+});
+
+test('any non-explicit abort of a bound request before paste is retryable StaleContext', async () => {
+    for (const change of [
+        h => { h.inputMethod.currentFocus = null; }, // Silent: no watched signal fires.
+        h => { h.selection.set_owner(1, {formats: new Map([['text/plain', 'user copy']])}); },
+    ]) {
+        const h = contextHarness(); const {token} = prepareBound(h);
+        const reply = h.invocation();
+        const op = h.service.InjectBoundAsync(['silent', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
+        await h.flush();
+        change(h);
+        await h.fire(20); await op;
+        assert.equal(h.keyEvents.length, 0);
+        assert.deepEqual(reply.replies, ['StaleContext']);
+        assertNoContextWatches(h); h.service.destroy();
+    }
+});
+
+test('a bound handoff invalidated after its keys were queued still reports the paste', async () => {
+    const h = contextHarness(); const {token} = prepareBound(h);
+    const reply = h.invocation();
+    const op = h.service.InjectBoundAsync(['after', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
+    await h.flush(); await h.fire(20);
+    assert.equal(h.keyEvents.length, 4);
+    h.context.global.display.focus_window = {}; h.context.global.display.emit('notify::focus-window');
+    h.inputMethod.currentFocus = null;
+    await h.fire(350); await op;
+    assert.deepEqual(reply.replies, [true], 'never StaleContext after paste: the daemon would insert twice');
+    assertNoContextWatches(h); h.service.destroy();
+});
+
+test('a Busy bound request leaves the unclaimed token on its expiry clock', async () => {
+    const h = contextHarness(); const {token} = prepareBound(h);
+    h.service._pending.add(h.invocation());
+    const busy = h.invocation();
+    await h.service.InjectBoundAsync(['busy', token, 'ADAPTED', 'ctrl-v', true, 350], busy);
+    assert.deepEqual(busy.replies, ['Busy']);
+    assert.ok([...h.timers.values()].some(t => t.ms === 2000));
+    h.service._pending.clear();
+    await h.fire(2000);
+    assert.equal(h.service._handoff, null);
+    assertNoContextWatches(h); h.service.destroy();
 });
 
 test('repeated identical cursor rectangles keep the handoff; a moved rectangle makes it stale', async () => {
