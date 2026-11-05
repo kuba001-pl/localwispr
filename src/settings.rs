@@ -122,6 +122,8 @@ pub fn run() -> Result<()> {
     let app = adw::Application::builder()
         .application_id("org.localwispr.Settings")
         .build();
+    // Compositors that do not read the desktop entry take the icon from here.
+    gtk::Window::set_default_icon_name("org.localwispr.Settings");
     app.connect_activate(|app| {
         // Single instance: a second launch just raises the window.
         if let Some(w) = app.active_window() {
