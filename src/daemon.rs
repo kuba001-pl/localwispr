@@ -200,6 +200,13 @@ fn injection_backend(
     }
 }
 
+// Tests run many private buses in parallel; a loaded machine must not turn the
+// mock extension's reply into a timeout and test the wrong path.
+#[cfg(not(test))]
+const INSERTION_CONTEXT_TIMEOUT: Duration = crate::cursor_context::GNOME_INSERTION_TIMEOUT;
+#[cfg(test)]
+const INSERTION_CONTEXT_TIMEOUT: Duration = Duration::from_secs(5);
+
 /// Formats `text` for the destination caret and inserts it. A bound GNOME
 /// insertion fails without pasting when its target changed after the context
 /// read: re-read and re-format once, then insert unadapted rather than drop
@@ -229,8 +236,11 @@ async fn insert_adapted(
         // modifiers are released: the caret may have moved since recording.
         let context = if output.cursor_aware {
             let report = if let Route::Gnome(shell) = &route {
-                let (report, token) =
-                    crate::cursor_context::read_gnome_insertion_report(shell).await;
+                let (report, token) = crate::cursor_context::read_gnome_insertion_report_within(
+                    shell,
+                    INSERTION_CONTEXT_TIMEOUT,
+                )
+                .await;
                 // The fallback still reads, for the checks below, but inserts
                 // unbound: the target keeps changing under us.
                 if let Some(token) = token.filter(|_| !fallback) {
@@ -1995,6 +2005,36 @@ mod tests {
         tokens: std::sync::Mutex<u32>,
     }
 
+    /// Serves the mock extension on its own connection, as in a real session.
+    /// Calling an object served on the caller's own connection can stall
+    /// under heavy parallel test load.
+    async fn serve_stale_shell(
+        shell: Arc<StaleShell>,
+    ) -> (zbus::Connection, zbus::Connection, tokio::process::Child) {
+        let mut bus = tokio::process::Command::new("dbus-daemon")
+            .args(["--session", "--nofork", "--print-address=1"])
+            .stdout(std::process::Stdio::piped())
+            .kill_on_drop(true)
+            .spawn()
+            .expect("daemon regressions require dbus-daemon");
+        let mut address = String::new();
+        BufReader::new(bus.stdout.take().unwrap())
+            .read_line(&mut address)
+            .await
+            .unwrap();
+        let server = zbus::connection::Builder::address(address.trim())
+            .name(dbus::SHELL_NAME)
+            .serve_at("/org/localwispr/Shell", StaleShellRef(shell))
+            .build()
+            .await
+            .unwrap();
+        let client = zbus::connection::Builder::address(address.trim())
+            .build()
+            .await
+            .unwrap();
+        (client, server, bus)
+    }
+
     struct StaleShellRef(Arc<StaleShell>);
 
     #[zbus::interface(name = "org.localwispr.Shell1")]
@@ -2067,7 +2107,6 @@ mod tests {
             (2, ("hello there ", false)),
             (9, ("hello there ", false)),
         ] {
-            let (engine, _bus) = engine().await;
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(stale),
                 cancel: None,
@@ -2075,24 +2114,18 @@ mod tests {
                 pasted: std::sync::Mutex::default(),
                 tokens: std::sync::Mutex::default(),
             });
-            engine
-                .conn
-                .object_server()
-                .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
-                .await
-                .unwrap();
-            engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
-            let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
-            let mut output = engine.cfg.output.clone();
+            let (conn, _server, _bus) = serve_stale_shell(shell.clone()).await;
+            let route = Route::Gnome(dbus::ShellProxy::new(&conn).await.unwrap());
+            let mut output = Config::default().output;
             output.cursor_aware = true;
             output.append_space = true;
             let held = AtomicBool::new(false);
             let cancelled = Arc::new(AtomicBool::new(false));
-            let (events, _rx) = mpsc::unbounded_channel();
+            let (events, mut rx) = mpsc::unbounded_channel();
             insert_adapted(
                 &mut Injector::new(false),
                 &route,
-                &engine.conn,
+                &conn,
                 "hello there",
                 &output,
                 (&held, &cancelled),
@@ -2108,7 +2141,17 @@ mod tests {
                 "stale={stale}"
             );
             // The fallback still reads, to refuse a field turned protected.
-            assert_eq!(*shell.tokens.lock().unwrap(), stale.min(2) + 1);
+            let mut statuses = Vec::new();
+            while let Ok(event) = rx.try_recv() {
+                if let Event::ContextRead { status, .. } = event {
+                    statuses.push(status);
+                }
+            }
+            assert_eq!(
+                *shell.tokens.lock().unwrap(),
+                stale.min(2) + 1,
+                "stale={stale} statuses={statuses:?}"
+            );
         }
     }
 
@@ -2117,7 +2160,6 @@ mod tests {
         // "changed"/"timeout": a prompt taking focus mid-read is not
         // confirmed safe either, even after the extra read.
         for retry_status in ["protected", "terminal", "changed", "timeout"] {
-            let (engine, _bus) = engine().await;
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(9),
                 cancel: None,
@@ -2125,15 +2167,9 @@ mod tests {
                 pasted: std::sync::Mutex::default(),
                 tokens: std::sync::Mutex::default(),
             });
-            engine
-                .conn
-                .object_server()
-                .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
-                .await
-                .unwrap();
-            engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
-            let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
-            let mut output = engine.cfg.output.clone();
+            let (conn, _server, _bus) = serve_stale_shell(shell.clone()).await;
+            let route = Route::Gnome(dbus::ShellProxy::new(&conn).await.unwrap());
+            let mut output = Config::default().output;
             output.cursor_aware = true;
             let held = AtomicBool::new(false);
             let cancelled = Arc::new(AtomicBool::new(false));
@@ -2141,7 +2177,7 @@ mod tests {
             let error = insert_adapted(
                 &mut Injector::new(false),
                 &route,
-                &engine.conn,
+                &conn,
                 "hello",
                 &output,
                 (&held, &cancelled),
@@ -2160,7 +2196,6 @@ mod tests {
 
     #[tokio::test]
     async fn cancellation_during_a_stale_attempt_stops_retries() {
-        let (engine, _bus) = engine().await;
         let cancelled = Arc::new(AtomicBool::new(false));
         let shell = Arc::new(StaleShell {
             stale: std::sync::Mutex::new(9),
@@ -2169,22 +2204,16 @@ mod tests {
             pasted: std::sync::Mutex::default(),
             tokens: std::sync::Mutex::default(),
         });
-        engine
-            .conn
-            .object_server()
-            .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
-            .await
-            .unwrap();
-        engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
-        let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
+        let (conn, _server, _bus) = serve_stale_shell(shell.clone()).await;
+        let route = Route::Gnome(dbus::ShellProxy::new(&conn).await.unwrap());
         let held = AtomicBool::new(false);
         let (events, _rx) = mpsc::unbounded_channel();
         let result = insert_adapted(
             &mut Injector::new(false),
             &route,
-            &engine.conn,
+            &conn,
             "hello",
-            &engine.cfg.output,
+            &Config::default().output,
             (&held, &cancelled),
             &events,
             1,

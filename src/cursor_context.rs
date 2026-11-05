@@ -82,12 +82,13 @@ pub async fn read_insertion_report(session: &zbus::Connection) -> ReadReport {
 /// It is dropped when the registry itself stops answering or a read times
 /// out, so a restarted bus reconnects. Ordinary "no usable field" results
 /// (terminals, password fields, inaccessible apps) keep it.
-static ACCESSIBILITY_BUS: tokio::sync::Mutex<Option<(String, zbus::Connection)>> =
-    tokio::sync::Mutex::const_new(None);
+static ACCESSIBILITY_BUS: std::sync::Mutex<Option<(String, zbus::Connection)>> =
+    std::sync::Mutex::new(None);
 
 async fn accessibility_bus(address: &str) -> Option<zbus::Connection> {
-    let mut cached = ACCESSIBILITY_BUS.lock().await;
-    if let Some((cached_address, bus)) = cached.as_ref()
+    // Never hold the lock across the handshake: a slow connect must not delay
+    // an unrelated read (or a concurrent one to another bus) past its deadline.
+    if let Some((cached_address, bus)) = ACCESSIBILITY_BUS.lock().unwrap().as_ref()
         && cached_address == address
     {
         return Some(bus.clone());
@@ -96,12 +97,12 @@ async fn accessibility_bus(address: &str) -> Option<zbus::Connection> {
         .build()
         .await
         .ok()?;
-    *cached = Some((address.to_owned(), bus.clone()));
+    *ACCESSIBILITY_BUS.lock().unwrap() = Some((address.to_owned(), bus.clone()));
     Some(bus)
 }
 
-async fn forget_accessibility_bus(address: &str) {
-    let mut cached = ACCESSIBILITY_BUS.lock().await;
+fn forget_accessibility_bus(address: &str) {
+    let mut cached = ACCESSIBILITY_BUS.lock().unwrap();
     if cached
         .as_ref()
         .is_some_and(|(cached_address, _)| cached_address == address)
@@ -118,7 +119,8 @@ async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> R
         // The input-method route can work even when an application's
         // accessibility tree is disabled. Older extensions simply lack it.
         if let Ok(Some(reply)) =
-            tokio::time::timeout(Duration::from_millis(130), compositor_context(session)).await
+            // About half the budget (130 ms of the 250 ms recognition read).
+            tokio::time::timeout(deadline * 13 / 25, compositor_context(session)).await
         {
             source = "gnome-input-method";
             match reply {
@@ -149,7 +151,7 @@ async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> R
         connected = Some(address.clone());
         let context = read_bus(&bus, &mut status).await;
         if context.is_none() && status == "accessibility-bus-unavailable" {
-            forget_accessibility_bus(&address).await;
+            forget_accessibility_bus(&address);
         }
         context
     })
@@ -158,7 +160,7 @@ async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> R
         && let Some(address) = &connected
     {
         // A hung connection would otherwise time out every later read too.
-        forget_accessibility_bus(address).await;
+        forget_accessibility_bus(address);
     }
     match result {
         Ok(Some(context)) => {
@@ -186,12 +188,23 @@ async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> R
     }
 }
 
+/// Deadline for the extension's insertion-context reply (post-release path).
+pub const GNOME_INSERTION_TIMEOUT: Duration = Duration::from_millis(130);
+
+#[cfg(test)]
+pub async fn read_gnome_insertion_report(
+    shell: &crate::dbus::ShellProxy<'_>,
+) -> (ReadReport, Option<String>) {
+    read_gnome_insertion_report_within(shell, GNOME_INSERTION_TIMEOUT).await
+}
+
 /// GNOME insertion must not use an unbound compositor or AT-SPI snapshot.
 /// Old loaded extensions still accept plain insertion, but cannot safely adapt
 /// punctuation/spacing for a range they do not bind to the eventual key commit.
 /// Recognition continues to use read_report and never holds a future target.
-pub async fn read_gnome_insertion_report(
+pub async fn read_gnome_insertion_report_within(
     shell: &crate::dbus::ShellProxy<'_>,
+    deadline: Duration,
 ) -> (ReadReport, Option<String>) {
     let mut report = ReadReport {
         context: None,
@@ -199,7 +212,7 @@ pub async fn read_gnome_insertion_report(
         source: "gnome-input-method",
     };
     let reply = tokio::time::timeout(
-        Duration::from_millis(130),
+        deadline,
         shell.inner().call_method("GetInsertionContext", &()),
     )
     .await;
@@ -292,9 +305,15 @@ async fn compositor_context(
     }))
 }
 
+/// Functional tests run many private buses in parallel; give them a generous
+/// deadline so load cannot change the path under test. Deadline behaviour is
+/// tested separately against the real constants.
+#[cfg(test)]
+const TEST_DEADLINE: Duration = Duration::from_secs(3);
+
 #[cfg(test)]
 pub async fn read(session: &zbus::Connection) -> Option<SurroundingText> {
-    read_report(session).await.context
+    read_report_within(session, TEST_DEADLINE).await.context
 }
 
 async fn call<R, B>(
@@ -1413,7 +1432,7 @@ mod tests {
             })
             .await;
             let start = Instant::now();
-            assert!(read(&fixture.session).await.is_none());
+            assert!(read_report(&fixture.session).await.context.is_none());
             assert!(
                 start.elapsed() >= TIMEOUT - Duration::from_millis(25),
                 "a timeout must not be an early handler failure"
@@ -1537,7 +1556,7 @@ mod tests {
         };
         model.nodes.get_mut(WINDOW).unwrap().states = bits(&[]);
         let fixture = Fixture::new(model).await;
-        let report = read_report(&fixture.session).await;
+        let report = read_report_within(&fixture.session, TEST_DEADLINE).await;
         assert_eq!(
             (report.status, report.source),
             ("available", "gnome-input-method")
@@ -1558,7 +1577,7 @@ mod tests {
                 ..Model::default()
             })
             .await;
-            let report = read_report(&fixture.session).await;
+            let report = read_report_within(&fixture.session, TEST_DEADLINE).await;
             if status == "protected" {
                 assert!(report.context.is_none());
                 assert_eq!(
@@ -1580,7 +1599,7 @@ mod tests {
             ..Model::default()
         })
         .await;
-        let report = read_report(&fixture.session).await;
+        let report = read_report_within(&fixture.session, TEST_DEADLINE).await;
         assert_eq!(report.status, "terminal-field");
         assert!(report.context.is_none());
         assert_eq!(
@@ -1596,7 +1615,7 @@ mod tests {
         let mut missing = Model::default();
         missing.nodes.get_mut(WINDOW).unwrap().states = bits(&[]);
         let fixture = Fixture::new(missing).await;
-        let report = read_report(&fixture.session).await;
+        let report = read_report_within(&fixture.session, TEST_DEADLINE).await;
         assert!(report.context.is_none());
         assert_eq!(report.status, "no-active-window");
         let fixture = Fixture::new(Model {
@@ -1605,7 +1624,7 @@ mod tests {
             ..Model::default()
         })
         .await;
-        let report = read_report(&fixture.session).await;
+        let report = read_report_within(&fixture.session, TEST_DEADLINE).await;
         assert!(report.context.is_some());
         assert_eq!(report.status, "empty-field");
     }
@@ -1622,7 +1641,7 @@ mod tests {
             ..Model::default()
         })
         .await;
-        let recognition = read_report(&fixture.session).await;
+        let recognition = read_report_within(&fixture.session, TEST_DEADLINE).await;
         assert!(recognition.context.is_some());
         let shell = crate::dbus::ShellProxy::new(&fixture.session)
             .await
