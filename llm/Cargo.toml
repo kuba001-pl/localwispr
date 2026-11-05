@@ -1,6 +1,6 @@
 [package]
 name = "localwispr-llm"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2024"
 description = "Out-of-process llama.cpp worker for localwispr transcript cleanup"
 license = "MIT"

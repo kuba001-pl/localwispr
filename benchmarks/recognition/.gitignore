@@ -1,0 +1,6 @@
+/audio/
+/recognition-harness
+/__pycache__/
+
+# Canonical generated audio is a local replay artifact, not source code.
+/audio-fixtures.tar.zst

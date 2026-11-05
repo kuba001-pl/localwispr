@@ -141,6 +141,8 @@ pub struct Transcription {
     pub accuracy: Accuracy,
     /// Vocabulary/context hint passed to Whisper (names, jargon…).
     pub initial_prompt: String,
+    /// Use nearby accessible text as a local vocabulary hint for this utterance.
+    pub context_aware: bool,
     pub use_gpu: bool,
     pub threads: u32,
 }
@@ -155,6 +157,7 @@ impl Default for Transcription {
             vad: true,
             accuracy: Accuracy::Balanced,
             initial_prompt: String::new(),
+            context_aware: true,
             use_gpu: true,
             threads: 4,
         }
@@ -179,9 +182,6 @@ pub struct Cleanup {
     /// Reject LLM output whose word count drifts more than this fraction
     /// from the input (guards against the model "answering" the text).
     pub max_length_drift: f32,
-    /// Reject LLM output that introduces more than this fraction of words
-    /// not present in the input.
-    pub max_new_words: f32,
     /// Utterances with fewer words skip the LLM (nothing to polish).
     pub skip_below_words: u32,
     /// Extra instructions appended to the system prompt.
@@ -197,7 +197,6 @@ impl Default for Cleanup {
             live_preview: true,
             remove_fillers: true,
             max_length_drift: 0.4,
-            max_new_words: 0.1,
             skip_below_words: 3,
             custom_instructions: String::new(),
             gpu_layers: 999,
@@ -223,6 +222,8 @@ pub struct Output {
     pub restore_delay_ms: u32,
     /// Append a trailing space so consecutive dictations join naturally.
     pub append_space: bool,
+    /// Adapt boundary casing, whitespace and punctuation using accessible text.
+    pub cursor_aware: bool,
 }
 
 impl Default for Output {
@@ -232,6 +233,7 @@ impl Default for Output {
             restore_clipboard: true,
             restore_delay_ms: 400,
             append_space: true,
+            cursor_aware: true,
         }
     }
 }
@@ -321,7 +323,6 @@ impl Config {
         }
         let c = &mut self.cleanup;
         c.max_length_drift = c.max_length_drift.clamp(0.05, 5.0);
-        c.max_new_words = c.max_new_words.clamp(0.0, 1.0);
         let h = &mut self.hud;
         h.bands = h.bands.clamp(4, 48);
         h.opacity = h.opacity.clamp(0.0, 1.0);
@@ -344,6 +345,22 @@ mod tests {
         let partial: Config = toml::from_str("[cleanup]\nenabled = false\n").unwrap();
         assert!(!partial.cleanup.enabled);
         assert_eq!(partial.transcription, Transcription::default());
+        assert!(partial.transcription.context_aware);
+        assert!(partial.output.cursor_aware);
+
+        let disabled: Config = toml::from_str(
+            "[transcription]\ncontext_aware = false\n[output]\ncursor_aware = false\n",
+        )
+        .unwrap();
+        assert!(!disabled.transcription.context_aware);
+        assert!(!disabled.output.cursor_aware);
+        let saved = toml::to_string(&disabled).unwrap();
+        assert_eq!(toml::from_str::<Config>(&saved).unwrap(), disabled);
+
+        // 0.2.x configs saved the since-removed `max_new_words` key.
+        let old: Config =
+            toml::from_str("[cleanup]\nmax_new_words = 0.1\nmax_length_drift = 0.5\n").unwrap();
+        assert_eq!(old.cleanup.max_length_drift, 0.5);
     }
 
     #[test]

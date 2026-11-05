@@ -7,7 +7,7 @@
 //    no clipboard or virtual-keyboard protocol for background clients, so
 //    clipboard + paste keystroke happen here, inside the compositor.
 //
-// No logic lives here; everything else is in the daemon.
+// Also provides an optional, read-only snapshot of compositor input context.
 
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
@@ -37,8 +37,41 @@ const SHELL_XML = `
       <arg type="u" direction="in" name="restore_delay_ms"/>
       <arg type="b" direction="out" name="ok"/>
     </method>
+    <method name="InjectCancellable">
+      <arg type="s" direction="in" name="request_id"/>
+      <arg type="s" direction="in" name="text"/>
+      <arg type="s" direction="in" name="chord"/>
+      <arg type="b" direction="in" name="restore"/>
+      <arg type="u" direction="in" name="restore_delay_ms"/>
+      <arg type="b" direction="out" name="ok"/>
+    </method>
+    <method name="InjectBound">
+      <arg type="s" direction="in" name="request_id"/>
+      <arg type="s" direction="in" name="context_token"/>
+      <arg type="s" direction="in" name="text"/>
+      <arg type="s" direction="in" name="chord"/>
+      <arg type="b" direction="in" name="restore"/>
+      <arg type="u" direction="in" name="restore_delay_ms"/>
+      <arg type="b" direction="out" name="ok"/>
+    </method>
+    <method name="GetInsertionContext">
+      <arg type="s" direction="out" name="status"/>
+      <arg type="s" direction="out" name="before"/>
+      <arg type="s" direction="out" name="after"/>
+      <arg type="b" direction="out" name="is_replacement"/>
+      <arg type="s" direction="out" name="context_token"/>
+    </method>
+    <method name="CancelInject">
+      <arg type="s" direction="in" name="request_id"/>
+    </method>
     <method name="Version">
       <arg type="s" direction="out" name="version"/>
+    </method>
+    <method name="GetCursorContext">
+      <arg type="s" direction="out" name="status"/>
+      <arg type="s" direction="out" name="before"/>
+      <arg type="s" direction="out" name="after"/>
+      <arg type="b" direction="out" name="is_replacement"/>
     </method>
   </interface>
 </node>`;
@@ -65,6 +98,67 @@ function spring(value, velocity, target, dt, frequency) {
 const SNAPSHOT_LIMIT = 32 * 1024 * 1024;
 const TRANSFER_TIMEOUT_MS = 5000;
 const TEXT_MIMES = ['text/plain;charset=utf-8', 'UTF8_STRING', 'text/plain', 'STRING'];
+const CONTEXT_TIMEOUT_MS = 100;
+const CONTEXT_CHARS = 256;
+// Bounds an unclaimed token only. Once InjectBound claims it, focus, caret and
+// range watches (not a clock) decide validity through clipboard preparation.
+const HANDOFF_TIMEOUT_MS = 2000;
+// After keys are queued, the app may still be reading our clipboard. disable()
+// deliberately lets that one grace timer finish (restoring early could paste the
+// user's previous clipboard instead); the cap bounds how long it can outlive it.
+const MAX_RESTORE_DELAY_MS = 2000;
+const MAX_SURROUNDING_UNITS = 64 * 1024;
+
+function contextProtection(inputMethod) {
+    // Clutter's content purpose/hints are authoritative; Shell's IBus fields
+    // are only translations of these same values.
+    const contentPurpose = inputMethod.content_purpose;
+    const contentHints = inputMethod.content_hints;
+    const clutterPurposes = Clutter.InputContentPurpose;
+    const clutterHints = Clutter.InputContentHintFlags;
+    if (!Number.isInteger(contentPurpose) || contentPurpose < 0 ||
+        !Number.isInteger(contentHints) || contentHints < 0 ||
+        !Number.isInteger(clutterPurposes?.PASSWORD) ||
+        !Number.isInteger(clutterHints?.SENSITIVE_DATA) ||
+        !Number.isInteger(clutterHints?.HIDDEN_TEXT))
+        return 'unavailable';
+    if (contentPurpose === clutterPurposes.PASSWORD ||
+        Number.isInteger(clutterPurposes.PIN) && contentPurpose === clutterPurposes.PIN ||
+        (contentHints & (clutterHints.SENSITIVE_DATA | clutterHints.HIDDEN_TEXT)) !== 0)
+        return 'protected';
+    if (Number.isInteger(clutterPurposes.TERMINAL) && contentPurpose === clutterPurposes.TERMINAL)
+        return 'terminal';
+    return null;
+}
+
+// Only the bounded outside text and range metadata survive the call. Never
+// retain, return, log, or compare the selected text itself.
+function surroundingRange(inputMethod) {
+    const snapshot = inputMethod.getSurroundingText();
+    if (!Array.isArray(snapshot) || snapshot.length !== 3 || typeof snapshot[0] !== 'string')
+        return null;
+    const [text, cursor, anchor] = snapshot;
+    if (text.length > MAX_SURROUNDING_UNITS)
+        return null;
+    const chars = Array.from(text);
+    if (!Number.isInteger(cursor) || !Number.isInteger(anchor) ||
+        cursor < 0 || anchor < 0 || cursor > chars.length || anchor > chars.length)
+        return null;
+    const start = Math.min(cursor, anchor);
+    const end = Math.max(cursor, anchor);
+    return {cursor, anchor, length: chars.length,
+        before: chars.slice(Math.max(0, start - CONTEXT_CHARS), start).join(''),
+        after: chars.slice(end, end + CONTEXT_CHARS).join('')};
+}
+
+function rectKey(rect) {
+    try {
+        const values = [rect.get_x(), rect.get_y(), rect.get_width(), rect.get_height()];
+        return values.every(Number.isFinite) ? values.join(',') : null;
+    } catch {
+        return null;
+    }
+}
 
 function bestMime(mimes) {
     return TEXT_MIMES.find(mime => mimes.includes(mime)) ?? mimes[0];
@@ -129,9 +223,11 @@ function savedSelection(contents) {
 
 // Inject returns whether the clipboard was preserved; a D-Bus error means the
 // text was not inserted.
-function settle(invocation, pasted, preserved, failure) {
+function settle(invocation, pasted, preserved, failure, stale = false) {
     if (pasted)
         invocation.return_value(new GLib.Variant('(b)', [preserved]));
+    else if (stale)
+        invocation.return_dbus_error('org.localwispr.Shell1.Error.StaleContext', failure);
     else
         invocation.return_dbus_error('org.localwispr.Shell1.Error.Failed', failure);
 }
@@ -537,30 +633,374 @@ class ShellService {
         this._restore = [];
         this._pending = new Set();
         this._pasted = new Set();
+        this._daemonOwner = null;
+        this._contextRequests = new Set();
+        this._injection = null;
+        this._handoff = null;
+        // The latest caret rectangle per focused field. A click moves only the
+        // rectangle (GTK re-sends unchanged surrounding text), so a token must
+        // start from the rectangle current when it is issued.
+        this._caret = null;
+        this._caretSource = null;
+        this._caretWatch = 0;
+        try {
+            const inputMethod = Main.inputMethod;
+            this._caretWatch = inputMethod?.connect?.('cursor-location-changed', (im, rect) => {
+                this._caret = {focus: im.currentFocus, key: rectKey(rect)};
+            }) ?? 0;
+            if (this._caretWatch)
+                this._caretSource = inputMethod;
+        } catch {
+            // No caret signal: tokens fall back to their first observed rectangle.
+            this._caretWatch = 0;
+        }
     }
 
     Version() {
         return this._version;
     }
 
-    destroy() {
-        ++this._generation;
-        this._lifetime.destroy();
-        // Restore synchronously while our sources still own the selections.
-        this._restoreOwned();
-        this._selection.disconnect(this._ownerWatch);
+    _setDaemonOwner(owner) {
+        if (this._daemonOwner === owner)
+            return;
+        this._daemonOwner = owner;
+        this._cancelInjection(true);
+        this._releaseHandoff();
+        for (const finish of this._contextRequests)
+            finish('denied');
+    }
+
+    GetCursorContextAsync(_params, invocation) {
+        return this._getCursorContext(invocation, false);
+    }
+
+    GetInsertionContextAsync(_params, invocation) {
+        return this._getCursorContext(invocation, true);
+    }
+
+    _getCursorContext(invocation, bound) {
+        let done = false;
+        let timeout = 0;
+        const signals = [];
+        const finish = (status, before = '', after = '', replacement = false, token = '') => {
+            if (done)
+                return;
+            done = true;
+            this._contextRequests.delete(finish);
+            for (const [object, id] of signals) {
+                try {
+                    object.disconnect(id);
+                } catch {
+                    // The focus or Shell may already have been destroyed.
+                }
+            }
+            if (timeout)
+                GLib.Source.remove(timeout);
+            timeout = 0;
+            const readable = status === 'available' || status === 'empty';
+            try {
+                const values = [status, readable ? before : '', readable ? after : '', readable && replacement];
+                if (bound)
+                    values.push(readable ? token : '');
+                invocation.return_value(new GLib.Variant(bound ? '(sssbs)' : '(sssb)', values));
+            } catch {
+                // A disconnected caller cannot receive a reply. Never log text.
+            }
+        };
+        this._contextRequests.add(finish);
+        try {
+            const owner = this._daemonOwner;
+            if (!owner || invocation.get_sender() !== owner) {
+                finish('denied');
+                return;
+            }
+            if (!this._lifetime.active) {
+                finish('unavailable');
+                return;
+            }
+            if (bound)
+                this._releaseHandoff();
+            const inputMethod = Main.inputMethod;
+            if (!inputMethod || !('currentFocus' in inputMethod) ||
+                typeof inputMethod.getSurroundingText !== 'function' ||
+                typeof inputMethod.request_surrounding !== 'function' ||
+                typeof inputMethod.hasPreedit !== 'function' ||
+                typeof inputMethod.connect !== 'function' ||
+                typeof inputMethod.disconnect !== 'function' || !inputMethod.currentFocus) {
+                finish('unavailable');
+                return;
+            }
+            const focus = inputMethod.currentFocus;
+            const window = global.display.focus_window;
+            const keyFocus = global.stage.get_key_focus?.();
+            const invalid = () => {
+                if (this._daemonOwner !== owner)
+                    return 'denied';
+                if (!this._lifetime.active)
+                    return 'unavailable';
+                // Protection first: a password prompt that just took focus must
+                // read as protected, not merely changed, so no retry pastes there.
+                const protection = Main.inputMethod === inputMethod ? contextProtection(inputMethod) : null;
+                if (protection)
+                    return protection;
+                if (Main.inputMethod !== inputMethod || inputMethod.currentFocus !== focus ||
+                    global.display.focus_window !== window || global.stage.get_key_focus?.() !== keyFocus)
+                    return 'changed';
+                return inputMethod.hasPreedit() ? 'changed' : null;
+            };
+            const initial = invalid();
+            if (initial) {
+                finish(initial);
+                return;
+            }
+            // Connect BEFORE requesting: a client can answer synchronously. The
+            // getter is read only after this request's signal. On Wayland that
+            // signal can replay the compositor's committed input state; it is
+            // not an independent acknowledgement from the application.
+            let requested = false;
+            const watch = (object, signal, callback) => {
+                signals.push([object, object.connect(signal, callback)]);
+            };
+            watch(inputMethod, 'surrounding-text-set', () => {
+                if (done || !requested)
+                    return;
+                try {
+                    const status = invalid();
+                    if (status) {
+                        finish(status);
+                        return;
+                    }
+                    const range = surroundingRange(inputMethod);
+                    if (!range) {
+                        finish('unavailable');
+                        return;
+                    }
+                    const changed = invalid();
+                    if (changed) {
+                        finish(changed);
+                        return;
+                    }
+                    const token = bound ? this._bindContext({owner, inputMethod, focus, window, keyFocus}, range) : '';
+                    finish(range.before || range.after ? 'available' : 'empty',
+                        range.before, range.after, range.cursor !== range.anchor, token);
+                } catch {
+                    finish('unavailable');
+                }
+            });
+            const check = () => {
+                if (done)
+                    return;
+                try {
+                    const status = invalid();
+                    if (status)
+                        finish(status);
+                } catch {
+                    finish('unavailable');
+                }
+            };
+            // Catch window/widget focus transitions even if focus returns before
+            // the surrounding-text response. No input-method vfunc is patched.
+            watch(global.display, 'notify::focus-window', check);
+            watch(global.stage, 'notify::key-focus', check);
+            watch(inputMethod, 'notify::content-purpose', check);
+            watch(inputMethod, 'notify::content-hints', check);
+            timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, CONTEXT_TIMEOUT_MS, () => {
+                timeout = 0;
+                check();
+                finish('timeout');
+                return GLib.SOURCE_REMOVE;
+            });
+            requested = true;
+            inputMethod.request_surrounding();
+        } catch {
+            finish('unavailable');
+        }
+    }
+
+    _bindContext(target, range) {
+        this._releaseHandoff();
+        const handoff = {...target, range, token: GLib.uuid_string_random(), active: true, signals: [], timeout: 0};
+        if (this._caret?.focus === target.focus && this._caret.key !== null)
+            handoff.rect = this._caret.key;
+        this._handoff = handoff;
+        try {
+            const watch = (object, signal, callback) => {
+                handoff.signals.push([object, object.connect(signal, callback)]);
+            };
+            const invalidate = () => this._releaseHandoff(handoff);
+            const revalidate = () => {
+                if (!this._revalidateHandoff(handoff))
+                    invalidate();
+            };
+            // Keep these watches through the response and all clipboard work.
+            // Any observed focus transition invalidates, including away/back.
+            watch(global.display, 'notify::focus-window', invalidate);
+            watch(global.stage, 'notify::key-focus', invalidate);
+            watch(target.inputMethod, 'notify::content-purpose', invalidate);
+            watch(target.inputMethod, 'notify::content-hints', invalidate);
+            // Clients re-commit an unchanged cursor rectangle on unrelated
+            // redraws. A moved rectangle invalidates; a repeated one only
+            // rechecks the bound range (a real caret move changes it too).
+            watch(target.inputMethod, 'cursor-location-changed', (_im, rect) => {
+                const next = rectKey(rect);
+                if (next === null || (handoff.rect !== undefined && handoff.rect !== next)) {
+                    invalidate();
+                    return;
+                }
+                handoff.rect = next;
+                revalidate();
+            });
+            watch(target.inputMethod, 'surrounding-text-set', revalidate);
+            handoff.timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HANDOFF_TIMEOUT_MS, () => {
+                handoff.timeout = 0;
+                invalidate();
+                return GLib.SOURCE_REMOVE;
+            });
+            return handoff.token;
+        } catch {
+            this._releaseHandoff(handoff);
+            throw new Error('Context binding unavailable');
+        }
+    }
+
+    _handoffTargetValid(handoff) {
+        return handoff?.active && this._daemonOwner === handoff.owner && this._lifetime.active &&
+            Main.inputMethod === handoff.inputMethod && handoff.inputMethod.currentFocus === handoff.focus &&
+            global.display.focus_window === handoff.window && global.stage.get_key_focus?.() === handoff.keyFocus &&
+            !contextProtection(handoff.inputMethod) && !handoff.inputMethod.hasPreedit();
+    }
+
+    _revalidateHandoff(handoff) {
+        try {
+            if (!this._handoffTargetValid(handoff))
+                return false;
+            const current = surroundingRange(handoff.inputMethod);
+            return this._handoffTargetValid(handoff) && current &&
+                Object.keys(handoff.range).every(key => current[key] === handoff.range[key]);
+        } catch {
+            return false;
+        }
+    }
+
+    _releaseHandoff(handoff = this._handoff) {
+        if (!handoff)
+            return;
+        handoff.active = false;
+        handoff.range = null;
+        for (const [object, id] of handoff.signals) {
+            try {
+                object.disconnect(id);
+            } catch {
+                // The focus may already have been destroyed.
+            }
+        }
+        handoff.signals = [];
+        if (handoff.timeout)
+            GLib.Source.remove(handoff.timeout);
+        handoff.timeout = 0;
+        if (this._handoff === handoff)
+            this._handoff = null;
+        if (this._injection?.handoff === handoff && !this._injection.pasted)
+            this._cancelInjection();
+    }
+
+    _disconnectSelection() {
+        if (this._ownerWatch)
+            this._selection.disconnect(this._ownerWatch);
         this._ownerWatch = 0;
         this._owners.clear();
-        for (const invocation of this._pending)
-            settle(invocation, this._pasted.has(invocation), false, 'Extension disabled');
-        this._pending.clear();
-        this._pasted.clear();
+    }
+
+    destroy() {
+        if (this._caretWatch) {
+            try {
+                this._caretSource.disconnect(this._caretWatch);
+            } catch {
+                // The input method may already be gone.
+            }
+        }
+        this._caretWatch = 0;
+        this._caretSource = null;
+        this._caret = null;
+        this._cancelInjection(true);
+        this._releaseHandoff();
+        ++this._generation;
+        for (const finish of this._contextRequests)
+            finish('unavailable');
+        this._lifetime.destroy();
+        // A queued paste still needs its selection after disable. Its independent
+        // grace timer retains the owner watch and performs conditional restoration.
+        if (!this._injection?.pasted) {
+            this._restoreOwned(true);
+            this._disconnectSelection();
+        }
+        for (const invocation of this._pending) {
+            if (!this._pasted.has(invocation)) {
+                settle(invocation, false, false, 'Extension disabled');
+                this._pending.delete(invocation);
+            }
+        }
         this._keyboard.run_dispose();
         this._keyboard = null;
     }
 
+    _cancelInjection(explicit = false) {
+        // Keys are queued, not acknowledged as consumed. Cancellation after
+        // submission must not shorten the normal clipboard consumption grace.
+        if (this._injection?.pasted)
+            return;
+        // Explicit: the daemon cancelled, the daemon changed, or disable().
+        // Anything else that aborts before paste is a moved target.
+        if (explicit && this._injection)
+            this._injection.explicit = true;
+        this._injection?.lifetime.destroy();
+        this._restoreOwned(true);
+    }
+
+    CancelInjectAsync([requestId], invocation) {
+        if (!this._daemonOwner || invocation.get_sender() !== this._daemonOwner) {
+            invocation.return_dbus_error('org.localwispr.Shell1.Error.Denied', 'Daemon owner required');
+            return;
+        }
+        if (this._injection?.requestId === requestId)
+            this._cancelInjection(true);
+        invocation.return_value(new GLib.Variant('()', []));
+    }
+
+    InjectCancellableAsync([requestId, ...params], invocation) {
+        if (!this._daemonOwner || invocation.get_sender() !== this._daemonOwner ||
+            typeof requestId !== 'string' || !requestId || requestId.length > 128) {
+            invocation.return_dbus_error('org.localwispr.Shell1.Error.Denied', 'Valid daemon request required');
+            return;
+        }
+        return this.InjectAsync(params, invocation, requestId);
+    }
+
+    InjectBoundAsync([requestId, token, ...params], invocation) {
+        if (!this._daemonOwner || invocation.get_sender() !== this._daemonOwner ||
+            typeof requestId !== 'string' || !requestId || requestId.length > 128) {
+            invocation.return_dbus_error('org.localwispr.Shell1.Error.Denied', 'Valid daemon request required');
+            return;
+        }
+        const handoff = this._handoff;
+        if (!handoff || token !== handoff.token || !this._revalidateHandoff(handoff)) {
+            if (handoff && token === handoff.token)
+                this._releaseHandoff(handoff);
+            invocation.return_dbus_error('org.localwispr.Shell1.Error.StaleContext', 'Insertion context changed or expired');
+            return;
+        }
+        return this.InjectAsync(params, invocation, requestId, handoff);
+    }
+
     _valid(generation) {
-        return this._lifetime.active && generation === this._generation;
+        const operation = this._injection;
+        return this._lifetime.active && generation === this._generation &&
+            operation?.lifetime.active &&
+            (operation.pasted ||
+                ((!operation.handoff || operation.handoff.active) &&
+                 global.display.focus_window === operation.window &&
+                 global.stage.get_key_focus?.() === operation.keyFocus &&
+                 Main.inputMethod?.currentFocus === operation.inputFocus));
     }
 
     async _save(type, generation) {
@@ -573,7 +1013,8 @@ class ShellService {
         for (const mime of mimes) {
             const output = Gio.MemoryOutputStream.new_resizable();
             const transfer = new Lifetime();
-            const cancelled = this._lifetime.cancellable.connect(() => transfer.destroy());
+            const operationLifetime = this._injection.lifetime;
+            const cancelled = operationLifetime.cancellable.connect(() => transfer.destroy());
             transfer.wait(TRANSFER_TIMEOUT_MS).then(active => {
                 if (active)
                     transfer.cancellable.cancel();
@@ -602,7 +1043,7 @@ class ShellService {
                 output.close(null);
                 contents.push([mime, output.steal_as_bytes()]);
             } finally {
-                this._lifetime.cancellable.disconnect(cancelled);
+                operationLifetime.cancellable.disconnect(cancelled);
                 transfer.destroy();
                 output.close(null);
             }
@@ -610,11 +1051,13 @@ class ShellService {
         return contents.length ? savedSelection(contents) : null;
     }
 
-    _restoreOwned() {
+    _restoreOwned(discardUnrestorable = false) {
         const snapshots = this._restore;
         this._restore = [];
         let ok = true;
-        for (const {type, injected, saved} of snapshots) {
+        for (const {type, injected, saved, restorable} of snapshots) {
+            if (!restorable && !discardUnrestorable)
+                continue;
             if (this._owners.get(type) !== injected)
                 continue;
             try {
@@ -638,21 +1081,53 @@ class ShellService {
             this._keyboard.notify_keyval(t++, kv, Clutter.KeyState.RELEASED);
     }
 
-    async InjectAsync(params, invocation) {
+    async InjectAsync(params, invocation, requestId = null, handoff = null) {
         const [text, chord, restore, delayMs] = params;
         if (!this._lifetime.active || this._pending.size) {
             invocation.return_dbus_error('org.localwispr.Shell1.Error.Busy', 'Another insertion is in progress');
             return;
         }
+        // A claimed token is no longer bounded by a clock: the watches below
+        // and the handoff's own watches decide whether its target still holds.
+        if (handoff?.timeout) {
+            GLib.Source.remove(handoff.timeout);
+            handoff.timeout = 0;
+        }
         const generation = ++this._generation;
+        const operation = {
+            requestId, handoff, lifetime: new Lifetime(), pasted: false, explicit: false,
+            signals: [], grace: null,
+            window: global.display.focus_window,
+            keyFocus: global.stage.get_key_focus?.(),
+            inputFocus: Main.inputMethod?.currentFocus,
+        };
+        this._injection = operation;
+        const watch = (object, signal, callback) => {
+            if (typeof object?.connect === 'function')
+                operation.signals.push([object, object.connect(signal, callback)]);
+        };
+        const cancelBeforePaste = () => {
+            if (!operation.pasted && this._injection === operation)
+                this._cancelInjection();
+        };
+        const checkFocus = () => {
+            if (!this._valid(generation))
+                cancelBeforePaste();
+        };
+        const changedField = cancelBeforePaste;
         this._pending.add(invocation);
         let ok = false;
         let failure = 'Insertion cancelled';
         try {
+            watch(global.display, 'notify::focus-window', checkFocus);
+            watch(global.stage, 'notify::key-focus', checkFocus);
+            watch(Main.inputMethod, 'notify::content-purpose', changedField);
+            watch(Main.inputMethod, 'notify::content-hints', changedField);
             let backedUp = this._restoreOwned();
             const types = [Meta.SelectionType.SELECTION_CLIPBOARD, Meta.SelectionType.SELECTION_PRIMARY];
             const snapshots = [];
             for (const type of types) {
+                const owner = this._owners.get(type);
                 let saved = null;
                 let restorable = restore;
                 try {
@@ -666,9 +1141,15 @@ class ShellService {
                 }
                 if (!this._valid(generation))
                     return;
-                snapshots.push({type, saved, restorable, owner: this._owners.get(type)});
+                // A failed MIME read can be tolerated, but a new user copy
+                // must never be overwritten and then mistaken for our backup.
+                if (this._owners.get(type) !== owner)
+                    throw new Error('Clipboard changed while saving');
+                snapshots.push({type, saved, restorable, owner});
             }
             // Both selections are saved before either is overwritten.
+            if (handoff && !this._revalidateHandoff(handoff))
+                throw new Error('Insertion context changed');
             if (snapshots.some(({type, owner}) => this._owners.get(type) !== owner))
                 throw new Error('Clipboard changed while saving');
             const installed = [];
@@ -678,34 +1159,67 @@ class ShellService {
                 if (nativeSelection)
                     formats.push(['text/plain', bytes], ['UTF8_STRING', bytes]);
                 const injected = savedSelection(formats);
+                // Track before setting: a setter may take ownership then fail.
+                // Never-pasted text is discarded even without a usable backup.
+                this._restore.push({type, injected, saved, restorable});
                 this._selection.set_owner(type, injected);
                 installed.push({type, injected});
-                if (restorable)
-                    this._restore.push({type, injected, saved});
             }
             // Clipboard propagation is separate from the daemon's HUD dissolve wait.
-            if (!await this._lifetime.wait(20) || !this._valid(generation))
+            if (!await operation.lifetime.wait(20) || !this._valid(generation))
                 return;
             if (installed.some(({type, injected}) => this._owners.get(type) !== injected))
                 throw new Error('Clipboard ownership lost before paste');
-            this._press(CHORDS[chord] ?? CHORDS['shift-insert']);
+            if (handoff && !this._revalidateHandoff(handoff))
+                throw new Error('Insertion context changed');
+            // The commit point is immediately before the first queued key.
+            // There is no atomic transaction with the application's later paste.
+            operation.pasted = true;
             this._pasted.add(invocation);
-            if (restore) {
-                if (!await this._lifetime.wait(Math.max(100, delayMs)) || !this._valid(generation))
-                    return;
-                backedUp = this._restoreOwned() && backedUp;
-            }
+            if (restore)
+                operation.grace = operation.lifetime.wait(
+                    Math.min(MAX_RESTORE_DELAY_MS, Math.max(100, delayMs)));
+            if (handoff)
+                this._releaseHandoff(handoff);
+            this._press(CHORDS[chord] ?? CHORDS['shift-insert']);
             ok = backedUp;
         } catch (e) {
             failure = e.message;
-            if (this._valid(generation)) {
+            if (this._valid(generation))
                 logError(e, 'localwispr: inject failed');
-                this._restoreOwned();
-            }
         } finally {
+            if (operation.pasted && restore) {
+                await operation.grace;
+                ok = this._restoreOwned() && ok;
+            }
+            // Restore on cancellation or focus changes too, while ownership
+            // checks keep any newer user clipboard contents intact.
+            for (const [object, id] of operation.signals) {
+                try {
+                    object.disconnect(id);
+                } catch {
+                    // A focus object can be destroyed during cancellation.
+                }
+            }
+            if (this._injection === operation) {
+                if (!operation.pasted)
+                    this._restoreOwned(true);
+                else
+                    this._restore = []; // Successful restore=false keeps the text.
+                if (handoff)
+                    this._releaseHandoff(handoff);
+                operation.lifetime.destroy();
+                this._injection = null;
+            }
+            // A bound request that ended before its keys were queued, for any
+            // reason but explicit cancellation, pasted nothing: the daemon can
+            // safely re-read context and retry instead of losing the text.
+            const stale = Boolean(handoff) && !operation.explicit && !this._pasted.has(invocation);
             if (this._pending.delete(invocation))
-                settle(invocation, this._pasted.has(invocation), ok, failure);
+                settle(invocation, this._pasted.has(invocation), ok, failure, stale);
             this._pasted.delete(invocation);
+            if (!this._lifetime.active)
+                this._disconnectSelection();
         }
     }
 }
@@ -733,7 +1247,11 @@ export default class LocalWisprExtension extends Extension {
         // If the daemon dies mid-dictation, don't leave the capsule on screen.
         this._watchId = Gio.bus_watch_name(
             Gio.BusType.SESSION, DAEMON_NAME, Gio.BusNameWatcherFlags.NONE,
-            () => this._syncDaemon(), () => {
+            (_connection, _name, owner) => {
+                this._service?._setDaemonOwner(owner);
+                this._syncDaemon();
+            }, () => {
+                this._service?._setDaemonOwner(null);
                 ++this._daemonGeneration;
                 this._state = 'idle';
                 this._pendingNotice = null;

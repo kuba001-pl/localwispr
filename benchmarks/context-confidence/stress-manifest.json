@@ -1,0 +1,36 @@
+[
+  {
+    "id": "quiet-gain-0.1",
+    "reference": "Do not delete the draft before Maria has checked the final paragraph.",
+    "source_ids": [
+      "neutral-01-en"
+    ],
+    "samples": 62444,
+    "rms": 0.008646702364132298,
+    "sha256": "1e43ebdb5ebc90538611079d322ce498bd6c27bd7f1acbe15f94b23607f2cc60",
+    "purpose": "dev-derived acoustic stress; overlay has no unambiguous word reference and no WER score"
+  },
+  {
+    "id": "quiet-gain-0.01",
+    "reference": "Do not delete the draft before Maria has checked the final paragraph.",
+    "source_ids": [
+      "neutral-01-en"
+    ],
+    "samples": 62444,
+    "rms": 0.0008646702371722337,
+    "sha256": "b5477a3a6266db864e71eff3405e5a6f3e2609f9dcb0a1357ad58df4fc0c0cc5",
+    "purpose": "dev-derived acoustic stress; overlay has no unambiguous word reference and no WER score"
+  },
+  {
+    "id": "mixedspeech-dev-two-speaker",
+    "reference": null,
+    "source_ids": [
+      "neutral-01-en",
+      "neutral-02-pl"
+    ],
+    "samples": 63405,
+    "rms": 0.060982732720848115,
+    "sha256": "5a46f8b75f54cd2d0595859ef3d96137646bcf5b19a133463a56a788cee7e250",
+    "purpose": "dev-derived acoustic stress; overlay has no unambiguous word reference and no WER score"
+  }
+]

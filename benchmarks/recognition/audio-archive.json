@@ -1,0 +1,9 @@
+{
+  "created_utc": "2026-11-03T07:49:39.005932+00:00",
+  "file": "audio-fixtures.tar.zst",
+  "sha256": "ea0f878407312bbf48cf246877c6509f1c40d79302793331768cffb7cb49cfcf",
+  "bytes": 64553453,
+  "fixtures": 278,
+  "purpose": "Canonical lossless float32 audio used in all recognition runs; restore these rather than resynthesizing stochastic f3 variants.",
+  "command": "tar --sort=name --mtime=1970-01-01 --owner=0 --group=0 --numeric-owner -I 'zstd -T2 -10' -cf audio-fixtures.tar.zst -C benchmarks/recognition audio"
+}

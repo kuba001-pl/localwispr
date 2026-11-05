@@ -1,0 +1,9 @@
+{
+  "src/cleanup.rs": "a3722e21b562363c5ac3ae399eadab98c094c17102ed1d187dcd842f92f81f86",
+  "src/stt.rs": "62489bb88f3240806dc08db117dca8c6d8cc50aa22adeaf737522abccf36955a",
+  "src/insertion.rs": "0930ef91654ac0b0ec198c884a48bb93dc7d95432a3a6d31f050bf13ee25be30",
+  "src/inject.rs": "2188495005b30d4dffcb33a455b2c70917f8ba76854c53560ec4abcc9349a697",
+  "src/cursor_context.rs": "a0295c07e5371a2ed958e42088a596c4723526150a81b6fefb35bdd52a916f4e",
+  "src/daemon.rs": "8f53d1ddede38e687b198082d1a7743a7c222056f5a6f360d6b9ba1e34c8a336",
+  "gnome-extension/localwispr@localwispr.github.io/extension.js": "b09e095d767ede06424e3e4b40cea92ae5dfbb0438e9f106961dc88081a1804d"
+}

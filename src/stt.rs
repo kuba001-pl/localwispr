@@ -82,7 +82,7 @@ impl SttWorker {
         let thread = std::thread::Builder::new()
             .name("stt".into())
             .spawn(move || {
-                let _ctx = ctx; // keep the model alive for the state
+                // Keep the model on this thread for decoding and token budgeting.
                 let mut lang_cache: Option<(String, f32)> = None;
                 let mut vad: Option<(std::path::PathBuf, WhisperVadContext)> = None;
                 for msg in rx {
@@ -106,16 +106,21 @@ impl SttWorker {
                                     audio_secs: job.audio.len() as f32 / SAMPLE_RATE as f32,
                                     ms: t0.elapsed().as_millis() as u64,
                                 }),
-                                Some(s) => {
-                                    transcribe(&mut state, &job, &s, &mut lang_cache, abort.clone())
-                                        .map(|mut t| {
-                                            t.audio_secs =
-                                                job.audio.len() as f32 / SAMPLE_RATE as f32;
-                                            t.ms = t0.elapsed().as_millis() as u64;
-                                            t
-                                        })
-                                }
+                                Some(s) => transcribe(
+                                    &ctx,
+                                    &mut state,
+                                    &job,
+                                    &s,
+                                    &mut lang_cache,
+                                    abort.clone(),
+                                )
+                                .map(|mut t| {
+                                    t.audio_secs = job.audio.len() as f32 / SAMPLE_RATE as f32;
+                                    t.ms = t0.elapsed().as_millis() as u64;
+                                    t
+                                }),
                                 None => transcribe(
+                                    &ctx,
                                     &mut state,
                                     &job,
                                     &job.audio,
@@ -295,7 +300,18 @@ fn rms(x: &[f32]) -> f32 {
     (x.iter().map(|v| v * v).sum::<f32>() / x.len() as f32).sqrt()
 }
 
+// Digital silence (including a constant DC offset) contains no speech. This
+// deliberately avoids a volume threshold: quiet but varying speech must still
+// reach Whisper, even when the user disables VAD.
+fn has_audio_signal(input: &[f32]) -> bool {
+    let Some(&first) = input.first() else {
+        return false;
+    };
+    input.iter().all(|sample| sample.is_finite()) && input.iter().any(|sample| *sample != first)
+}
+
 fn transcribe(
+    context: &WhisperContext,
     state: &mut whisper_rs::WhisperState,
     job: &Job,
     input: &[f32],
@@ -307,8 +323,13 @@ fn transcribe(
     let audio_secs = input.len() as f32 / SAMPLE_RATE as f32;
     let threads = cfg.threads as usize;
 
-    // Previews of near-silence are pointless and are where Whisper hallucinates.
-    if job.partial && rms(input) < 0.004 {
+    anyhow::ensure!(
+        input.iter().all(|sample| sample.is_finite()),
+        "audio contains non-finite samples"
+    );
+    // Finals must reject digital silence too: contextual hints can otherwise
+    // turn an empty recording into an invented name when VAD is disabled.
+    if !has_audio_signal(input) || (job.partial && rms(input) < 0.004) {
         return Ok(Transcript {
             text: String::new(),
             language: String::new(),
@@ -377,12 +398,9 @@ fn transcribe(
         // tokens/s even in Polish.
         p.set_max_tokens((audio_secs * 8.0) as i32 + 16);
     }
-    let prompt = [switch_hint.unwrap_or(""), cfg.initial_prompt.trim()]
-        .join(" ")
-        .trim()
-        .to_owned();
-    if !prompt.is_empty() {
-        p.set_initial_prompt(&prompt);
+    let prompt_tokens = bounded_prompt_tokens(context, cfg.initial_prompt.trim(), switch_hint)?;
+    if !prompt_tokens.is_empty() {
+        p.set_tokens(&prompt_tokens);
     }
     // whisper-rs 0.16's `set_abort_callback_safe` casts its double-boxed
     // closure back to the wrong type (reads garbage → random aborts), so use
@@ -436,6 +454,31 @@ const CODE_SWITCH_HINTS: &[(&str, &str, &str)] = &[(
     "en",
     "Dobra, zrobię deploy na staging, okay? Potem check the logs i fix tego buga.",
 )];
+
+fn bounded_prompt_tokens(
+    context: &WhisperContext,
+    configured: &str,
+    switch_hint: Option<&str>,
+) -> Result<Vec<whisper_rs::WhisperTokenId>> {
+    // Native Whisper uses at most half the text context, minus the previous-
+    // text marker. Reserve the bilingual hint first, then retain the suffix
+    // containing nearby vocabulary and the user's highest-priority manual hint.
+    let budget = (context.n_text_ctx() / 2).saturating_sub(1).max(0) as usize;
+    let hint = switch_hint.unwrap_or("");
+    let mut tokens = context.tokenize(hint, hint.len().saturating_add(1))?;
+    tokens.truncate(budget);
+    if !configured.is_empty() && tokens.len() < budget {
+        let text = if hint.is_empty() {
+            configured.to_owned()
+        } else {
+            format!(" {configured}")
+        };
+        let configured_tokens = context.tokenize(&text, text.len().saturating_add(1))?;
+        let retained = configured_tokens.len().min(budget - tokens.len());
+        tokens.extend_from_slice(&configured_tokens[configured_tokens.len() - retained..]);
+    }
+    Ok(tokens)
+}
 
 fn code_switch_hint(languages: &[String]) -> Option<&'static str> {
     let allowed = |code: &str| languages.iter().any(|l| l == code);
@@ -538,77 +581,441 @@ const HALLUCINATIONS: &[&str] = &[
     "napisy by",
 ];
 
-pub fn filter_hallucinations(text: &str) -> String {
-    let mut out = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    for h in HALLUCINATIONS {
-        loop {
-            let lower = out.to_lowercase();
-            let Some(pos) = lower.find(h) else { break };
-            // Byte offsets of the lowercase string match the original for these
-            // ASCII/Polish phrases only when lengths agree; fall back to a
-            // char-safe cut otherwise.
-            if lower.len() != out.len() || !out.is_char_boundary(pos) {
-                break;
+/// Byte spans of words, so deterministic edits never rebuild whitespace.
+pub(crate) fn word_spans(text: &str) -> Vec<std::ops::Range<usize>> {
+    let mut spans = Vec::new();
+    let mut start = None;
+    for (i, c) in text.char_indices() {
+        if c.is_whitespace() {
+            if let Some(start) = start.take() {
+                spans.push(start..i);
             }
-            let mut end = pos + h.len();
-            while end < out.len() && !out.is_char_boundary(end) {
-                end += 1;
-            }
-            // Swallow trailing punctuation like "!" or "." after the phrase.
-            let rest = &out[end..];
-            let trimmed = rest.trim_start_matches(['.', '!', ',', ' ']);
-            out = format!("{}{}", &out[..pos], trimmed).trim().to_owned();
+        } else {
+            start.get_or_insert(i);
         }
     }
-    // Lone bracketed annotations such as "[Music]" or "(śmiech)".
-    let words: Vec<&str> = out
-        .split_whitespace()
-        .filter(|w| {
-            !((w.starts_with('[') && w.ends_with(']')) || (w.starts_with('(') && w.ends_with(')')))
-        })
-        .collect();
-    words.join(" ")
+    if let Some(start) = start {
+        spans.push(start..text.len());
+    }
+    spans
 }
 
-/// Collapses decoder repetition loops ("to, to, to, …", ". . . .",
-/// "iszisziszisz") to a single occurrence. Returns whether a loop was found.
-pub fn collapse_loops(text: &str) -> (String, bool) {
-    fn key(w: &str) -> String {
-        w.trim_matches(|c: char| c.is_ascii_punctuation())
-            .to_lowercase()
+/// Explicit code and indented lines are opaque to speech cleanup. Unclosed
+/// backticks/fences are protected too: previews often end inside a code span.
+fn code_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
+    let mut ranges = Vec::new();
+    let mut fence = crate::fence::Fence::default();
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        let body = line.trim_start_matches([' ', '\t']);
+        let in_fence = fence.is_open();
+        let boundary = fence.line(line.trim_end_matches(['\r', '\n']));
+        let code_statement = (["let ", "const ", "var "]
+            .iter()
+            .any(|prefix| body.starts_with(prefix))
+            && body.contains('='))
+            || (["fn ", "pub fn "]
+                .iter()
+                .any(|prefix| body.starts_with(prefix))
+                && body.contains('('));
+        let command = [
+            "cargo test",
+            "cargo run",
+            "cargo build",
+            "git diff",
+            "git status",
+            "npm run",
+        ]
+        .iter()
+        .any(|prefix| {
+            body.trim_end().strip_prefix(prefix).is_some_and(|args| {
+                (args.is_empty() || args.starts_with(char::is_whitespace))
+                    && args
+                        .split_whitespace()
+                        .all(|arg| arg.starts_with('-') || arg.contains('/'))
+            })
+        });
+        if in_fence
+            || boundary
+            || line.starts_with("    ")
+            || line.starts_with('\t')
+            || code_statement
+            || command
+        {
+            ranges.push(offset..offset + line.trim_end_matches(['\r', '\n']).len());
+        }
+        offset += line.len();
     }
-    let mut looped = false;
-    let words: Vec<String> = text
-        .split_whitespace()
-        .map(|w| {
-            let (w, l) = collapse_word(w);
-            looped |= l;
-            w
-        })
-        .collect();
-    let keys: Vec<String> = words.iter().map(|w| key(w)).collect();
-    let mut out: Vec<&str> = Vec::with_capacity(words.len());
     let mut i = 0;
-    'scan: while i < words.len() {
-        for n in 1..=4 {
-            let mut reps = 1;
-            while i + (reps + 1) * n <= words.len()
-                && keys[i + reps * n..i + (reps + 1) * n] == keys[i..i + n]
-            {
-                reps += 1;
+    while i < text.len() {
+        if let Some(range) = ranges.iter().find(|r| r.contains(&i)) {
+            i = range.end;
+            continue;
+        }
+        if text.as_bytes()[i] == b'`' {
+            let n = text[i..].bytes().take_while(|b| *b == b'`').count();
+            let delimiter = "`".repeat(n);
+            let end = text[i + n..]
+                .find(&delimiter)
+                .map_or(text.len(), |end| i + n + end + n);
+            ranges.push(i..end);
+            i = end;
+        } else {
+            i += text[i..].chars().next().unwrap().len_utf8();
+        }
+    }
+    ranges.sort_by_key(|r| r.start);
+    ranges
+}
+
+pub(crate) fn overlaps(a: &std::ops::Range<usize>, b: &std::ops::Range<usize>) -> bool {
+    a.start < b.end && b.start < a.end
+}
+
+/// Exact technical fragments. Ordinary punctuation/case in prose stays editable.
+pub(crate) fn literal_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
+    let mut ranges = code_ranges(text);
+    // Delimited arguments may contain whitespace and nested delimiters. Scan
+    // characters, not whitespace tokens; an unfinished preview is opaque too.
+    let mut brackets = Vec::new();
+    for (i, c) in text.char_indices() {
+        if ranges.iter().any(|r| r.contains(&i)) {
+            continue;
+        }
+        match c {
+            '[' | '(' => brackets.push((c, i)),
+            ']' | ')' => {
+                if let Some(&(open, start)) = brackets.last()
+                    && matches!((open, c), ('[', ']') | ('(', ')'))
+                {
+                    brackets.pop();
+                    if brackets.is_empty() {
+                        ranges.push(start..i + c.len_utf8());
+                    }
+                }
             }
-            // Natural speech repeats a word or phrase at most three times.
-            if reps >= 4 {
-                looped = true;
-                out.extend(words[i..i + n].iter().map(String::as_str));
-                i += reps * n;
-                continue 'scan;
+            _ => {}
+        }
+    }
+    if let Some(&(_, start)) = brackets.first() {
+        ranges.push(start..text.len());
+    }
+    let spans = word_spans(text);
+    for (i, span) in spans.iter().enumerate() {
+        let token = &text[span.clone()];
+        let left_trimmed = token.trim_start_matches([',', '.', '!', '?', ':', ';']);
+        let core = left_trimmed.trim_end_matches([',', '.', '!', '?', ':', ';']);
+        if ((core.starts_with('[') && core.ends_with(']'))
+            || (core.starts_with('(') && core.ends_with(')')))
+            || core.contains('_')
+            || core.contains("::")
+            || core.contains('=')
+            || core.starts_with("--")
+            || (spans.get(i + 1).is_some_and(|next| {
+                matches!(
+                    text[next.clone()].trim_end_matches(';'),
+                    "=" | ":=" | "+=" | "-="
+                )
+            }) && core.chars().all(|c| c.is_alphanumeric() || c == '_'))
+            || matches!(core, "em" | "er" | "EM" | "ER" | "mm" | "MM")
+            || (matches!(core, "um" | "hm" | "UM" | "HM")
+                && i > 0
+                && (text[spans[i - 1].clone()]
+                    .chars()
+                    .last()
+                    .is_some_and(|c| c.is_ascii_digit())
+                    || crate::cleanup::cardinal_atom(&text[spans[i - 1].clone()].to_lowercase())
+                        .is_some()))
+        {
+            let start = span.start + token.len() - left_trimmed.len();
+            ranges.push(start..start + core.len());
+        }
+    }
+    ranges.sort_by_key(|r| r.start);
+    // Code lines already include their inner tokens.
+    let mut merged: Vec<std::ops::Range<usize>> = Vec::new();
+    for range in ranges {
+        if let Some(prev) = merged.last_mut().filter(|r| r.end >= range.start) {
+            prev.end = prev.end.max(range.end);
+        } else {
+            merged.push(range);
+        }
+    }
+    merged
+}
+
+/// Outermost prose quotations, including unfinished previews. Apostrophes
+/// inside words are not quote delimiters; escaped quotes stay inside a span.
+pub(crate) fn quoted_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
+    let chars: Vec<(usize, char)> = text.char_indices().collect();
+    let mut stack: Vec<(char, usize)> = Vec::new();
+    let mut ranges = Vec::new();
+    let mut escaped = false;
+    for (n, &(i, c)) in chars.iter().enumerate() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if c == '\\' {
+            escaped = true;
+            continue;
+        }
+        if matches!(c, '\'' | '’')
+            && n > 0
+            && chars[n - 1].1.is_alphanumeric()
+            && chars
+                .get(n + 1)
+                .is_some_and(|(_, next)| next.is_alphanumeric())
+        {
+            continue;
+        }
+        if stack.last().is_some_and(|(close, _)| *close == c) {
+            let (_, start) = stack.pop().unwrap();
+            if stack.is_empty() {
+                ranges.push(start..i + c.len_utf8());
+            }
+        } else {
+            let close = match c {
+                '"' => '"',
+                '\'' => '\'',
+                '“' | '„' => '”',
+                '‘' => '’',
+                '«' => '»',
+                '‹' => '›',
+                _ => continue,
+            };
+            // A trailing possessive apostrophe is not an opening quotation.
+            if c == '\'' && n > 0 && chars[n - 1].1.is_alphanumeric() {
+                continue;
+            }
+            stack.push((close, i));
+        }
+    }
+    if let Some(&(_, start)) = stack.first() {
+        ranges.push(start..text.len());
+    }
+    ranges
+}
+
+/// Remove only the selected spans and redundant adjacent horizontal spaces.
+/// Newlines and the indentation following them always belong to the source.
+fn removal_span(text: &str, span: &std::ops::Range<usize>) -> std::ops::Range<usize> {
+    let mut range = span.clone();
+    let after = &text[range.end..];
+    range.end += after.len() - after.trim_start_matches([' ', '\t']).len();
+    if range.end == span.end {
+        let before = &text[..range.start];
+        let line = before.rsplit('\n').next().unwrap_or(before);
+        if line.chars().any(|c| !c.is_whitespace()) {
+            range.start -= line.len() - line.trim_end_matches([' ', '\t']).len();
+        }
+    }
+    range
+}
+
+pub(crate) fn removal_spans(
+    text: &str,
+    spans: &[std::ops::Range<usize>],
+) -> Vec<std::ops::Range<usize>> {
+    let mut sorted = spans.to_vec();
+    sorted.sort_by_key(|r| r.start);
+    let mut merged: Vec<std::ops::Range<usize>> = Vec::new();
+    for span in sorted {
+        if let Some(prev) = merged.last_mut().filter(|r| {
+            r.end >= span.start
+                || text[r.end..span.start]
+                    .chars()
+                    .all(|c| matches!(c, ' ' | '\t'))
+        }) {
+            prev.end = prev.end.max(span.end);
+        } else {
+            merged.push(span);
+        }
+    }
+    merged.iter().map(|r| removal_span(text, r)).collect()
+}
+
+pub(crate) fn remove_spans(text: &str, spans: &[std::ops::Range<usize>]) -> String {
+    let edits = removal_spans(text, spans);
+    let mut out = String::new();
+    let mut cursor = 0;
+    for range in edits {
+        if range.start > cursor {
+            out.push_str(&text[cursor..range.start]);
+        }
+        cursor = cursor.max(range.end);
+    }
+    out.push_str(&text[cursor..]);
+    out
+}
+
+pub fn filter_hallucinations(text: &str) -> String {
+    let mut protected = code_ranges(text);
+    protected.extend(quoted_ranges(text));
+    let literals = literal_ranges(text);
+    let mut removed = Vec::new();
+    // Match within original UTF-8 spans instead of using offsets from a
+    // lowercased copy (case folding can change individual byte lengths).
+    let spans = word_spans(text);
+    for (i, span) in spans.iter().enumerate() {
+        if protected.iter().any(|r| overlaps(r, span)) {
+            continue;
+        }
+        let token = text[span.clone()].trim_end_matches(['.', '!', ',', '?']);
+        let annotation = token
+            .strip_prefix('[')
+            .and_then(|s| s.strip_suffix(']'))
+            .or_else(|| token.strip_prefix('(').and_then(|s| s.strip_suffix(')')));
+        if !literals
+            .iter()
+            .any(|r| overlaps(r, span) && (r.start < span.start || r.end > span.end))
+            && annotation.is_some_and(|s| {
+                matches!(
+                    s.to_lowercase().as_str(),
+                    "music"
+                        | "applause"
+                        | "laughter"
+                        | "laughing"
+                        | "silence"
+                        | "muzyka"
+                        | "śmiech"
+                        | "oklaski"
+                        | "cisza"
+                )
+            })
+        {
+            removed.push(span.clone());
+            continue;
+        }
+        if literals.iter().any(|r| overlaps(r, span)) {
+            continue;
+        }
+        for phrase in HALLUCINATIONS {
+            let count = phrase.split_whitespace().count();
+            if let Some(last) = spans.get(i + count - 1) {
+                let range = span.start..last.end;
+                if literals
+                    .iter()
+                    .chain(protected.iter())
+                    .any(|r| overlaps(r, &range))
+                {
+                    continue;
+                }
+                // Boilerplate must be a complete trailing sentence, not words
+                // embedded in genuine dictated prose.
+                if !text[range.end..].trim().is_empty()
+                    || (!text[..range.start].trim().is_empty()
+                        && !text[..range.start].trim_end().ends_with(['.', '!', '?']))
+                {
+                    continue;
+                }
+                let candidate = text[range.clone()]
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                if candidate
+                    .trim_end_matches(['.', '!', ',', '?'])
+                    .to_lowercase()
+                    == *phrase
+                {
+                    removed.push(range);
+                }
             }
         }
-        out.push(&words[i]);
+    }
+    let out = remove_spans(text, &removed);
+    // Retain the historical tidying of spaces in plain, single-line speech.
+    // Structured or literal input keeps its original whitespace exactly.
+    if !text.contains(['\n', '\r', '\t'])
+        && literal_ranges(text).is_empty()
+        && quoted_ranges(text).is_empty()
+    {
+        out.split_whitespace().collect::<Vec<_>>().join(" ")
+    } else {
+        out
+    }
+}
+
+/// Collapses decoder loops without reflowing unaffected text or touching code.
+pub fn collapse_loops(text: &str) -> (String, bool) {
+    let spans = word_spans(text);
+    let mut protected = literal_ranges(text);
+    protected.extend(quoted_ranges(text));
+    let opaque: Vec<bool> = spans
+        .iter()
+        .map(|s| protected.iter().any(|r| overlaps(s, r)))
+        .collect();
+    let words: Vec<String> = spans
+        .iter()
+        .enumerate()
+        .map(|(i, span)| {
+            let word = &text[span.clone()];
+            if opaque[i] {
+                word.to_owned()
+            } else {
+                collapse_word(word).0
+            }
+        })
+        .collect();
+    let keys: Vec<String> = words
+        .iter()
+        .map(|word| {
+            word.trim_matches(|c: char| c.is_ascii_punctuation())
+                .to_lowercase()
+        })
+        .collect();
+    let mut edits = Vec::new();
+    let mut i = 0;
+    'scan: while i < spans.len() {
+        if !opaque[i] {
+            // Decoder loops can repeat an entire sentence, not just short
+            // phrases. Bound the search while retaining the four-repeat rule;
+            // two or three deliberate repetitions and literal spans survive.
+            for n in 1..=32.min((spans.len() - i) / 4) {
+                let mut reps = 1;
+                while i + (reps + 1) * n <= spans.len() {
+                    let end = i + (reps + 1) * n;
+                    if opaque[i..end].iter().any(|p| *p)
+                        || text[spans[i].start..spans[end - 1].end].contains(['\n', '\r'])
+                        || keys[i + reps * n..end] != keys[i..i + n]
+                    {
+                        break;
+                    }
+                    reps += 1;
+                }
+                if reps >= 4 {
+                    let last = i + reps * n - 1;
+                    let mut end = spans[last].end;
+                    if text[end..].chars().all(|c| matches!(c, ' ' | '\t')) {
+                        end = text.len();
+                    }
+                    edits.push((spans[i + n - 1].end..end, String::new()));
+                    for j in i..i + n {
+                        if words[j] != text[spans[j].clone()] {
+                            edits.push((spans[j].clone(), words[j].clone()));
+                        }
+                    }
+                    i = last + 1;
+                    continue 'scan;
+                }
+            }
+        }
+        if words[i] != text[spans[i].clone()] {
+            edits.push((spans[i].clone(), words[i].clone()));
+        }
         i += 1;
     }
-    (out.join(" "), looped)
+    let looped = !edits.is_empty();
+    edits.sort_by_key(|(range, _)| range.start);
+    let mut out = String::new();
+    let mut cursor = 0;
+    for (range, replacement) in edits {
+        out.push_str(&text[cursor..range.start]);
+        out.push_str(&replacement);
+        cursor = range.end;
+    }
+    out.push_str(&text[cursor..]);
+    (out, looped)
 }
 
 /// Character-level loops inside one "word" ("f-i-i-i-i-i-i", "theiszisziszisz").
@@ -641,7 +1048,64 @@ fn collapse_word(word: &str) -> (String, bool) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn quotations_survive_decoder_cleanup() {
+        for text in [
+            "\"We will win the game. We will win the game. We will win the game. We will win the game.\"",
+            "He said \"play [Music] now\".",
+            "He said \"please thank you for watching everyone\".",
+            "He said “play ‘[Music]’ now”.",
+            "He said ‹go go go go›.",
+            "He said \"go go go go",
+            "Don't alter O’Connor's words.",
+        ] {
+            assert_eq!(super::collapse_loops(text), (text.to_owned(), false));
+            assert_eq!(super::filter_hallucinations(text), text);
+        }
+        assert_eq!(
+            super::filter_hallucinations("We thank you for watching the training video."),
+            "We thank you for watching the training video."
+        );
+        assert_eq!(
+            super::filter_hallucinations("Hello there. Thank you for watching!"),
+            "Hello there."
+        );
+        assert!(super::has_audio_signal(&[0.0, 0.0000009, -0.0000009]));
+        assert!(super::has_audio_signal(&[0.0000009, 0.0, -0.0000009]));
+        assert!(!super::has_audio_signal(&[0.0, f32::NAN]));
+        for text in ["5 UM", "five um", "pięć hm"] {
+            assert!(!super::literal_ranges(text).is_empty(), "{text}");
+        }
+    }
+
+    #[test]
+    fn digital_silence_is_not_speech_but_quiet_variation_is() {
+        assert!(!super::has_audio_signal(&[]));
+        assert!(!super::has_audio_signal(&[0.0; 320]));
+        assert!(!super::has_audio_signal(&[0.125; 320]));
+        assert!(super::has_audio_signal(&[0.0, 0.0001, -0.0001, 0.0]));
+    }
+
     use super::*;
+
+    #[test]
+    fn sentence_decoder_loops_collapse_without_removing_short_or_literal_repeats() {
+        let phrase = "Please keep the existing configuration unchanged.";
+        let looped = std::iter::repeat_n(phrase, 6).collect::<Vec<_>>().join(" ");
+        assert_eq!(collapse_loops(&looped), (phrase.into(), true));
+        for repeats in [2, 3] {
+            let intentional = std::iter::repeat_n(phrase, repeats)
+                .collect::<Vec<_>>()
+                .join(" ");
+            assert_eq!(collapse_loops(&intentional), (intentional.clone(), false));
+        }
+        let code = format!("```text\n{looped}\n```");
+        assert_eq!(collapse_loops(&code), (code.clone(), false));
+        let paragraphs = std::iter::repeat_n(phrase, 6)
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert_eq!(collapse_loops(&paragraphs), (paragraphs.clone(), false));
+    }
 
     #[test]
     fn collapses_decoder_loops() {
@@ -676,6 +1140,55 @@ mod tests {
         }
     }
 
+    #[test]
+    fn filters_only_known_annotations_and_preserves_structure_and_literals() {
+        for text in [
+            "First paragraph.\n\nSecond paragraph.\n",
+            "Use [value] and (x), then [--flag] and (HTTP).",
+            "```rust\nfn main() {\n    let um = [1, 2];\n}\n```",
+            "Use `[Music]` and `thank you for watching` literally.",
+            "alpha\n\n    beta\n\tcommand",
+            "Źródło ẞẞ é İİ\n[value] (x)",
+            "Use ,x_ą. and (żółć).",
+            "Use [the um value] and (the uh value).",
+            "Use [outer (um uh)] unchanged.",
+            "Use [thank you for watching] literally.",
+            "Use (keep [Music] here) literally.",
+            "Use [the um value",
+            "Set um = true",
+        ] {
+            assert_eq!(filter_hallucinations(text), text, "{text:?}");
+            assert_eq!(collapse_loops(text), (text.into(), false), "{text:?}");
+        }
+        assert_eq!(filter_hallucinations("[Music] Hello. (śmiech)"), "Hello.");
+        assert_eq!(
+            filter_hallucinations("[Music]\n\nHello. (śmiech)"),
+            "\n\nHello."
+        );
+        assert_eq!(
+            filter_hallucinations("ẞẞ é thank you for watching İİ"),
+            "ẞẞ é thank you for watching İİ"
+        );
+        assert_eq!(
+            collapse_loops("alpha\n\n  to to to to beta"),
+            ("alpha\n\n  to beta".into(), true)
+        );
+        for literal in [
+            "`um um um um`",
+            "    um um um um",
+            "[x] [x] [x] [x]",
+            "[um um um um]",
+            "(uh uh uh uh)",
+            "alpha\nalpha\nalpha\nalpha",
+        ] {
+            assert_eq!(collapse_loops(literal), (literal.into(), false));
+        }
+        assert_eq!(
+            collapse_loops("alpha  beta\n\n  gamma"),
+            ("alpha  beta\n\n  gamma".into(), false)
+        );
+    }
+
     /// Optional native regression for a real model, separate from ordinary unit tests.
     #[test]
     #[ignore = "requires LOCALWISPR_TEST_WHISPER_MODEL and native model inference"]
@@ -705,6 +1218,47 @@ mod tests {
         assert!(polls.load(Ordering::Relaxed) >= 3);
         // A subsequent call must not retain a dangling callback or partial graph.
         assert!(state.lang_detect(0, 2).is_ok());
+    }
+
+    #[test]
+    #[ignore = "requires LOCALWISPR_TEST_WHISPER_MODEL for native tokenization"]
+    fn context_prompt_budget_preserves_language_nearby_and_manual_hints() {
+        let path = std::env::var("LOCALWISPR_TEST_WHISPER_MODEL").expect("model path");
+        let mut params = WhisperContextParameters::default();
+        params.use_gpu(false);
+        let context = WhisperContext::new_with_params(&path, params).unwrap();
+        let versions = (0..35)
+            .map(|i| format!("v{}.{}.{}", i % 10, i / 10, i % 7))
+            .collect::<Vec<_>>();
+        let nearby = crate::insertion::SurroundingText {
+            before: format!("{} PostgreSQL", versions.join(" ")),
+            after: versions
+                .iter()
+                .rev()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(" "),
+            ..crate::insertion::SurroundingText::default()
+        };
+        let configured = crate::insertion::recognition_prompt("Manual", Some(&nearby));
+        let language_hint = CODE_SWITCH_HINTS[0].2;
+        let tokens = bounded_prompt_tokens(&context, &configured, Some(language_hint)).unwrap();
+        let budget = context.n_text_ctx() as usize / 2 - 1;
+        assert!(tokens.len() <= budget);
+        let language_tokens = context
+            .tokenize(language_hint, language_hint.len() + 1)
+            .unwrap();
+        assert!(tokens.starts_with(&language_tokens));
+        let retained: String = tokens
+            .iter()
+            .map(|token| context.token_to_str_lossy(*token).unwrap().to_string())
+            .collect();
+        assert!(retained.ends_with("PostgreSQL\nManual"), "{retained}");
+        assert!(
+            bounded_prompt_tokens(&context, "", None)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]

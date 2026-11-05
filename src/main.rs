@@ -3,12 +3,15 @@
 mod audio;
 mod cleanup;
 mod config;
+mod cursor_context;
 mod daemon;
 mod dbus;
 mod desktop;
+mod fence;
 mod hotkey;
 mod hud;
 mod inject;
+mod insertion;
 mod llm_proto;
 mod models;
 mod settings;

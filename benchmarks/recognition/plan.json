@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "unique_sentences": 270,
+  "acoustic_fixtures": 8,
+  "freeze_sha256": "71b8f544aea97f93745ed07147476552ba68fd9656b9e69dc372298aa1e3c0ee",
+  "split_rule": "SHA256(split-v1:id), every third row within category/language is dev",
+  "primary": "Fast all fixtures: off / source relevant / source distractor",
+  "secondary": "Balanced fixed stratified subset: same three conditions",
+  "strategies_dev_only": [
+    "source",
+    "case16",
+    "prose320",
+    "short12"
+  ],
+  "selection": "Minimize summed dev word errors across relevant+distractor, then minimize lexical false brand clips, then prefer source. No heldout strategy tests.",
+  "repeats": "Fixed 24 speech sentences, same three Fast conditions once again, excluded from unique/micro aggregate totals",
+  "long_manual": "Every thirteenth speech fixture: 280 repetitions of ordinary vocabulary then a fixed manual suffix. Identical across context conditions.",
+  "metrics": [
+    "micro normalized WER/CER",
+    "literal and case-insensitive target-token occurrence accuracy",
+    "decoy lexical false brand versus case-only false brand",
+    "all absent-name insertions",
+    "ordinary anchor preservation",
+    "paired per-sentence WER changes",
+    "latency p50 p95 excluding capture, synthesis and file read",
+    "non-speech hallucinations",
+    "failure buckets by language/category/voice/speed/long_hint"
+  ],
+  "limitations": "Synthetic eSpeak only; 270 unique authored sentences with related templates, not natural dictation or population accuracy. Exact product spellings can be acoustically ambiguous."
+}

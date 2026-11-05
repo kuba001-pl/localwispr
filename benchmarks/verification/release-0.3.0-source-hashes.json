@@ -1,0 +1,15 @@
+{
+  "Cargo.toml": "64a88855a795e8c2947db4816f99bb974bfd63f5e31669856b54b7a17da000c1",
+  "Cargo.lock": "0377d1a0c8780acf70e0d65577410264fe78830f2d2a6010581eabb29fd2b0f0",
+  "llm/Cargo.toml": "08b48c00298599fed211d0528cbc1343fae4a8e1e19c9c0161ac3ca8b0c25813",
+  "src/cleanup.rs": "25ee199c152c79779f70285eff1d6095aedf33b2e46631f10d13479563b78f31",
+  "src/stt.rs": "62489bb88f3240806dc08db117dca8c6d8cc50aa22adeaf737522abccf36955a",
+  "src/insertion.rs": "19eaf7722301af3812b79205ca86bd451aec801239139ddb39b94b589396d94d",
+  "src/inject.rs": "b15e34c130ccf549db816e2252e919c499fbf040f9695acf4e68d3e203ddf35f",
+  "src/cursor_context.rs": "24d0ec516caab67c874d9ec50771ad301b4a35dc9a01496c7b8b04970c6b6393",
+  "src/daemon.rs": "6fb03dacf3728d7df5780cc52ff40b9a609dc30a06085acd77e07ed8f2591a24",
+  "src/dbus.rs": "17b21fe86c10dda80f276e7d3cc741ee17eae04cee6605d85830f530a114a5b7",
+  "src/settings.rs": "acefac582c6e4c582267b8e70a114ec84ae1e2a37006eb35a300f21640345b8e",
+  "gnome-extension/localwispr@localwispr.github.io/extension.js": "83e729f8ee67f724f1006d2af33e897fd152f9f2f45a1d4f411f403b753f5457",
+  "gnome-extension/localwispr@localwispr.github.io/metadata.json": "d17c72abf2d8a3dab317fbff09b41f3cd023ff844ea66b441a2f02e01a9a7c30"
+}

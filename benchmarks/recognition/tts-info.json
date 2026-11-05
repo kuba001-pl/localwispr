@@ -1,0 +1,29 @@
+{
+  "engine": "eSpeak NG synthetic speech",
+  "version": "1.52.0.1",
+  "library": "/usr/share/steam/compatibilitytools.d/proton-cachyos-slr/files/lib/x86_64-linux-gnu/libespeak-ng.so",
+  "library_sha256": "ff983fef81d6b241545a8b87e2ee0a06cb49fbd76f1142ec045117a3ff30893c",
+  "source_rate": 22050,
+  "output": "mono float32 little endian 16kHz; ffmpeg default resampling + 300ms end silence",
+  "voices": [
+    "en-gb",
+    "en-sc",
+    "en-us",
+    "en-us+f3",
+    "pl",
+    "pl+f3",
+    "pl+m3"
+  ],
+  "voice_alias_resolution": {
+    "en-gb": "en",
+    "en-sc": "en-gb-scotland"
+  },
+  "speeds_wpm": [
+    135,
+    160,
+    185
+  ],
+  "private_audio": false,
+  "downloads": false,
+  "warning": "Polish eSpeak pronounces English brand names and mixed prose artificially. Voice variants share the same synthesis family."
+}

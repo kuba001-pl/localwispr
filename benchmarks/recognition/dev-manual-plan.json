@@ -1,0 +1,17 @@
+{
+  "created_utc": "2026-11-03T07:43:14.116196+00:00",
+  "purpose": "Supplemental matched development-only manual-hint ablation, prompted by catastrophic long-hint dev errors. Not a revised strategy selection and never evaluated on heldout.",
+  "subset": [
+    "name-13-en",
+    "name-30-pl",
+    "name-39-en",
+    "control-01-pl",
+    "control-10-en",
+    "control-14-pl",
+    "neutral-04-pl"
+  ],
+  "change": "Remove the preassigned 280x ordinary vocabulary manual hint, leave all three conditions and frozen source/model/audio identical.",
+  "requests": 21,
+  "holdout_untouched": true,
+  "corpus_sha256": "71b8f544aea97f93745ed07147476552ba68fd9656b9e69dc372298aa1e3c0ee"
+}

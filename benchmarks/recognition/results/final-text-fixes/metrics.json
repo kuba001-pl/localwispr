@@ -1,0 +1,522 @@
+{
+  "metrics": {
+    "off": {
+      "clips": 278,
+      "unique_sentences": 270,
+      "words": 2729,
+      "word_errors": 760,
+      "wer": 0.2784902894833272,
+      "chars": 16811,
+      "char_errors": 2099,
+      "cer": 0.12485872345488074,
+      "targets": 126,
+      "target_literal_ci": 48,
+      "target_exact_case": 31,
+      "target_token_ci": 48,
+      "target_accuracy_ci": 0.38095238095238093,
+      "target_accuracy_exact_case": 0.24603174603174602,
+      "ordinary_control_clips": 84,
+      "control_lexical_false_clips": 0,
+      "control_case_only_false_clips": 0,
+      "control_lexical_false_rate": 0.0,
+      "control_case_only_false_rate": 0.0,
+      "ordinary_anchors": 60,
+      "ordinary_preserved": 35,
+      "any_lexical_false_brand_clips": 0,
+      "acoustic_clips": 8,
+      "acoustic_nonempty": 0,
+      "latency_p50_ms": 187.0,
+      "latency_p95_ms": 213,
+      "latency_mean_ms": 165.6115107913669,
+      "latency_max_ms": 529,
+      "summed_submit_ms": 46040,
+      "audio_seconds": 1252.8841853141785
+    },
+    "relevant": {
+      "clips": 278,
+      "unique_sentences": 270,
+      "words": 2729,
+      "word_errors": 674,
+      "wer": 0.2469769146207402,
+      "chars": 16811,
+      "char_errors": 1889,
+      "cer": 0.11236690262328237,
+      "targets": 126,
+      "target_literal_ci": 84,
+      "target_exact_case": 77,
+      "target_token_ci": 85,
+      "target_accuracy_ci": 0.6666666666666666,
+      "target_accuracy_exact_case": 0.6111111111111112,
+      "ordinary_control_clips": 84,
+      "control_lexical_false_clips": 3,
+      "control_case_only_false_clips": 12,
+      "control_lexical_false_rate": 0.03571428571428571,
+      "control_case_only_false_rate": 0.14285714285714285,
+      "ordinary_anchors": 60,
+      "ordinary_preserved": 40,
+      "any_lexical_false_brand_clips": 3,
+      "acoustic_clips": 8,
+      "acoustic_nonempty": 0,
+      "latency_p50_ms": 189.5,
+      "latency_p95_ms": 219,
+      "latency_mean_ms": 168.20143884892087,
+      "latency_max_ms": 514,
+      "summed_submit_ms": 46760,
+      "audio_seconds": 1252.8841853141785
+    },
+    "distractor": {
+      "clips": 278,
+      "unique_sentences": 270,
+      "words": 2729,
+      "word_errors": 734,
+      "wer": 0.268962990106266,
+      "chars": 16811,
+      "char_errors": 2015,
+      "cer": 0.11986199512224138,
+      "targets": 126,
+      "target_literal_ci": 48,
+      "target_exact_case": 32,
+      "target_token_ci": 48,
+      "target_accuracy_ci": 0.38095238095238093,
+      "target_accuracy_exact_case": 0.25396825396825395,
+      "ordinary_control_clips": 84,
+      "control_lexical_false_clips": 2,
+      "control_case_only_false_clips": 11,
+      "control_lexical_false_rate": 0.023809523809523808,
+      "control_case_only_false_rate": 0.13095238095238096,
+      "ordinary_anchors": 60,
+      "ordinary_preserved": 40,
+      "any_lexical_false_brand_clips": 2,
+      "acoustic_clips": 8,
+      "acoustic_nonempty": 0,
+      "latency_p50_ms": 190.0,
+      "latency_p95_ms": 218,
+      "latency_mean_ms": 169.23741007194243,
+      "latency_max_ms": 517,
+      "summed_submit_ms": 47048,
+      "audio_seconds": 1252.8841853141785
+    }
+  },
+  "changes": [
+    {
+      "id": "control-14-pl",
+      "condition": "relevant",
+      "old": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska",
+      "new": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska"
+    },
+    {
+      "id": "control-14-pl",
+      "condition": "distractor",
+      "old": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska",
+      "new": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska"
+    },
+    {
+      "id": "control-14-pl",
+      "condition": "off",
+      "old": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska",
+      "new": "słucha sucha syska potoczyła się pod płaskę obronie. słucha syska potoczyła się pod łaskę obronie. słucha syska pod łasky syska pod łasky syska"
+    },
+    {
+      "id": "neutral-04-pl",
+      "condition": "off",
+      "old": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u",
+      "new": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u"
+    },
+    {
+      "id": "neutral-04-pl",
+      "condition": "relevant",
+      "old": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u",
+      "new": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u"
+    },
+    {
+      "id": "neutral-04-pl",
+      "condition": "distractor",
+      "old": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u",
+      "new": "mały czerwony rower należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony ulicy. mały czerwony rowery należy do dziecka z drugiej strony u"
+    }
+  ],
+  "paired": {
+    "relevant": {
+      "pairs": 270,
+      "wer_improved": 68,
+      "wer_regressed": 19,
+      "wer_equal": 183,
+      "output_changed": 209,
+      "exact_name_improved": 38,
+      "exact_name_regressed": 2,
+      "new_lexical_false_brand_clips": 3,
+      "new_case_false_brand_clips": 12,
+      "word_errors_delta": -86,
+      "harms": [
+        {
+          "id": "name-23-mixed",
+          "reference": "Wyślij notebook z Databricks, but remove the secret values najpierw.",
+          "off": "Myśli notebook z databricks, putremovem ssb2s iperf.",
+          "context": "Myśli Notebooks, Databricks, Putremovem SX Red, Manu SX, I care.",
+          "error_delta": 3,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-11-mixed",
+          "reference": "Balon wysyła open telemetry readings i ląduje za lasem.",
+          "off": "Alon wysyła open telemetry reaing i ląduje na lasem.",
+          "context": "Alon wysyła OpenTelemetry Radings i londuje na lasem.",
+          "error_delta": 3,
+          "new_false_brands": [
+            "OpenTelemetry"
+          ]
+        },
+        {
+          "id": "control-24-en",
+          "reference": "The elastic band snapped when I stretched it around the thick book.",
+          "off": "The elastic band stopped when I stretched it around the thick book.",
+          "context": "The last tick bond stopped when I stretched it around the thick book",
+          "error_delta": 3,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-05-mixed",
+          "reference": "Kup fresh bread i dwa jabłka, kiedy będziesz wracać do domu.",
+          "off": "Kup fresh bread i dwa jabka, kiedy będziesz wracać do domu.",
+          "context": "Kup Fresh Red i 2 jabka, kiedy będziesz wracać do domu.",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-12-pl",
+          "reference": "Kliknij ikonę domku raz i poczekaj na pojawienie się mapy.",
+          "off": "Kliknij ikonę domku raz i poczekaj na pojawienie się mapy.",
+          "context": "Clicknij ikonę domku raz i poczekaj na pojawienie się mapy",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-22-en",
+          "reference": "The illustrator drew a svelte figure wearing a long green coat.",
+          "off": "The illustrator drew a svelte figure wearing a long green coat.",
+          "context": "The illustrator drew a Svelt figure wearing a long green coat",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-17-mixed",
+          "reference": "Brat sent a postcard z małej wsi nad górskim jeziorem.",
+          "off": "Rad sent a postzar z małej zina durskim jeżorem.",
+          "context": "Rad sent a post-sarts małej zina durskim jeżorem.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-06-mixed",
+          "reference": "Dlaczego Hugging Face appears twice tutaj, skoro potrzebujemy jednej usługi?",
+          "off": "Dlaczego hooding face up perstwice tutaj, skoro potrzebujemy jednej usługi?",
+          "context": "dlaczego hudding face up, per, stwice tutaj, skoro potrzebujemy jednej usługi?",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-09-mixed",
+          "reference": "Security approved Tailscale, teraz czekamy na zgodę administratora.",
+          "off": "Security App ProVetiles wcale. Teraz czekamy na zgodę administratora.",
+          "context": "security, up, provide, Tails, Sale, teraz czekamy na zgodę administratora.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-10-pl",
+          "reference": "Przenieś zadanie do Linear dopiero po dodaniu zrzutu ekranu.",
+          "off": "Czernie zna danie do linear dopiero po dodaniu zjutu ekranu.",
+          "context": "Cień jest nadanie do Linear dopiero po dodaniu z rzutu ekranu.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-24-mixed",
+          "reference": "Traffic goes through Cloudflare, a serwer stoi w innym regionie.",
+          "off": "Trafi do estroke Cloudflare, a serwer stoi w innym regionie.",
+          "context": "Trafi doestroke Cloudflare, a server stoi w innym regionie.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-26-mixed",
+          "reference": "Handbook opisuje GitHub, read the permissions section przed zmianą.",
+          "off": "Handbook opisuje GitHub, read the permission section, share zmano.",
+          "context": "Handbook opisuje GitHub, create the permission section, share zmano.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-27-mixed",
+          "reference": "We included DeepSeek w ocenie, ale decyzja należy do zespołu.",
+          "off": "We instrument wepce kłocenie, ale medcynia należy do zespołu.",
+          "context": "We instrument, wepce, kłocenie, ale bez synia należy do zespołu.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-28-pl",
+          "reference": "Krótka uwaga o Mistral znajduje się na drugiej stronie propozycji.",
+          "off": "Krótka uwaga, o Mistral znajduje się na drugiej stronie propozycji.",
+          "context": "Krótka uwaga, Mistral znajduje się na drugiej stronie propozycji",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-02-mixed",
+          "reference": "To jest linear growth, czyli zwykły prosty wzrost wartości.",
+          "off": "To jest linear prowz, czyli mykły prostym z rozmartości.",
+          "context": "To jest LinearPROFS, czyli mykły prostym z rozmartości.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-03-pl",
+          "reference": "Zasada antropiczna pojawia się w rozdziale o kosmologii.",
+          "off": "Masada antropiczna pojawnia się w rozdziale o kosmologii.",
+          "context": "Masada Antropicna pojawnia się w rozdziale o kosmologii",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-06-mixed",
+          "reference": "Zamaluj the upper right quadrant i odłóż ołówek na stół.",
+          "off": "Zamanuj, pep, peraj, ma brand i obu showback na tu.",
+          "context": "Zamanuj, Beb, Perraiz, Vagrant, Iobu, Show, Bec, Na, Tu",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-10-pl",
+          "reference": "Złożyła list ostrożnie i włożyła go do niebieskiej koperty.",
+          "off": "Złożyła list ostrożnie i włożyła go do niebieskiej koperty.",
+          "context": "złożyła list ostrożnie i włożyła do niebieskiej koperty.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-09-mixed",
+          "reference": "Na następnej stronie read the short poem i podkreśl ostatni wers.",
+          "off": "Na następnej stronie read the short poem i podkreśl ostatni verse.",
+          "context": "Na następnej stronie real the short poem i podkreśl ostatni verse.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-21-mixed",
+          "reference": "Nie mogę grok that joke, wyjaśnij mi go jeszcze raz.",
+          "off": "Nie mogę grog tatyoke, wyjaśnij mi go jeszcze raz.",
+          "context": "Nie mogę groq tatjoke, wyjaśnij mi go jeszcze raz.",
+          "error_delta": 0,
+          "new_false_brands": [
+            "Groq"
+          ]
+        },
+        {
+          "id": "control-09-mixed",
+          "reference": "Mamy eleven labs na uczelni i trzy sale wykładowe.",
+          "off": "Mamy 11 labs, a uczelni i 3 sale wykładowe.",
+          "context": "mamy ElevenLabs, a uczelni i trzy sale wykładowe.",
+          "error_delta": 0,
+          "new_false_brands": [
+            "ElevenLabs"
+          ]
+        }
+      ]
+    },
+    "distractor": {
+      "pairs": 270,
+      "wer_improved": 32,
+      "wer_regressed": 21,
+      "wer_equal": 217,
+      "output_changed": 147,
+      "exact_name_improved": 2,
+      "exact_name_regressed": 2,
+      "new_lexical_false_brand_clips": 2,
+      "new_case_false_brand_clips": 11,
+      "word_errors_delta": -26,
+      "harms": [
+        {
+          "id": "control-19-mixed",
+          "reference": "Please replicate ten wzór na większej kartce przed lekcją.",
+          "off": "Pleasereplica te ten vurna większej kartce przeflexią.",
+          "context": "Place, Replica, Tebura, Większej, Kart, Cep, Cep, Leccio.",
+          "error_delta": 3,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-11-mixed",
+          "reference": "Balon wysyła open telemetry readings i ląduje za lasem.",
+          "off": "Alon wysyła open telemetry reaing i ląduje na lasem.",
+          "context": "Alon wysyła OpenTelemetry Reading i londuje na lasem.",
+          "error_delta": 3,
+          "new_false_brands": [
+            "OpenTelemetry"
+          ]
+        },
+        {
+          "id": "control-24-en",
+          "reference": "The elastic band snapped when I stretched it around the thick book.",
+          "off": "The elastic band stopped when I stretched it around the thick book.",
+          "context": "The last tick bond stopped when I stretched it around the thick book",
+          "error_delta": 3,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-31-en",
+          "reference": "The demonstration runs on Fly.io with a single small machine.",
+          "off": "The demonstration runs on Fly.io with a single small machine.",
+          "context": "The demonstration runs on flight audio with a single small machine",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-41-mixed",
+          "reference": "Trace from Sentry jest w załączniku, read it before the call.",
+          "off": "Trace from sentry jest to małończyku, reatidbe forever call.",
+          "context": "Trace from Sentry, yes to Małączyku, created by forever cold.",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-03-pl",
+          "reference": "Jutro rano pojadę wczesnym pociągiem nad spokojne morze.",
+          "off": "Jutro rano pojadę wczesnym pociągiem nad pokole morze.",
+          "context": "jutro rano pojadę w ciesnym pociągiem nad pokole morze.",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-18-en",
+          "reference": "The alert arrived from Datadog while I was making coffee.",
+          "off": "The alert arrived from Datadog while I was making coffee.",
+          "context": "The alert arrived from data dog while I was making coffee",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-22-mixed",
+          "reference": "Query in Snowflake nadal działa, please stop it before lunch.",
+          "off": "Very insno, fuck it, nadal jała. Plea, se stop it before a lunch.",
+          "context": "very ins of like a naval jawa, place a stop it before a lunch.",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-23-mixed",
+          "reference": "Wyślij notebook z Databricks, but remove the secret values najpierw.",
+          "off": "Myśli notebook z databricks, putremovem ssb2s iperf.",
+          "context": "Myśli Notebooks, Databricks, Putremove, Deset, Red, Manu, Siker,",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-16-mixed",
+          "reference": "Dzisiaj a cold mistral blows through the valley, więc zamknij okno.",
+          "off": "Dzisiaj absolut mistral Bluffstruck B małej, więc zamknij okno.",
+          "context": "Dzisiaj absolut, Mistral, Bluff, Stroke, B.A.L.E., więc zamknij okno.",
+          "error_delta": 2,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-30-mixed",
+          "reference": "Deployment on Railway wymaga nowej zmiennej, please check the spelling.",
+          "off": "Deployment on Railway wymaga nowej zmiennej. Pleas against the spelling.",
+          "context": "deployment on Railway wymaga nowej zmiennej, plasechensk de spelling.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-17-mixed",
+          "reference": "Brat sent a postcard z małej wsi nad górskim jeziorem.",
+          "off": "Rad sent a postzar z małej zina durskim jeżorem.",
+          "context": "Rad sent a post-sarts małej zina durskim jeżorem.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-26-mixed",
+          "reference": "Handbook opisuje GitHub, read the permissions section przed zmianą.",
+          "off": "Handbook opisuje GitHub, read the permission section, share zmano.",
+          "context": "Handbook opisuje GitHub, create the permission section, share zmano.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-27-mixed",
+          "reference": "We included DeepSeek w ocenie, ale decyzja należy do zespołu.",
+          "off": "We instrument wepce kłocenie, ale medcynia należy do zespołu.",
+          "context": "We instrument wepce kłocenie, ale bez synia należy do zespołu.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "name-39-pl",
+          "reference": "Proces w tle w Temporal musi przetrwać restart wykonawcy.",
+          "off": "Process left temporal musi przetar, trystar, wykonawszy.",
+          "context": "Process, flef, temporal, muship, setrfa, trestar, vykonavtsi.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-02-mixed",
+          "reference": "To jest linear growth, czyli zwykły prosty wzrost wartości.",
+          "off": "To jest linear prowz, czyli mykły prostym z rozmartości.",
+          "context": "To jest LinearPROFS, czyli mykły prostym z rozmartości.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-06-mixed",
+          "reference": "Zamaluj the upper right quadrant i odłóż ołówek na stół.",
+          "off": "Zamanuj, pep, peraj, ma brand i obu showback na tu.",
+          "context": "Zamanuj, Beb, Perraiz, Vagrant, Iobu, Show, Bec, Na, Tu.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-10-pl",
+          "reference": "Złożyła list ostrożnie i włożyła go do niebieskiej koperty.",
+          "off": "Złożyła list ostrożnie i włożyła go do niebieskiej koperty.",
+          "context": "złożyła list ostrożnie i włożyła do niebieskiej koperty.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-01-mixed",
+          "reference": "Do not delete szkicu, Maria musi jeszcze sprawdzić ostatni akapit.",
+          "off": "Don't delete kitsu. Maria musi jeszcze sprawdzić ostatni akapit.",
+          "context": "Don't delete kitsu, Marja musi jeszcze sprawdzić ostatni akapit.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-05-mixed",
+          "reference": "Kup fresh bread i dwa jabłka, kiedy będziesz wracać do domu.",
+          "off": "Kup fresh bread i dwa jabka, kiedy będziesz wracać do domu.",
+          "context": "Kup Fresh Red i dwa jabka, kiedy będziesz wracać do domu.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "neutral-09-mixed",
+          "reference": "Na następnej stronie read the short poem i podkreśl ostatni wers.",
+          "off": "Na następnej stronie read the short poem i podkreśl ostatni verse.",
+          "context": "Na następnej stronie real the short poem i podkreśl ostatni verse.",
+          "error_delta": 1,
+          "new_false_brands": []
+        },
+        {
+          "id": "control-09-mixed",
+          "reference": "Mamy eleven labs na uczelni i trzy sale wykładowe.",
+          "off": "Mamy 11 labs, a uczelni i 3 sale wykładowe.",
+          "context": "mamy ElevenLabs, a uczelni i trzy sale wykładowe.",
+          "error_delta": 0,
+          "new_false_brands": [
+            "ElevenLabs"
+          ]
+        }
+      ]
+    }
+  }
+}

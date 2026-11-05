@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm --needed base-devel git cmake clang pkgconf \
-            gtk4 libadwaita gtk4-layer-shell pipewire alsa-lib dbus rustup
+            gtk4 libadwaita gtk4-layer-shell pipewire alsa-lib dbus rustup python
           rustup default stable
           rustup component add rustfmt clippy
       - uses: actions/checkout@v4
@@ -34,6 +34,8 @@ jobs:
       # CPU-only: runners have no CUDA. Still compiles whisper.cpp and llama.cpp.
       - run: cargo clippy --locked --workspace --all-targets --no-default-features -- -D warnings
       - run: cargo test --locked --workspace --no-default-features
+      - run: python3 benchmarks/verification/run.py
+      - run: python3 benchmarks/recognition/validate.py --skip-audio
 
   extension:
     runs-on: ubuntu-latest

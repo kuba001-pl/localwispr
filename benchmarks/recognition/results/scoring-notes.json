@@ -1,0 +1,14 @@
+{
+  "updated_utc": "2026-11-03T07:46:44.948304+00:00",
+  "correction": "During final review, broad any-brand lexical and case-only flags were refined to exclude repeated correctly cased products already present in the reference. Lexical flags require an absent brand token sequence; case flags require a non-official-case reference occurrence.",
+  "unchanged": [
+    "raw predictions",
+    "WER",
+    "CER",
+    "target recall",
+    "84-control decoy false rates",
+    "strategy selection criterion and winner",
+    "dev decision timestamp"
+  ],
+  "validation": "Explicit positive and negative scoring regression checks in validate.py; no inference rerun."
+}

@@ -1,5 +1,45 @@
 # Companion extension development
 
+`GetCursorContext` supplements AT-SPI with GNOME's compositor input-method
+surrounding text. It accepts only the current daemon's unique D-Bus owner,
+requests a response within 100 ms, validates focus, purpose and hints, and
+returns up to 256 Unicode characters on either side of the replacement range.
+It never selects, copies or edits text. Disabled extensions, protected fields,
+terminal input, preedit, focus changes, timeouts and missing input-method support return only a
+status. This uses Shell's input-method API on supported GNOME versions and still
+requires real-session validation. Mutter can replay committed context on request;
+that is not an independent fresh application response. The method cannot make an application supply missing
+context. Updated extension files require a fresh login to load on Wayland.
+
+`GetInsertionContext` adds a bounded, single-use handoff token for insertion.
+`InjectBound` accepts that token and rejects focus, caret, selection, protection,
+or bounded surrounding-text changes before submitting keys. Watches persist
+across the response and clipboard preparation. An unclaimed token expires after
+two seconds; once `InjectBound` claims it, only observed changes invalidate it. Cursor
+rectangles are compared with the first one reported after the token was issued
+(Clutter exposes no public getter for the current one), so an unchanged rectangle
+that a client re-commits only triggers a recheck of the bound range. A bound
+request that ends before its keys are queued, for any reason except explicit
+cancellation, fails with `StaleContext` and pastes nothing; the daemon then
+re-reads context and retries once, and falls back to plain insertion rather than
+dropping the dictation (never into a field that became protected or a terminal
+meanwhile). The clipboard-restore delay is capped at two seconds.
+Recognition continues using `GetCursorContext`. Old loaded extensions still
+paste normally, but GNOME cursor formatting reports `unbound-extension` until
+these new methods are loaded. AT-SPI remains available for recognition and for
+insertion on other desktops. No protocol makes context lookup and application
+paste atomic; cached or unobserved changes remain possible.
+
+`InjectCancellable` and `CancelInject` add request-scoped cancellation while
+retaining `Inject` for older daemons. Only the current daemon owner may use the
+new methods. Daemon disappearance cancels outstanding work; cancellation and
+focus changes before paste prevent keystrokes and restore owned selections.
+After keys have been sent, cancellation preserves the normal clipboard
+consumption delay before restoration and cannot undo inserted text. Before keys,
+all injected sources still owned by the operation are removed or restored even
+when restoration was disabled or a backup failed. Request IDs prevent a late cancellation from cancelling
+a later utterance. Loading this updated extension is required for these fixes.
+
 The extension uses Mutter's selection API to restore CLIPBOARD and PRIMARY
 independently. With the helper, every advertised MIME representation is read
 before either selection is replaced, and restoration occurs only while
