@@ -232,7 +232,9 @@ pub trait Shell {
         restore_delay_ms: u32,
     ) -> zbus::Result<bool>;
     /// Insert only into the focus/range held by GetInsertionContext. A stale
-    /// token is an error; callers must never retry adapted text unbound.
+    /// token (or a bound target that moved before paste) fails with
+    /// `org.localwispr.Shell1.Error.StaleContext` and nothing is pasted. Callers
+    /// must never retry that adapted text unbound; re-read and re-format.
     fn inject_bound(
         &self,
         request_id: &str,

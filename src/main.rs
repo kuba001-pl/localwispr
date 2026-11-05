@@ -7,6 +7,7 @@ mod cursor_context;
 mod daemon;
 mod dbus;
 mod desktop;
+mod fence;
 mod hotkey;
 mod hud;
 mod inject;

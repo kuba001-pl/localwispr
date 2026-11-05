@@ -1,6 +1,6 @@
 # Expanded recognition benchmark
 
-This directory owns a frozen **synthetic** recognition experiment. It does not modify production code. Read `REPORT.md` for measured outcomes; the generated files under `results/` contain every request, unmodified recognition output, source/tool/model hashes, latency and scoring detail.
+This directory owns a frozen **synthetic** recognition experiment. It does not modify production code. Read `REPORT.md` for measured outcomes; the committed files under `results/` contain every unmodified recognition output (with its request), source/tool/model hashes, latency and aggregate scoring detail. Bulky regenerable or debug artifacts (request dumps, per-decode scores, stderr/progress logs) are retained locally rather than committed; see Files.
 
 The corpus contains **270 unique authored sentences**, not repeated decodes counted as new sentences: 126 product/company sentences (42 names in English, Polish and mixed prose), 84 ordinary-word/near-homophone controls, 60 name-absent sentences, plus eight non-speech fixtures. References, annotations, context, split and subsets were frozen before recognition. The SHA256 is recorded in `plan.json`.
 
@@ -75,8 +75,9 @@ Name recall counts exact literal target spellings with word boundaries, first ca
 * `audio-fixtures.tar.zst`, `audio-archive.json`, `restore_audio.py`: canonical exact waveforms, archive hash, and lossless restore/verification.
 * `run.py`: serial request/response collection, stage input hashes and model logs.
 * `analyze.py`, `validate.py`: explicit scoring, split/input checks and ambiguity edge cases.
-* `results/*-requests.jsonl`, `results/*.jsonl`: frozen run requests and raw predictions, including prompts.
-* `results/metrics.json`, `results/scored.jsonl`: aggregate tables, paired harms, failure buckets and per-decode scores.
+* `results/*.jsonl`, `results/*-run.json`: raw predictions (each row embeds its request, including prompts) and pre-inference stage hashes. The `results/*-requests.jsonl` dumps are not committed; `validate.py` regenerates them byte-exactly from `corpus.jsonl` with `run.py` and checks the recorded `requests_sha256`.
+* `results/metrics.json`: aggregate tables, paired harms and failure buckets. Per-decode `results/scored.jsonl` is regenerable with `analyze.py`.
+* Not committed (local evidence only, hashes in `artifact-hashes.json`): `results/*.stderr.log`, `results/*-progress.log`, `results/analysis.log`, `results/build.log`, `comparison.html` (regenerable with `write_report.py`).
 * `results/dev-decision.json`: development-only strategy selection, locked before heldout.
 
 Synthetic speech can overstate improvements because names are spelled consistently in text while pronounced mechanically. Neither this benchmark nor the earlier ten-sentence experiment estimates real-user recognition accuracy. Human recordings with consent and a separately held-out speaker test are needed for that claim.

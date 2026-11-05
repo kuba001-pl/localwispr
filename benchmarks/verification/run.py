@@ -41,11 +41,11 @@ path = "main.rs"
         tests_end = source.index('    /// Optional native regression', end)
         (work / 'stt.rs').write_text(signal + source[start:end] +
             '\npub fn review_signal(samples: &[f32]) -> bool { has_audio_signal(samples) }\n' + source[end:tests_end] + '}\n')
-        for name in ['cleanup.rs', 'llm_proto.rs']:
+        for name in ['cleanup.rs', 'llm_proto.rs', 'fence.rs']:
             shutil.copyfile(ROOT / 'src' / name, work / name)
         shutil.copyfile(HERE / 'review_regressions.rs', work / 'review_regressions.rs')
         (work / 'main.rs').write_text('''#![allow(dead_code)]
-mod config; mod stt; mod cleanup; mod llm_proto;
+mod config; mod stt; mod cleanup; mod llm_proto; mod fence;
 #[cfg(test)] mod review_regressions;
 use std::io::BufRead;
 fn main() {

@@ -878,15 +878,6 @@ fn cleanup_page(ctx: &Shared) -> adw::PreferencesPage {
     ));
     guard.add(&spin_row(
         ctx,
-        "Max new words",
-        "Fraction of output words not in the transcript",
-        (0.0, 1.0, 0.05),
-        2,
-        |c| c.cleanup.max_new_words as f64,
-        |c, v| c.cleanup.max_new_words = v as f32,
-    ));
-    guard.add(&spin_row(
-        ctx,
         "Skip LLM below",
         "Words — short phrases are inserted as-is",
         (0.0, 50.0, 1.0),

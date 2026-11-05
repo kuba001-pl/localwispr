@@ -10,7 +10,7 @@ def rust(s):
  while '"'+'#'*n in s:n+=1
  return 'r'+'#'*n+'"'+s+'"'+'#'*n
 def boolean(v):return str(v).lower()
-code=['#[allow(dead_code)]',f'#[path={rust(str(source))}] mod insertion;', 'fn main() { let mut passed=0;']
+code=['#[allow(dead_code)]',f'#[path={rust(str(source))}] mod insertion;',f'#[allow(dead_code)] #[path={rust(str(source.with_name("fence.rs")))}] mod fence;', 'fn main() { let mut passed=0;']
 for c in cases:
  context='None' if not c['context'] else 'Some(&insertion::SurroundingText{before:'+rust(c['before'])+'.into(),after:'+rust(c['after'])+'.into(),is_replacement:'+boolean(c['is_replacement'])+'})'
  code += ['{',f'let actual=insertion::format({rust(c["text"])},{context},{boolean(c["append_space"])});',f'let expected={rust(c["expected"])};',f'if actual==expected {{ passed+=1; }} else {{ println!("FAIL {{}} expected={{:?}} actual={{:?}}",{rust(c["id"])},expected,actual); }}','}']

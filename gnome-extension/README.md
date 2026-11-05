@@ -14,7 +14,12 @@ context. Updated extension files require a fresh login to load on Wayland.
 `GetInsertionContext` adds a bounded, single-use handoff token for insertion.
 `InjectBound` accepts that token and rejects focus, caret, selection, protection,
 or bounded surrounding-text changes before submitting keys. Watches persist
-across the response and clipboard preparation; tokens expire after two seconds.
+across the response and clipboard preparation. An unclaimed token expires after
+two seconds; once `InjectBound` claims it, only observed changes invalidate it (a
+repeated, unchanged cursor rectangle does not). A bound request whose target
+changed before paste fails with `StaleContext` and pastes nothing; the daemon then
+re-reads context and retries once, and falls back to plain insertion rather than
+dropping the dictation. The clipboard-restore delay is capped at two seconds.
 Recognition continues using `GetCursorContext`. Old loaded extensions still
 paste normally, but GNOME cursor formatting reports `unbound-extension` until
 these new methods are loaded. AT-SPI remains available for recognition and for

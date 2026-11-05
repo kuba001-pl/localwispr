@@ -428,25 +428,16 @@ fn literal_context(context: &SurroundingText, text: &str) -> bool {
 /// close only on a run of the same length. Counting individual backticks makes
 /// ``code`still`` appear to end early and mistakes closed fences for open ones.
 fn in_code_span(before: &str) -> bool {
-    let mut fence: Option<(char, usize)> = None;
+    let mut fence = crate::fence::Fence::default();
     let mut inline = 0;
     for line in before.split('\n') {
-        let trimmed = line.trim_start_matches(' ');
-        let indentation = line.len() - trimmed.len();
-        let marker = trimmed.chars().next().unwrap_or(' ');
-        let run = trimmed.chars().take_while(|c| *c == marker).count();
-        if indentation <= 3 && matches!(marker, '`' | '~') && run >= 3 {
-            if let Some((open, length)) = fence {
-                if marker == open && run >= length && trimmed[run..].trim().is_empty() {
-                    fence = None;
-                }
-            } else if marker == '~' || !trimmed[run..].contains('`') {
-                fence = Some((marker, run));
+        if fence.line(line) {
+            if fence.is_open() {
                 inline = 0;
             }
             continue;
         }
-        if fence.is_some() {
+        if fence.is_open() {
             continue;
         }
         let mut chars = line.chars().peekable();
@@ -467,7 +458,7 @@ fn in_code_span(before: &str) -> bool {
             }
         }
     }
-    fence.is_some() || inline != 0
+    fence.is_open() || inline != 0
 }
 
 fn word_character(c: char) -> bool {

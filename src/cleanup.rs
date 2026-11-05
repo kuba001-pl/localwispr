@@ -235,6 +235,12 @@ fn is_digits(w: &str) -> bool {
 /// A deliberately bounded numeral parser, rather than permission to invent any
 /// digits whenever a number-like word occurs. Unsupported forms stay verbatim.
 fn number_atom(w: &str) -> Option<u64> {
+    cardinal_atom(w).or_else(|| ordinal_atom(w))
+}
+
+/// Spoken cardinal numerals (English and Polish), shared with recognition's
+/// literal-span detection so both modules agree on what a number word is.
+pub(crate) fn cardinal_atom(w: &str) -> Option<u64> {
     let value = match w {
         "zero" => 0,
         "one" | "jeden" | "jedna" | "jedno" | "jednego" => 1,
@@ -275,6 +281,13 @@ fn number_atom(w: &str) -> Option<u64> {
         "dziewięćset" => 900,
         "thousand" | "tysiąc" | "tysiące" | "tysięcy" => 1_000,
         "million" | "milion" | "miliony" | "milionów" => 1_000_000,
+        _ => return None,
+    };
+    Some(value)
+}
+
+fn ordinal_atom(w: &str) -> Option<u64> {
+    let value = match w {
         "first" => 1,
         "second" => 2,
         "third" => 3,
@@ -1013,6 +1026,11 @@ fn correction_sources(raw: &str) -> Vec<String> {
     suffixes
 }
 
+/// Subject pronouns whose immediate repetition is a restart ("I I think").
+const RESTART_PRONOUNS: &[&str] = &[
+    "i", "we", "you", "he", "she", "it", "they", "ja", "my", "ty", "wy", "on", "ona", "oni", "one",
+];
+
 /// A model may remove short adjacent stutters, but the same permission must
 /// never erase repeated numbers, names, quoted speech, literals, or line breaks.
 /// This produces an alternative source for validation, not an unconditional edit.
@@ -1052,24 +1070,11 @@ fn stutter_source(raw: &str) -> Option<String> {
                         | "wciąż"
                         | "jeszcze"
                 )
+                // Capitals usually mark names; a sentence-initial pronoun
+                // ("We we need") is the exception.
                 && (!token.chars().any(char::is_uppercase)
-                    || matches!(
-                        token,
-                        "I" | "We"
-                            | "You"
-                            | "He"
-                            | "She"
-                            | "It"
-                            | "They"
-                            | "Ja"
-                            | "My"
-                            | "Ty"
-                            | "Wy"
-                            | "On"
-                            | "Ona"
-                            | "Oni"
-                            | "One"
-                    ))
+                    || (RESTART_PRONOUNS.contains(&key.as_str())
+                        && token.chars().skip(1).all(|c| !c.is_uppercase())))
         })
         .collect();
     let mut removals = Vec::new();
@@ -1080,23 +1085,7 @@ fn stutter_source(raw: &str) -> Option<String> {
             // General doubled words are ambiguous ("can can fish", "people
             // people trust"). Limit authorization to pronoun restarts and a
             // small set of common action-word hesitations.
-            let pronoun = matches!(
-                keys[i].as_str(),
-                "i" | "we"
-                    | "you"
-                    | "he"
-                    | "she"
-                    | "it"
-                    | "they"
-                    | "ja"
-                    | "my"
-                    | "ty"
-                    | "wy"
-                    | "on"
-                    | "ona"
-                    | "oni"
-                    | "one"
-            );
+            let pronoun = RESTART_PRONOUNS.contains(&keys[i].as_str());
             let plausible_restart = if width == 1 {
                 pronoun
                     || matches!(

@@ -13,7 +13,6 @@ import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import GIRepository from 'gi://GIRepository';
-import IBus from 'gi://IBus';
 import Meta from 'gi://Meta';
 import Pango from 'gi://Pango';
 import St from 'gi://St';
@@ -101,12 +100,18 @@ const TRANSFER_TIMEOUT_MS = 5000;
 const TEXT_MIMES = ['text/plain;charset=utf-8', 'UTF8_STRING', 'text/plain', 'STRING'];
 const CONTEXT_TIMEOUT_MS = 100;
 const CONTEXT_CHARS = 256;
+// Bounds an unclaimed token only. Once InjectBound claims it, focus, caret and
+// range watches (not a clock) decide validity through clipboard preparation.
 const HANDOFF_TIMEOUT_MS = 2000;
+// After keys are queued, the app may still be reading our clipboard. disable()
+// deliberately lets that one grace timer finish (restoring early could paste the
+// user's previous clipboard instead); the cap bounds how long it can outlive it.
+const MAX_RESTORE_DELAY_MS = 2000;
 const MAX_SURROUNDING_UNITS = 64 * 1024;
 
 function contextProtection(inputMethod) {
-    // Shell's IBus caches can reset independently of Clutter's actual input
-    // properties. Check the authoritative properties first, with Clutter enums.
+    // Clutter's content purpose/hints are authoritative; Shell's IBus fields
+    // are only translations of these same values.
     const contentPurpose = inputMethod.content_purpose;
     const contentHints = inputMethod.content_hints;
     const clutterPurposes = Clutter.InputContentPurpose;
@@ -122,24 +127,6 @@ function contextProtection(inputMethod) {
         (contentHints & (clutterHints.SENSITIVE_DATA | clutterHints.HIDDEN_TEXT)) !== 0)
         return 'protected';
     if (Number.isInteger(clutterPurposes.TERMINAL) && contentPurpose === clutterPurposes.TERMINAL)
-        return 'terminal';
-    // GNOME Shell 48–51 maps Clutter content-purpose/content-hints to IBus
-    // enums in these fields (js/misc/inputMethod.js). Do not confuse them
-    // with Clutter enums or guess at an unrelated `purpose` property.
-    const purpose = inputMethod._purpose;
-    const hints = inputMethod._hints;
-    const purposes = IBus.InputPurpose;
-    const flags = IBus.InputHints;
-    if (!Number.isInteger(purpose) || purpose < 0 ||
-        !Number.isInteger(hints) || hints < 0 ||
-        !Number.isInteger(purposes?.PASSWORD) ||
-        !Number.isInteger(flags?.PRIVATE) || !Number.isInteger(flags?.HIDDEN_TEXT))
-        return 'unavailable';
-    if (purpose === purposes.PASSWORD ||
-        Number.isInteger(purposes.PIN) && purpose === purposes.PIN ||
-        (hints & (flags.PRIVATE | flags.HIDDEN_TEXT)) !== 0)
-        return 'protected';
-    if (Number.isInteger(purposes.TERMINAL) && purpose === purposes.TERMINAL)
         return 'terminal';
     return null;
 }
@@ -162,6 +149,15 @@ function surroundingRange(inputMethod) {
     return {cursor, anchor, length: chars.length,
         before: chars.slice(Math.max(0, start - CONTEXT_CHARS), start).join(''),
         after: chars.slice(end, end + CONTEXT_CHARS).join('')};
+}
+
+function rectKey(rect) {
+    try {
+        const values = [rect.get_x(), rect.get_y(), rect.get_width(), rect.get_height()];
+        return values.every(Number.isFinite) ? values.join(',') : null;
+    } catch {
+        return null;
+    }
 }
 
 function bestMime(mimes) {
@@ -227,9 +223,11 @@ function savedSelection(contents) {
 
 // Inject returns whether the clipboard was preserved; a D-Bus error means the
 // text was not inserted.
-function settle(invocation, pasted, preserved, failure) {
+function settle(invocation, pasted, preserved, failure, stale = false) {
     if (pasted)
         invocation.return_value(new GLib.Variant('(b)', [preserved]));
+    else if (stale)
+        invocation.return_dbus_error('org.localwispr.Shell1.Error.StaleContext', failure);
     else
         invocation.return_dbus_error('org.localwispr.Shell1.Error.Failed', failure);
 }
@@ -805,18 +803,33 @@ class ShellService {
             const watch = (object, signal, callback) => {
                 handoff.signals.push([object, object.connect(signal, callback)]);
             };
-            const invalidate = () => this._releaseHandoff(handoff);
+            const invalidate = () => {
+                handoff.stale = true;
+                this._releaseHandoff(handoff);
+            };
+            const revalidate = () => {
+                if (!this._revalidateHandoff(handoff))
+                    invalidate();
+            };
             // Keep these watches through the response and all clipboard work.
-            // Any observed focus/caret transition invalidates, including away/back.
+            // Any observed focus transition invalidates, including away/back.
             watch(global.display, 'notify::focus-window', invalidate);
             watch(global.stage, 'notify::key-focus', invalidate);
             watch(target.inputMethod, 'notify::content-purpose', invalidate);
             watch(target.inputMethod, 'notify::content-hints', invalidate);
-            watch(target.inputMethod, 'cursor-location-changed', invalidate);
-            watch(target.inputMethod, 'surrounding-text-set', () => {
-                if (!this._revalidateHandoff(handoff))
+            // Clients re-commit an unchanged cursor rectangle on unrelated
+            // redraws. A moved rectangle invalidates; a repeated one only
+            // rechecks the bound range (a real caret move changes it too).
+            watch(target.inputMethod, 'cursor-location-changed', (_im, rect) => {
+                const next = rectKey(rect);
+                if (next === null || (handoff.rect !== undefined && handoff.rect !== next)) {
                     invalidate();
+                    return;
+                }
+                handoff.rect = next;
+                revalidate();
             });
+            watch(target.inputMethod, 'surrounding-text-set', revalidate);
             handoff.timeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, HANDOFF_TIMEOUT_MS, () => {
                 handoff.timeout = 0;
                 invalidate();
@@ -941,6 +954,9 @@ class ShellService {
             invocation.return_dbus_error('org.localwispr.Shell1.Error.StaleContext', 'Insertion context changed or expired');
             return;
         }
+        if (handoff.timeout)
+            GLib.Source.remove(handoff.timeout);
+        handoff.timeout = 0;
         return this.InjectAsync(params, invocation, requestId, handoff);
     }
 
@@ -1093,8 +1109,10 @@ class ShellService {
                 snapshots.push({type, saved, restorable, owner});
             }
             // Both selections are saved before either is overwritten.
-            if (handoff && !this._revalidateHandoff(handoff))
+            if (handoff && !this._revalidateHandoff(handoff)) {
+                handoff.stale = true;
                 throw new Error('Insertion context changed');
+            }
             if (snapshots.some(({type, owner}) => this._owners.get(type) !== owner))
                 throw new Error('Clipboard changed while saving');
             const installed = [];
@@ -1115,14 +1133,17 @@ class ShellService {
                 return;
             if (installed.some(({type, injected}) => this._owners.get(type) !== injected))
                 throw new Error('Clipboard ownership lost before paste');
-            if (handoff && !this._revalidateHandoff(handoff))
+            if (handoff && !this._revalidateHandoff(handoff)) {
+                handoff.stale = true;
                 throw new Error('Insertion context changed');
+            }
             // The commit point is immediately before the first queued key.
             // There is no atomic transaction with the application's later paste.
             operation.pasted = true;
             this._pasted.add(invocation);
             if (restore)
-                operation.grace = operation.lifetime.wait(Math.max(100, delayMs));
+                operation.grace = operation.lifetime.wait(
+                    Math.min(MAX_RESTORE_DELAY_MS, Math.max(100, delayMs)));
             if (handoff)
                 this._releaseHandoff(handoff);
             this._press(CHORDS[chord] ?? CHORDS['shift-insert']);
@@ -1155,8 +1176,11 @@ class ShellService {
                 operation.lifetime.destroy();
                 this._injection = null;
             }
+            // Nothing was pasted because the bound target moved: the daemon
+            // can safely re-read context and retry instead of losing the text.
+            const stale = Boolean(handoff?.stale) && !this._pasted.has(invocation);
             if (this._pending.delete(invocation))
-                settle(invocation, this._pasted.has(invocation), ok, failure);
+                settle(invocation, this._pasted.has(invocation), ok, failure, stale);
             this._pasted.delete(invocation);
             if (!this._lifetime.active)
                 this._disconnectSelection();

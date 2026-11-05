@@ -18,6 +18,9 @@ use zbus::{DynamicType, OwnedObjectPath, OwnedVariant, Type};
 use crate::insertion::SurroundingText;
 
 const TIMEOUT: Duration = Duration::from_millis(250);
+/// Insertion reads happen after key release, on the latency-critical path.
+/// Missing this deadline only means unadapted (plain) insertion.
+const INSERTION_TIMEOUT: Duration = Duration::from_millis(150);
 const CONTEXT: i32 = 256;
 const MAX_APPS: usize = 32;
 const MAX_WINDOWS: usize = 64;
@@ -66,9 +69,49 @@ pub struct ReadReport {
 /// The compositor and accessibility providers share one deadline. Diagnostic
 /// strings contain only fixed labels, never document text or accessible names.
 pub async fn read_report(session: &zbus::Connection) -> ReadReport {
+    read_report_within(session, TIMEOUT).await
+}
+
+/// Non-GNOME insertion: the same providers under a tighter deadline.
+pub async fn read_insertion_report(session: &zbus::Connection) -> ReadReport {
+    read_report_within(session, INSERTION_TIMEOUT).await
+}
+
+/// One accessibility-bus connection is reused across reads; a fresh
+/// connection's authentication handshake would be paid after every utterance.
+/// It is dropped whenever a read fails, so a restarted bus reconnects.
+static ACCESSIBILITY_BUS: tokio::sync::Mutex<Option<(String, zbus::Connection)>> =
+    tokio::sync::Mutex::const_new(None);
+
+async fn accessibility_bus(address: &str) -> Option<zbus::Connection> {
+    let mut cached = ACCESSIBILITY_BUS.lock().await;
+    if let Some((cached_address, bus)) = cached.as_ref()
+        && cached_address == address
+    {
+        return Some(bus.clone());
+    }
+    let bus = zbus::connection::Builder::address(address)
+        .build()
+        .await
+        .ok()?;
+    *cached = Some((address.to_owned(), bus.clone()));
+    Some(bus)
+}
+
+async fn forget_accessibility_bus(address: &str) {
+    let mut cached = ACCESSIBILITY_BUS.lock().await;
+    if cached
+        .as_ref()
+        .is_some_and(|(cached_address, _)| cached_address == address)
+    {
+        *cached = None;
+    }
+}
+
+async fn read_report_within(session: &zbus::Connection, deadline: Duration) -> ReadReport {
     let mut status = "accessibility-bus-unavailable";
     let mut source = "at-spi";
-    let result = tokio::time::timeout(TIMEOUT, async {
+    let result = tokio::time::timeout(deadline, async {
         // The input-method route can work even when an application's
         // accessibility tree is disabled. Older extensions simply lack it.
         if let Ok(Some(reply)) =
@@ -99,11 +142,12 @@ pub async fn read_report(session: &zbus::Connection) -> ReadReport {
         if !address.starts_with("unix:") {
             return None;
         }
-        let bus = zbus::connection::Builder::address(address.as_str())
-            .build()
-            .await
-            .ok()?;
-        read_bus(&bus, &mut status).await
+        let bus = accessibility_bus(&address).await?;
+        let context = read_bus(&bus, &mut status).await;
+        if context.is_none() {
+            forget_accessibility_bus(&address).await;
+        }
+        context
     })
     .await;
     match result {
@@ -151,16 +195,7 @@ pub async fn read_gnome_insertion_report(
     .await;
     let reply = match reply {
         Ok(Ok(reply)) => reply,
-        Ok(Err(zbus::Error::MethodError(name, _, _)))
-            if name.as_str() == "org.freedesktop.DBus.Error.UnknownMethod" =>
-        {
-            return (report, None);
-        }
-        Ok(Err(zbus::Error::FDO(error)))
-            if matches!(error.as_ref(), zbus::fdo::Error::UnknownMethod(_)) =>
-        {
-            return (report, None);
-        }
+        Ok(Err(error)) if crate::inject::unknown_method(&error) => return (report, None),
         Ok(Err(_)) => {
             report.status = "unavailable";
             return (report, None);
@@ -593,27 +628,6 @@ async fn text_range(
     (text.chars().count() == (end - start) as usize).then_some(text)
 }
 
-async fn context(bus: &zbus::Connection, focus: &Focus, pos: &Position) -> Option<SurroundingText> {
-    validate_focus(bus, focus).await?;
-    let object = &focus.object;
-    if position(bus, object).await? != *pos {
-        return None;
-    }
-    let (start, end) = pos.edges();
-    let before = text_range(bus, object, start.saturating_sub(CONTEXT).max(0), start).await?;
-    // A selection/focus change after the first range must not cause the second
-    // request to read newly selected or protected contents at stale offsets.
-    validate_focus(bus, focus).await?;
-    if position(bus, object).await? != *pos {
-        return None;
-    }
-    Some(SurroundingText {
-        before,
-        after: text_range(bus, object, end, end.saturating_add(CONTEXT).min(pos.count)).await?,
-        is_replacement: end > start,
-    })
-}
-
 async fn read_bus(bus: &zbus::Connection, status: &mut &'static str) -> Option<SurroundingText> {
     *status = "no-active-window";
     let window = active_window(bus).await?;
@@ -622,22 +636,31 @@ async fn read_bus(bus: &zbus::Connection, status: &mut &'static str) -> Option<S
     *status = "unsupported-or-protected-editor";
     validate_focus(bus, &focus).await?;
     *status = "invalid-caret-or-selection";
-    let initial = position(bus, &focus.object).await?;
+    let pos = position(bus, &focus.object).await?;
     *status = "context-changed-or-unreadable";
-    let first = context(bus, &focus, &initial).await?;
-    if position(bus, &focus.object).await? != initial {
+    let object = &focus.object;
+    let (start, end) = pos.edges();
+    let before = text_range(bus, object, start.saturating_sub(CONTEXT).max(0), start).await?;
+    // A selection/focus change after the first range must not cause the second
+    // request to read newly selected or protected contents at stale offsets.
+    validate_focus(bus, &focus).await?;
+    if position(bus, object).await? != pos {
+        return None;
+    }
+    let after = text_range(bus, object, end, end.saturating_add(CONTEXT).min(pos.count)).await?;
+    // Final check: the context still describes the validated caret. A
+    // same-length edit between the two short reads is not detected; the
+    // context only steers capitalization/spacing, and every check above runs
+    // after the user has stopped typing (key release).
+    if position(bus, object).await? != pos {
         return None;
     }
     validate_focus(bus, &focus).await?;
-    // Same-length edits do not change CharacterCount/CaretOffset. Compare only
-    // the bounded context, never the selection, to detect those changes too.
-    if context(bus, &focus, &initial).await? != first
-        || position(bus, &focus.object).await? != initial
-    {
-        return None;
-    }
-    validate_focus(bus, &focus).await?;
-    Some(first)
+    Some(SurroundingText {
+        before,
+        after,
+        is_replacement: end > start,
+    })
 }
 
 #[cfg(test)]
@@ -1149,7 +1172,7 @@ mod tests {
                 .iter()
                 .filter(|call| matches!(call, Call::Text(..)))
                 .count(),
-            4
+            2
         );
     }
 
@@ -1198,8 +1221,8 @@ mod tests {
     async fn empty_context_and_document_boundaries_need_no_empty_get_text() {
         for (text, caret, expected_before, expected_after, reads) in [
             ("", 0, "", "", 0),
-            ("abc", 0, "", "abc", 2),
-            ("abc", 3, "abc", "", 2),
+            ("abc", 0, "", "abc", 1),
+            ("abc", 3, "abc", "", 1),
         ] {
             let fixture = Fixture::new(Model {
                 text: text.into(),
@@ -1302,7 +1325,6 @@ mod tests {
             Change::Caret,
             Change::Selection,
             Change::Count,
-            Change::Text,
             Change::Focus,
             Change::Active,
             Change::Protection,
@@ -1320,6 +1342,21 @@ mod tests {
                 assert_eq!(fixture.model.lock().unwrap().reads, 1);
             }
         }
+    }
+
+    #[tokio::test]
+    async fn same_length_edit_between_reads_is_an_accepted_race() {
+        // One pass keeps post-release latency low. A same-length edit between
+        // the two short reads is not detected: context only steers spacing and
+        // case, and the selection is still never read.
+        let fixture = Fixture::new(Model {
+            change: Change::Text,
+            ..Model::default()
+        })
+        .await;
+        let result = read(&fixture.session).await.unwrap();
+        assert_eq!(result.before, "abc");
+        assert_eq!(fixture.model.lock().unwrap().reads, 2);
     }
 
     #[tokio::test]

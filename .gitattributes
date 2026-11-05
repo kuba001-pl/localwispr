@@ -2,7 +2,6 @@
 benchmarks/**/results/** linguist-generated=true
 benchmarks/**/frozen/** linguist-generated=true
 benchmarks/verification/*results.jsonl linguist-generated=true
-benchmarks/verification/safety-replay.jsonl linguist-generated=true
 # Unified-diff context lines intentionally contain a single space; preserve the
 # exact archived patch bytes used by source hashes.
 benchmarks/**/frozen/source-diff.patch -whitespace

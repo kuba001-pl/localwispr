@@ -121,7 +121,18 @@ impl Drop for ShellCancellation {
     }
 }
 
-fn unknown_method(error: &zbus::Error) -> bool {
+/// The extension refused or aborted a bound insertion before pasting because
+/// the focus/caret/range changed or the token expired. Nothing was inserted.
+pub fn is_stale_context(error: &anyhow::Error) -> bool {
+    error.chain().any(|cause| {
+        matches!(cause.downcast_ref::<zbus::Error>(),
+            Some(zbus::Error::MethodError(name, _, _))
+                if name.as_str() == "org.localwispr.Shell1.Error.StaleContext")
+    })
+}
+
+/// An older extension that predates the called method.
+pub(crate) fn unknown_method(error: &zbus::Error) -> bool {
     matches!(error, zbus::Error::MethodError(name, _, _)
         if name.as_str() == "org.freedesktop.DBus.Error.UnknownMethod")
         || matches!(error, zbus::Error::FDO(inner)
@@ -145,8 +156,8 @@ async fn shell_inject_with_handoff(
         armed: true,
     };
     let result = if let Some(token) = token {
-        // A bound request may fail stale/unsupported; never replay adapted text
-        // through the unbound legacy methods against a different range.
+        // A bound request may fail stale/unsupported; never replay this adapted
+        // text unbound. The daemon re-reads context and re-formats instead.
         shell
             .inject_bound(
                 &cancellation.request_id,

@@ -257,7 +257,11 @@ The compositor route requires the updated GNOME extension to be loaded; older
 extensions continue to paste normally. Recognition can still use AT-SPI, while
 GNOME cursor formatting falls back to plain insertion with `unbound-extension`
 status until the new handoff methods are loaded. Installing updated Shell
-extension code takes effect after a fresh login. Neither route can inspect an
+extension code takes effect after a fresh login: until you log out and back in
+after upgrading, the bound handoff and its pre-paste protection recheck are not
+active. If the cursor or field changes between the context read and the paste,
+the daemon re-reads context and retries; if that fails again it inserts the text
+unadapted instead of discarding it. Neither route can inspect an
 editor that exposes no surrounding-text or accessibility interface. Terminals,
 inaccessible browser/editor fields, ambiguous selections, and unavailable
 desktop services fall back to ordinary

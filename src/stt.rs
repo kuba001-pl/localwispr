@@ -604,21 +604,12 @@ pub(crate) fn word_spans(text: &str) -> Vec<std::ops::Range<usize>> {
 /// backticks/fences are protected too: previews often end inside a code span.
 fn code_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
     let mut ranges = Vec::new();
-    let mut fence: Option<(char, usize)> = None;
+    let mut fence = crate::fence::Fence::default();
     let mut offset = 0;
     for line in text.split_inclusive('\n') {
         let body = line.trim_start_matches([' ', '\t']);
-        let marker = body.chars().next().unwrap_or(' ');
-        let run = body.chars().take_while(|c| *c == marker).count();
-        let boundary = matches!(marker, '`' | '~') && run >= 3;
-        let in_fence = fence.is_some();
-        if let Some((c, n)) = fence {
-            if boundary && marker == c && run >= n {
-                fence = None;
-            }
-        } else if boundary {
-            fence = Some((marker, run));
-        }
+        let in_fence = fence.is_open();
+        let boundary = fence.line(line.trim_end_matches(['\r', '\n']));
         let code_statement = (["let ", "const ", "var "]
             .iter()
             .any(|prefix| body.starts_with(prefix))
@@ -733,33 +724,8 @@ pub(crate) fn literal_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
                     .chars()
                     .last()
                     .is_some_and(|c| c.is_ascii_digit())
-                    || matches!(
-                        text[spans[i - 1].clone()].to_lowercase().as_str(),
-                        "one"
-                            | "two"
-                            | "three"
-                            | "four"
-                            | "five"
-                            | "six"
-                            | "seven"
-                            | "eight"
-                            | "nine"
-                            | "ten"
-                            | "hundred"
-                            | "thousand"
-                            | "jeden"
-                            | "dwa"
-                            | "trzy"
-                            | "cztery"
-                            | "pięć"
-                            | "sześć"
-                            | "siedem"
-                            | "osiem"
-                            | "dziewięć"
-                            | "dziesięć"
-                            | "sto"
-                            | "tysiąc"
-                    )))
+                    || crate::cleanup::cardinal_atom(&text[spans[i - 1].clone()].to_lowercase())
+                        .is_some()))
         {
             let start = span.start + token.len() - left_trimmed.len();
             ranges.push(start..start + core.len());

@@ -47,8 +47,8 @@ Improvement over the earlier feature snapshot partly comes from removing two
 pathological output loops, not recognizing their remaining words correctly.
 
 After quote/silence fixes, all 87 long-manual-hint and acoustic requests matched
-that earlier replay exactly. See the adjacent raw outputs, comparison, and source
-hashes. A subsequent single-guillemet quote addition is covered by text tests.
+that earlier replay exactly. See the adjacent comparison and source hashes
+(`safety-replay-*.json`); the raw replay outputs are retained locally, not committed. A subsequent single-guillemet quote addition is covered by text tests.
 The full 834-request measurement remains explicitly tied to its own snapshot.
 
 Human speech controls are 73 public clips from one speaker and three chapters;

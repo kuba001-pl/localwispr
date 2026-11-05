@@ -200,6 +200,74 @@ fn injection_backend(
     }
 }
 
+/// Formats `text` for the destination caret and inserts it. A bound GNOME
+/// insertion fails without pasting when the caret/range moved after the
+/// context read: re-read and re-format once, then fall back to plain insertion.
+/// A dictation must never be dropped because its context went stale.
+#[allow(clippy::too_many_arguments)]
+async fn insert_adapted(
+    injector: &mut Injector,
+    base: &Route,
+    conn: &zbus::Connection,
+    text: &str,
+    output: &crate::config::Output,
+    input: (&AtomicBool, &Arc<AtomicBool>),
+    events: &mpsc::UnboundedSender<Event>,
+    utterance: u64,
+) -> Result<()> {
+    const BOUND_ATTEMPTS: u32 = 2;
+    let cancelled = input.1;
+    let mut attempt = 0;
+    loop {
+        let unbound = attempt >= BOUND_ATTEMPTS;
+        let mut route = match base {
+            Route::Gnome(shell) | Route::GnomeBound(shell, _) => Route::Gnome(shell.clone()),
+            Route::DataControl => Route::DataControl,
+        };
+        // This is deliberately a fresh read, after the HUD disappears and
+        // modifiers are released: the caret may have moved since recording.
+        let context = if output.cursor_aware && !unbound {
+            let report = if let Route::Gnome(shell) = &route {
+                let (report, token) =
+                    crate::cursor_context::read_gnome_insertion_report(shell).await;
+                if let Some(token) = token {
+                    route = Route::GnomeBound(shell.clone(), token);
+                }
+                report
+            } else {
+                crate::cursor_context::read_insertion_report(conn).await
+            };
+            let _ = events.send(Event::ContextRead {
+                utterance,
+                phase: "insertion",
+                status: report.status,
+                source: report.source,
+            });
+            report.context
+        } else {
+            None
+        };
+        anyhow::ensure!(!cancelled.load(Ordering::Acquire), "dictation cancelled");
+        let formatted = insertion::format(text, context.as_ref(), output.append_space);
+        let result = injector
+            .inject(&formatted, &route, output, input, |message| {
+                let _ = events.send(Event::Notice("warning", message));
+            })
+            .await;
+        match result {
+            Err(e)
+                if !unbound
+                    && crate::inject::is_stale_context(&e)
+                    && !cancelled.load(Ordering::Acquire) =>
+            {
+                attempt += 1;
+                tracing::debug!("insertion context changed before paste; retry {attempt}");
+            }
+            result => return result,
+        }
+    }
+}
+
 fn missing_injection_message(gnome: bool, data_control: bool, uinput: bool) -> &'static str {
     if gnome {
         "Cannot insert dictation: enable the localwispr GNOME Shell extension and log out/in"
@@ -1183,48 +1251,18 @@ impl Engine {
                     "dictation cancelled"
                 );
                 match route {
-                    Some(mut route) => {
-                        // This is deliberately a fresh read, after the HUD
-                        // disappears and modifiers are released: the caret
-                        // may have moved since recording began.
-                        let context = if cfg.output.cursor_aware {
-                            let report = if let Route::Gnome(shell) = &route {
-                                let (report, token) =
-                                    crate::cursor_context::read_gnome_insertion_report(shell).await;
-                                if let Some(token) = token {
-                                    route = Route::GnomeBound(shell.clone(), token);
-                                }
-                                report
-                            } else {
-                                crate::cursor_context::read_report(&conn).await
-                            };
-                            let _ = events.send(Event::ContextRead {
-                                utterance,
-                                phase: "insertion",
-                                status: report.status,
-                                source: report.source,
-                            });
-                            report.context
-                        } else {
-                            None
-                        };
-                        anyhow::ensure!(
-                            !task_cancelled.load(Ordering::Acquire),
-                            "dictation cancelled"
-                        );
-                        let text =
-                            insertion::format(&text, context.as_ref(), cfg.output.append_space);
-                        injector
-                            .inject(
-                                &text,
-                                &route,
-                                &cfg.output,
-                                (&modifiers, &task_cancelled),
-                                |message| {
-                                    let _ = events.send(Event::Notice("warning", message));
-                                },
-                            )
-                            .await?;
+                    Some(base) => {
+                        insert_adapted(
+                            &mut injector,
+                            &base,
+                            &conn,
+                            &text,
+                            &cfg.output,
+                            (&modifiers, &task_cancelled),
+                            &events,
+                            utterance,
+                        )
+                        .await?;
                     }
                     None => anyhow::bail!(
                         "{}",
@@ -1304,7 +1342,8 @@ impl Engine {
                 || self.cfg.audio != new.audio
                 || self.cfg.transcription != new.transcription
                 || self.cfg.cleanup != new.cleanup
-                || self.cfg.output != new.output
+                // Output settings are read only after recording ends, from the
+                // processing task's own copy; changing them never cancels.
                 || self.cfg.hud.bands != new.hud.bands)
         {
             self.cancel_recording().await;
@@ -1615,13 +1654,18 @@ impl Engine {
 
     fn publish_status(&self) {
         let mut s = self.status.lock().unwrap();
+        // Nothing is read while idle: an empty, failed or cancelled utterance
+        // must not leave a read reported as still pending.
+        let idle = self.phase == Phase::Idle;
         for (phase, enabled) in [
             ("recognition", self.cfg.transcription.context_aware),
             ("insertion", self.cfg.output.cursor_aware),
         ] {
             let key = format!("{phase}_context");
             if enabled {
-                if s.get(&key).is_none_or(|value| value == "disabled") {
+                if s.get(&key)
+                    .is_none_or(|value| value == "disabled" || (idle && value == "pending"))
+                {
                     s.insert(key, "not-captured".into());
                 }
             } else {
@@ -1903,6 +1947,152 @@ mod tests {
         }
     }
 
+    #[derive(Debug, zbus::DBusError)]
+    #[zbus(prefix = "org.localwispr.Shell1.Error")]
+    enum ShellError {
+        #[zbus(error)]
+        ZBus(zbus::Error),
+        StaleContext(String),
+    }
+
+    /// Bound insertions go stale `stale` times before any paste succeeds.
+    struct StaleShell {
+        stale: std::sync::Mutex<u32>,
+        pasted: std::sync::Mutex<Vec<(String, bool)>>,
+        tokens: std::sync::Mutex<u32>,
+    }
+
+    struct StaleShellRef(Arc<StaleShell>);
+
+    #[zbus::interface(name = "org.localwispr.Shell1")]
+    impl StaleShellRef {
+        fn get_insertion_context(&self) -> (String, String, String, bool, String) {
+            let mut tokens = self.0.tokens.lock().unwrap();
+            *tokens += 1;
+            (
+                "available".into(),
+                "Done.".into(),
+                String::new(),
+                false,
+                format!("t{tokens}"),
+            )
+        }
+        fn inject_bound(
+            &self,
+            _request_id: &str,
+            _token: &str,
+            text: &str,
+            _chord: &str,
+            _restore: bool,
+            _restore_delay_ms: u32,
+        ) -> Result<bool, ShellError> {
+            let mut stale = self.0.stale.lock().unwrap();
+            if *stale > 0 {
+                *stale -= 1;
+                return Err(ShellError::StaleContext("Insertion context changed".into()));
+            }
+            self.0.pasted.lock().unwrap().push((text.into(), true));
+            Ok(true)
+        }
+        fn inject_cancellable(
+            &self,
+            _request_id: &str,
+            text: &str,
+            _chord: &str,
+            _restore: bool,
+            _restore_delay_ms: u32,
+        ) -> bool {
+            self.0.pasted.lock().unwrap().push((text.into(), false));
+            true
+        }
+        fn cancel_inject(&self, _request_id: &str) {}
+    }
+
+    #[tokio::test]
+    async fn stale_insertion_context_retries_then_falls_back_instead_of_dropping_text() {
+        // (stale replies, expected (text, bound) paste)
+        for (stale, expected) in [
+            (0, (" Hello there ", true)),
+            (1, (" Hello there ", true)),
+            (2, ("hello there ", false)),
+            (9, ("hello there ", false)),
+        ] {
+            let (engine, _bus) = engine().await;
+            let shell = Arc::new(StaleShell {
+                stale: std::sync::Mutex::new(stale),
+                pasted: std::sync::Mutex::default(),
+                tokens: std::sync::Mutex::default(),
+            });
+            engine
+                .conn
+                .object_server()
+                .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
+                .await
+                .unwrap();
+            engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
+            let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
+            let mut output = engine.cfg.output.clone();
+            output.cursor_aware = true;
+            output.append_space = true;
+            let held = AtomicBool::new(false);
+            let cancelled = Arc::new(AtomicBool::new(false));
+            let (events, _rx) = mpsc::unbounded_channel();
+            insert_adapted(
+                &mut Injector::new(false),
+                &route,
+                &engine.conn,
+                "hello there",
+                &output,
+                (&held, &cancelled),
+                &events,
+                1,
+            )
+            .await
+            .unwrap();
+            let pasted = shell.pasted.lock().unwrap().clone();
+            assert_eq!(
+                pasted,
+                vec![(expected.0.to_owned(), expected.1)],
+                "stale={stale}"
+            );
+            assert_eq!(*shell.tokens.lock().unwrap(), stale.min(1) + 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn cancellation_stops_stale_insertion_retries() {
+        let (engine, _bus) = engine().await;
+        let shell = Arc::new(StaleShell {
+            stale: std::sync::Mutex::new(9),
+            pasted: std::sync::Mutex::default(),
+            tokens: std::sync::Mutex::default(),
+        });
+        engine
+            .conn
+            .object_server()
+            .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
+            .await
+            .unwrap();
+        engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
+        let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
+        let held = AtomicBool::new(false);
+        let cancelled = Arc::new(AtomicBool::new(true));
+        let (events, _rx) = mpsc::unbounded_channel();
+        let result = insert_adapted(
+            &mut Injector::new(false),
+            &route,
+            &engine.conn,
+            "hello",
+            &engine.cfg.output,
+            (&held, &cancelled),
+            &events,
+            1,
+        )
+        .await;
+        assert!(result.is_err());
+        assert!(shell.pasted.lock().unwrap().is_empty());
+    }
+
     #[tokio::test]
     async fn extension_failure_is_an_error_and_unpreserved_clipboard_a_warning() {
         let (engine, _bus) = engine().await;
@@ -2146,7 +2336,7 @@ mod tests {
                 2 => new.transcription.use_gpu = !new.transcription.use_gpu,
                 3 => new.transcription.model = "/nonexistent/replacement-model.bin".into(),
                 4 => new.transcription.context_aware = !new.transcription.context_aware,
-                _ => new.output.cursor_aware = !new.output.cursor_aware,
+                _ => new.cleanup.enabled = !new.cleanup.enabled,
             }
             engine.apply_config(new).await;
             assert_eq!(engine.phase, Phase::Idle);
@@ -2158,9 +2348,18 @@ mod tests {
                 .unwrap()
                 .unwrap();
         }
+        // Output settings are read after recording ends; they never cancel it.
         engine.phase = Phase::Recording {
             since: Instant::now(),
         };
+        let utterance = engine.utterance;
+        let mut new = engine.cfg.clone();
+        new.output.cursor_aware = !new.output.cursor_aware;
+        new.output.append_space = !new.output.append_space;
+        engine.apply_config(new).await;
+        assert!(matches!(engine.phase, Phase::Recording { .. }));
+        assert_eq!(engine.utterance, utterance);
+        assert!(commands.try_recv().is_err());
         let (reply, _) = oneshot::channel();
         engine.on_request(Request::CaptureHotkey(reply)).await;
         assert_eq!(engine.phase, Phase::Idle);

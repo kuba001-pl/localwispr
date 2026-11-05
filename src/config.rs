@@ -182,9 +182,6 @@ pub struct Cleanup {
     /// Reject LLM output whose word count drifts more than this fraction
     /// from the input (guards against the model "answering" the text).
     pub max_length_drift: f32,
-    /// Reject LLM output that introduces more than this fraction of words
-    /// not present in the input.
-    pub max_new_words: f32,
     /// Utterances with fewer words skip the LLM (nothing to polish).
     pub skip_below_words: u32,
     /// Extra instructions appended to the system prompt.
@@ -200,7 +197,6 @@ impl Default for Cleanup {
             live_preview: true,
             remove_fillers: true,
             max_length_drift: 0.4,
-            max_new_words: 0.1,
             skip_below_words: 3,
             custom_instructions: String::new(),
             gpu_layers: 999,
@@ -327,7 +323,6 @@ impl Config {
         }
         let c = &mut self.cleanup;
         c.max_length_drift = c.max_length_drift.clamp(0.05, 5.0);
-        c.max_new_words = c.max_new_words.clamp(0.0, 1.0);
         let h = &mut self.hud;
         h.bands = h.bands.clamp(4, 48);
         h.opacity = h.opacity.clamp(0.0, 1.0);
@@ -361,6 +356,11 @@ mod tests {
         assert!(!disabled.output.cursor_aware);
         let saved = toml::to_string(&disabled).unwrap();
         assert_eq!(toml::from_str::<Config>(&saved).unwrap(), disabled);
+
+        // 0.2.x configs saved the since-removed `max_new_words` key.
+        let old: Config =
+            toml::from_str("[cleanup]\nmax_new_words = 0.1\nmax_length_drift = 0.5\n").unwrap();
+        assert_eq!(old.cleanup.max_length_drift, 0.5);
     }
 
     #[test]

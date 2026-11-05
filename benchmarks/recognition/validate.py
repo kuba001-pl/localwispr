@@ -65,11 +65,15 @@ def main():
         if not metadata.exists():continue
         meta=json.loads(metadata.read_text())
         if 'completed_utc' not in meta:continue
-        raw=OUT/'results'/(stage+'.jsonl');reqpath=OUT/'results'/(stage+'-requests.jsonl')
+        raw=OUT/'results'/(stage+'.jsonl')
         assert hashlib.sha256(raw.read_bytes()).hexdigest()==meta['results_sha256']
-        assert hashlib.sha256(reqpath.read_bytes()).hexdigest()==meta['requests_sha256']
+        # The *-requests.jsonl dumps are not committed: regenerate them byte-exactly
+        # from the frozen corpus/plan exactly as run.py wrote them, then check the
+        # pre-inference hash recorded in *-run.json.
+        expected=requests(stage,rows)
+        frozen=''.join(json.dumps(v,ensure_ascii=False)+'\n' for v in expected).encode()
+        assert hashlib.sha256(frozen).hexdigest()==meta['requests_sha256'],stage
         recorded=[json.loads(s) for s in raw.read_text().splitlines()]
-        expected=[json.loads(s) for s in reqpath.read_text().splitlines()]
         assert [r['request'] for r in recorded]==expected
         assert len(recorded)==meta['requests']
         keys=[(r['request']['id'],r['request']['strategy'],r['request']['condition']) for r in recorded]

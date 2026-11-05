@@ -16,9 +16,9 @@ function signalObject(properties = {}) {
             return id;
         },
         disconnect(id) { this.handlers.delete(id); },
-        emit(signal) {
+        emit(signal, ...args) {
             for (const {signal: name, callback} of [...this.handlers.values()])
-                if (name === signal) callback(this);
+                if (name === signal) callback(this, ...args);
         },
     }, properties);
 }
@@ -140,8 +140,6 @@ function harness() {
             SelectionType: {SELECTION_PRIMARY: 0, SELECTION_CLIPBOARD: 1, SELECTION_DND: 2},
             SelectionSourceMemory: {new(mime, bytes) { return {formats: new Map([[mime, bytes.get_data()]])}; }},
         },
-        IBus: {InputPurpose: {FREE_FORM: 0, PASSWORD: 8, PIN: 9, TERMINAL: 10},
-            InputHints: {PRIVATE: 1 << 11, HIDDEN_TEXT: 1 << 12}},
         global: {
             stage: signalObject({context: {get_backend() { return {get_default_seat() { return {
                 create_virtual_device() { return {
@@ -182,7 +180,7 @@ function harness() {
 function contextHarness(properties = {}) {
     const h = harness();
     const inputMethod = signalObject({
-        currentFocus: {}, content_purpose: 0, content_hints: 0, _purpose: 0, _hints: 0, preedit: false,
+        currentFocus: {}, content_purpose: 0, content_hints: 0, preedit: false,
         snapshot: ['cached text', 6, 6], requests: 0, reads: 0,
         hasPreedit() { return this.preedit; },
         getSurroundingText() { this.reads++; return this.snapshot; },
@@ -306,22 +304,9 @@ test('cursor context bounds work for oversized surrounding documents', () => {
     h.service.destroy();
 });
 
-test('cursor context protects IBus PASSWORD/PIN and PRIVATE/HIDDEN_TEXT flags', () => {
-    for (const fields of [{_purpose: 8}, {_purpose: 9}, {_hints: 1 << 11}, {_hints: 1 << 12},
-        {_hints: (1 << 11) | 1}]) {
+test('cursor context protects Clutter PASSWORD/PIN and SENSITIVE/HIDDEN_TEXT fields', () => {
+    for (const fields of [{content_purpose: 8}, {content_hints: 64}, {content_hints: 128}, {content_hints: 64 | 1}]) {
         const h = contextHarness(fields);
-        h.request();
-        assert.deepEqual(h.reply.values, [['protected', '', '', false]]);
-        assert.equal(h.inputMethod.requests, 0);
-        assert.equal(h.inputMethod.reads, 0);
-        h.assertClean();
-        h.service.destroy();
-    }
-});
-
-test('cursor context checks Clutter protection even when the IBus cache was reset', () => {
-    for (const fields of [{content_purpose: 8}, {content_hints: 64}, {content_hints: 128}]) {
-        const h = contextHarness({...fields, _purpose: 0, _hints: 0});
         h.request();
         assert.deepEqual(h.reply.values, [['protected', '', '', false]]);
         assert.equal(h.inputMethod.reads, 0);
@@ -335,7 +320,7 @@ test('cursor context rechecks protection before reading a fresh response', () =>
     for (const notify of [false, true]) {
         const h = contextHarness();
         h.request();
-        h.inputMethod._hints = h.context.IBus.InputHints.PRIVATE;
+        h.inputMethod.content_hints = 64;
         if (notify) h.inputMethod.emit('notify::content-hints');
         h.respond(['secret', 0, 0]);
         assert.deepEqual(h.reply.values, [['protected', '', '', false]]);
@@ -350,12 +335,11 @@ test('cursor context feature-detects input APIs, mapped fields and privacy enums
         h => { h.context.Main.inputMethod = null; },
         h => { delete h.inputMethod.currentFocus; },
         h => { h.inputMethod.currentFocus = null; },
-        ...['getSurroundingText', 'request_surrounding', 'hasPreedit', 'connect', 'disconnect', '_purpose', '_hints', 'content_purpose', 'content_hints']
+        ...['getSurroundingText', 'request_surrounding', 'hasPreedit', 'connect', 'disconnect', 'content_purpose', 'content_hints']
             .map(name => h => { delete h.inputMethod[name]; }),
-        h => { delete h.context.IBus.InputPurpose.PASSWORD; },
-        h => { delete h.context.IBus.InputHints.PRIVATE; },
-        h => { delete h.context.IBus.InputHints.HIDDEN_TEXT; },
-        h => { delete h.inputMethod._purpose; h.inputMethod.purpose = 0; },
+        h => { delete h.context.Clutter.InputContentPurpose.PASSWORD; },
+        h => { delete h.context.Clutter.InputContentHintFlags.SENSITIVE_DATA; },
+        h => { delete h.context.Clutter.InputContentHintFlags.HIDDEN_TEXT; },
     ];
     for (const variant of variants) {
         const h = contextHarness();
@@ -368,7 +352,7 @@ test('cursor context feature-detects input APIs, mapped fields and privacy enums
     }
     // Optional enum members must never accidentally match an undefined purpose.
     const h = contextHarness();
-    delete h.context.IBus.InputPurpose.PIN;
+    delete h.context.Clutter.InputContentPurpose.PIN;
     h.request();
     h.respond(['safe', 0, 0]);
     assert.deepEqual(h.reply.values, [['available', '', 'safe', false]]);
@@ -415,12 +399,12 @@ test('cursor context rechecks focus on timeout without a response', async () => 
 
 test('cursor context discards a snapshot if focus or protection changes while reading it', () => {
     for (const change of [h => { h.inputMethod.currentFocus = {}; },
-        h => { h.inputMethod.preedit = true; }, h => { h.inputMethod._purpose = 8; }]) {
+        h => { h.inputMethod.preedit = true; }, h => { h.inputMethod.content_purpose = 8; }]) {
         const h = contextHarness();
         h.inputMethod.getSurroundingText = () => { change(h); return ['sensitive', 1, 1]; };
         h.request();
         h.respond(['fresh', 1, 1]);
-        assert.deepEqual(h.reply.values, [[h.inputMethod._purpose === 8 ? 'protected' : 'changed', '', '', false]]);
+        assert.deepEqual(h.reply.values, [[h.inputMethod.content_purpose === 8 ? 'protected' : 'changed', '', '', false]]);
         h.assertClean();
         h.service.destroy();
     }
@@ -450,7 +434,7 @@ test('cursor context requires the currently watched unique daemon owner', () => 
 
 test('extension daemon bus watch supplies the current unique owner and revokes it on disappearance', () => {
     const h = harness();
-    const inputMethod = signalObject({currentFocus: {}, content_purpose: 0, content_hints: 0, _purpose: 0, _hints: 0,
+    const inputMethod = signalObject({currentFocus: {}, content_purpose: 0, content_hints: 0,
         hasPreedit() { return false; }, getSurroundingText() { return ['text', 0, 0]; },
         request_surrounding() {}});
     h.context.Main.inputMethod = inputMethod;
@@ -992,8 +976,8 @@ test('helper build needs only GLib and stamps its ABI', () => {
 });
 
 
-test('terminal context is excluded through both authoritative and IBus properties', () => {
-    for (const properties of [{content_purpose: 10}, {_purpose: 10}]) {
+test('terminal context is excluded through the authoritative Clutter purpose', () => {
+    for (const properties of [{content_purpose: 10}]) {
         const h = contextHarness(properties);
         h.request();
         assert.deepEqual(h.reply.values, [['terminal', '', '', false]]);
@@ -1249,7 +1233,7 @@ test('range or bounded outside text changes during clipboard staging abort befor
         if (selectedTextOnly)
             await h.fire(400);
         await operation;
-        assert.deepEqual(reply.replies, selectedTextOnly ? [true] : ['Failed']);
+        assert.deepEqual(reply.replies, selectedTextOnly ? [true] : ['StaleContext']);
         assert.equal(h.owners.get(1).formats.get('text/plain'), 'original');
         assertNoContextWatches(h);
         h.service.destroy();
@@ -1270,7 +1254,7 @@ test('changes while a backup is outstanding cancel the bound request and its tra
     h.respond(['We old tools.', 0, 13]);
     await operation;
     assert.equal(waiting.cancelled, true);
-    assert.deepEqual(reply.replies, ['Failed']);
+    assert.deepEqual(reply.replies, ['StaleContext']);
     assert.equal(h.keyEvents.length, 0);
     assert.equal(h.owners.get(1).formats.get('text/plain'), 'original');
     assertNoContextWatches(h);
@@ -1290,7 +1274,7 @@ test('silent range changes during a backup are revalidated before installing eit
     h.selection.set_owner = (...args) => { installations++; setOwner(...args); };
     const reply = h.invocation();
     await h.service.InjectBoundAsync(['backup-silent', token, 'new', 'ctrl-v', true, 400], reply);
-    assert.deepEqual(reply.replies, ['Failed']);
+    assert.deepEqual(reply.replies, ['StaleContext']);
     assert.equal(installations, 0);
     assert.equal(h.keyEvents.length, 0);
     assertNoContextWatches(h);
@@ -1309,7 +1293,7 @@ test('final bound revalidation rejects focus/protection changed by the surroundi
         h.inputMethod.getSurroundingText = () => { const result = get(); change(h); return result; };
         await h.fire(20);
         await operation;
-        assert.deepEqual(reply.replies, ['Failed']);
+        assert.deepEqual(reply.replies, ['StaleContext']);
         assert.equal(h.keyEvents.length, 0);
         assertNoContextWatches(h);
         h.service.destroy();
@@ -1544,22 +1528,63 @@ test('independent: a cancelled token cannot be retried, including cancellation w
     }
 });
 
-test('independent: handoff expiry aborts clipboard staging and a pending backup', async () => {
-    for (const phase of ['backup', 'staged']) {
+test('independent: an unclaimed token expires, but a claimed one survives a slow clipboard backup', async () => {
+    const h = contextHarness(); const {token} = prepareBound(h);
+    let finish;
+    const transfer = h.selection.transfer_async;
+    h.selection.transfer_async = (...args) => {
+        h.selection.transfer_async = transfer; // Only the first backup is slow.
+        finish = () => transfer(...args);
+    };
+    const reply = h.invocation();
+    const op = h.service.InjectBoundAsync(['slow', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
+    await h.flush();
+    assert.ok(![...h.timers.values()].some(t => t.ms === 2000), 'claiming stops the expiry clock');
+    finish(); await h.flush();
+    await h.fire(20);
+    assert.equal(h.keyEvents.length, 4);
+    await h.fire(350); await op;
+    assert.deepEqual(reply.replies, [true]);
+    assertNoContextWatches(h); h.service.destroy();
+
+    const idle = contextHarness(); const {token: unused} = prepareBound(idle);
+    await idle.fire(2000);
+    const late = idle.invocation();
+    await idle.service.InjectBoundAsync(['late', unused, 'ADAPTED', 'ctrl-v', true, 350], late);
+    assert.deepEqual(late.replies, ['StaleContext']);
+    assertNoContextWatches(idle); idle.service.destroy();
+});
+
+test('repeated identical cursor rectangles keep the handoff; a moved rectangle makes it stale', async () => {
+    const rect = (x, y) => ({get_x: () => x, get_y: () => y, get_width: () => 1, get_height: () => 18});
+    for (const [events, expected] of [
+        [[rect(10, 20), rect(10, 20), rect(10, 20)], [true]],
+        [[rect(10, 20), rect(10, 40)], ['StaleContext']],
+    ]) {
         const h = contextHarness(); const {token} = prepareBound(h);
-        if (phase === 'backup') h.selection.transfer_async = (_t, _m, _n, _o, cancel, callback) => {
-            cancel.connect(() => queueMicrotask(() => callback(h.selection, {cancel})));
-        };
         const reply = h.invocation();
-        const op = h.service.InjectBoundAsync(['expire', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
-        await h.flush(); await h.fire(2000); await op;
+        const op = h.service.InjectBoundAsync(['rect', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
+        await h.flush();
+        for (const r of events) h.inputMethod.emit('cursor-location-changed', r);
         await h.fire(20);
-        assert.equal(h.keyEvents.length, 0);
-        assert.deepEqual(reply.replies, ['Failed']);
-        assert.equal(h.owners.get(1).formats.get('text/plain'), 'original');
-        assert.equal(h.owners.get(0).formats.get('text/plain'), 'selection');
+        if (expected[0] === true) await h.fire(350);
+        await op;
+        assert.deepEqual(reply.replies, expected);
+        assert.equal(h.keyEvents.length, expected[0] === true ? 4 : 0);
         assertNoContextWatches(h); h.service.destroy();
     }
+});
+
+test('the requested clipboard restore delay is capped', async () => {
+    const h = harness();
+    const service = new h.ShellService(1);
+    const operation = service.InjectAsync(['dictation', 'ctrl-v', true, 4294967295], h.invocation());
+    await h.flush();
+    await h.fire(20);
+    assert.deepEqual([...h.timers.values()].map(timer => timer.ms), [2000]);
+    await h.fire(2000);
+    await operation;
+    service.destroy();
 });
 
 test('independent: consumed token cannot replay during committed grace, and cancellation cannot shorten that grace', async () => {
