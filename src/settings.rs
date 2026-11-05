@@ -123,7 +123,9 @@ pub fn run() -> Result<()> {
         .application_id("org.localwispr.Settings")
         .build();
     // Compositors that do not read the desktop entry take the icon from here.
-    gtk::Window::set_default_icon_name("org.localwispr.Settings");
+    // GTK is initialized only once the application starts up; calling this
+    // any earlier panics.
+    app.connect_startup(|_| gtk::Window::set_default_icon_name("org.localwispr.Settings"));
     app.connect_activate(|app| {
         // Single instance: a second launch just raises the window.
         if let Some(w) = app.active_window() {
