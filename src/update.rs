@@ -53,6 +53,9 @@ pub const CHANNEL: &str = match option_env!("LOCALWISPR_CHANNEL") {
 const EXT_UUID: &str = "localwispr@localwispr.github.io";
 const UNIT: &str = "localwispr.service";
 const DESKTOP_FILE: &str = "org.localwispr.Settings.desktop";
+/// Named after the application ID so the Shell matches it to the window.
+const ICON_FILE: &str = "org.localwispr.Settings.svg";
+const ICON: &str = include_str!("../data/icons/org.localwispr.Settings.svg");
 /// `variant` recorded for an install from before bundles existed.
 const LEGACY: &str = "legacy";
 /// Marker in a version directory: an install of it completed, so it is a
@@ -157,6 +160,7 @@ pub struct Layout {
     pub ext_dir: PathBuf,
     pub unit_dir: PathBuf,
     pub apps_dir: PathBuf,
+    pub icon_dir: PathBuf,
 }
 
 impl Layout {
@@ -171,6 +175,7 @@ impl Layout {
                 .unwrap_or_else(|| home.join(".config"))
                 .join("systemd/user"),
             apps_dir: data.join("applications"),
+            icon_dir: data.join("icons/hicolor/scalable/apps"),
         }
     }
 
@@ -465,6 +470,31 @@ fn write_if_changed(path: &Path, contents: &str) -> Result<bool> {
     std::fs::write(&tmp, contents)?;
     std::fs::rename(&tmp, path)?;
     Ok(true)
+}
+
+/// Makes an icon added to or removed from `icon_dir` (`<theme>/scalable/apps`)
+/// visible. Icon themes trust an `icon-theme.cache` that is not older than the
+/// theme directory, and a file added in an existing subdirectory leaves the
+/// theme directory's time unchanged, so a cache some other program built
+/// would hide the icon. Rebuild that cache when a tool for it is installed;
+/// otherwise mark it stale so the theme is scanned instead.
+fn refresh_icon_cache(icon_dir: &Path) {
+    let Some(theme) = icon_dir.parent().and_then(Path::parent) else {
+        return;
+    };
+    let cache = theme.join("icon-theme.cache");
+    let Ok(cached) = std::fs::metadata(&cache).and_then(|m| m.modified()) else {
+        return;
+    };
+    let dir = theme.to_string_lossy();
+    let rebuilt = ["gtk-update-icon-cache", "gtk4-update-icon-cache"]
+        .into_iter()
+        .any(|tool| run_quiet(tool, &["-q", "-t", "-f", &dir]));
+    if !rebuilt {
+        // Past the cache's time even if that is ahead of the clock.
+        let stale = std::time::SystemTime::now().max(cached + Duration::from_secs(1));
+        let _ = std::fs::File::open(theme).and_then(|d| d.set_modified(stale));
+    }
 }
 
 /// File names and contents of a directory (following a symlink to it).
@@ -1062,7 +1092,7 @@ Type=Application
 Name=localwispr Settings
 Comment=Local voice dictation
 Exec={} settings
-Icon=audio-input-microphone
+Icon=org.localwispr.Settings
 Categories=Utility;Settings;
 StartupNotify=true
 ",
@@ -1161,6 +1191,9 @@ fn install_bundle(bundle: &Path, opts: InstallOptions) -> Result<()> {
     replace_symlink(&new_ext, &layout.ext_dir)?;
     let extension_changed = old_extension != snapshot(&new_ext);
 
+    if write_if_changed(&layout.icon_dir.join(ICON_FILE), ICON)? {
+        refresh_icon_cache(&layout.icon_dir);
+    }
     write_if_changed(&layout.apps_dir.join(DESKTOP_FILE), &desktop_entry(&bin))?;
 
     // Keep one version to roll back to: the one replaced or, when the current
@@ -1263,11 +1296,13 @@ pub fn uninstall(undo_permissions: bool) -> Result<()> {
     for path in [
         layout.unit_dir.join(UNIT),
         layout.apps_dir.join(DESKTOP_FILE),
+        layout.icon_dir.join(ICON_FILE),
         layout.bin_dir.join("localwispr"),
         layout.bin_dir.join("localwispr-llm"),
     ] {
         let _ = std::fs::remove_file(path);
     }
+    refresh_icon_cache(&layout.icon_dir);
     if std::fs::symlink_metadata(&layout.ext_dir).is_ok_and(|m| m.is_dir()) {
         std::fs::remove_dir_all(&layout.ext_dir)?;
     } else {
@@ -1358,7 +1393,47 @@ mod tests {
             ext_dir: root.join("ext"),
             unit_dir: root.join("units"),
             apps_dir: root.join("apps"),
+            icon_dir: root.join("icons"),
         }
+    }
+
+    #[test]
+    fn icon_is_not_hidden_by_a_stale_cache() {
+        let tmp = std::env::temp_dir().join(format!("lw-icon-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let theme = tmp.join("hicolor");
+        let apps = theme.join("scalable/apps");
+        std::fs::create_dir_all(&apps).unwrap();
+        // A cache built before the icon arrived, as another program would leave it.
+        let cache = theme.join("icon-theme.cache");
+        std::fs::write(&cache, "old").unwrap();
+        let later = std::time::SystemTime::now() + Duration::from_secs(5);
+        std::fs::File::open(&cache)
+            .unwrap()
+            .set_modified(later)
+            .unwrap();
+        std::fs::write(apps.join(ICON_FILE), ICON).unwrap();
+        refresh_icon_cache(&apps);
+        let rebuilt = std::fs::read(&cache).unwrap() != b"old";
+        let mtime = |p: &Path| std::fs::metadata(p).unwrap().modified().unwrap();
+        assert!(
+            rebuilt || mtime(&theme) >= mtime(&cache),
+            "cache still trusted"
+        );
+        // No cache: nothing to do, and the theme is left alone.
+        std::fs::remove_file(&cache).unwrap();
+        refresh_icon_cache(&apps);
+        assert!(!cache.exists());
+        std::fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    #[test]
+    fn icon_is_valid_svg() {
+        assert!(ICON.starts_with("<svg ") && ICON.trim_end().ends_with("</svg>"));
+        assert!(
+            !ICON.contains(" opacity="),
+            "use stroke-opacity; SVG Tiny has no group opacity"
+        );
     }
 
     #[test]

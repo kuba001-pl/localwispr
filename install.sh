@@ -61,7 +61,7 @@ if [[ $UNINSTALL -eq 1 ]]; then
     systemctl --user disable --now localwispr.service 2>/dev/null || true
     command -v gnome-extensions >/dev/null && gnome-extensions disable localwispr@localwispr.github.io 2>/dev/null || true
     rm -f "$BIN/localwispr" "$BIN/localwispr-llm" "${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/localwispr.service" \
-        "$DATA/applications/org.localwispr.Settings.desktop"
+        "$DATA/applications/org.localwispr.Settings.desktop" "$DATA/icons/hicolor/scalable/apps/org.localwispr.Settings.svg"
     rm -rf "$DATA/gnome-shell/extensions/localwispr@localwispr.github.io"
     systemctl --user daemon-reload 2>/dev/null || true
     say "Uninstalled. Config and models were kept."

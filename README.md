@@ -1,3 +1,5 @@
+<p align="center"><img src="data/icons/org.localwispr.Settings.svg" width="128" alt=""></p>
+
 # localwispr
 
 Push-to-talk dictation for Linux Wayland, with optional CUDA acceleration.

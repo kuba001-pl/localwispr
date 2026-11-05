@@ -27,6 +27,7 @@ if [[ -f $dist/localwispr-$version-$arch-vulkan.tar.xz ]]; then
         || fail "clipboard helper missing"
     grep -q "Exec=\"$home/.local/bin/localwispr\" settings" "$home/.local/share/applications/org.localwispr.Settings.desktop" \
         || fail "desktop entry"
+    [[ -f $home/.local/share/icons/hicolor/scalable/apps/org.localwispr.Settings.svg ]] || fail "app icon"
     echo "--- vulkan: reinstall over itself"
     run bash "$root/install.sh" --version "$version" --variant vulkan --no-service --no-permissions < /dev/null
     # The installed copy may be in use, so the reinstall gets its own name
@@ -54,5 +55,6 @@ if [[ -x $home/.local/bin/localwispr ]]; then
     echo "--- uninstall"
     run localwispr uninstall
     [[ ! -e $app && ! -e $home/.local/bin/localwispr ]] || fail "uninstall left files"
+    [[ ! -e $home/.local/share/icons/hicolor/scalable/apps/org.localwispr.Settings.svg ]] || fail "uninstall left the icon"
 fi
 echo "install tests passed"
