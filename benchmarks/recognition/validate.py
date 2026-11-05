@@ -70,10 +70,16 @@ def main():
         # The *-requests.jsonl dumps are not committed: regenerate them byte-exactly
         # from the frozen corpus/plan exactly as run.py wrote them, then check the
         # pre-inference hash recorded in *-run.json.
+        recorded=[json.loads(s) for s in raw.read_text().splitlines()]
         expected=requests(stage,rows)
+        # Audio paths are absolute to the checkout that recorded them. Rebase
+        # them onto that recorded root so the check is checkout-independent.
+        suffix='/audio/'+recorded[0]['request']['id']+'.f32'
+        root=recorded[0]['request']['audio'].removesuffix(suffix)
+        assert root+suffix==recorded[0]['request']['audio'],stage
+        for v in expected:v['audio']=root+'/audio/'+v['id']+'.f32'
         frozen=''.join(json.dumps(v,ensure_ascii=False)+'\n' for v in expected).encode()
         assert hashlib.sha256(frozen).hexdigest()==meta['requests_sha256'],stage
-        recorded=[json.loads(s) for s in raw.read_text().splitlines()]
         assert [r['request'] for r in recorded]==expected
         assert len(recorded)==meta['requests']
         keys=[(r['request']['id'],r['request']['strategy'],r['request']['condition']) for r in recorded]

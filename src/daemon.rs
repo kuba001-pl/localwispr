@@ -201,9 +201,10 @@ fn injection_backend(
 }
 
 /// Formats `text` for the destination caret and inserts it. A bound GNOME
-/// insertion fails without pasting when the caret/range moved after the
-/// context read: re-read and re-format once, then fall back to plain insertion.
-/// A dictation must never be dropped because its context went stale.
+/// insertion fails without pasting when its target changed after the context
+/// read: re-read and re-format once, then insert unadapted rather than drop
+/// the dictation. A retry never pastes into a field that has meanwhile become
+/// protected or a terminal (a password prompt that grabbed focus, say).
 #[allow(clippy::too_many_arguments)]
 async fn insert_adapted(
     injector: &mut Injector,
@@ -219,41 +220,49 @@ async fn insert_adapted(
     let cancelled = input.1;
     let mut attempt = 0;
     loop {
-        let unbound = attempt >= BOUND_ATTEMPTS;
+        let fallback = attempt >= BOUND_ATTEMPTS;
         let mut route = match base {
             Route::Gnome(shell) | Route::GnomeBound(shell, _) => Route::Gnome(shell.clone()),
             Route::DataControl => Route::DataControl,
         };
         // This is deliberately a fresh read, after the HUD disappears and
         // modifiers are released: the caret may have moved since recording.
-        let context = if output.cursor_aware && !unbound {
+        let context = if output.cursor_aware {
             let report = if let Route::Gnome(shell) = &route {
                 let (report, token) =
                     crate::cursor_context::read_gnome_insertion_report(shell).await;
-                if let Some(token) = token {
+                // The fallback still reads, for the protection check below,
+                // but inserts unbound: the target keeps changing under us.
+                if let Some(token) = token.filter(|_| !fallback) {
                     route = Route::GnomeBound(shell.clone(), token);
                 }
                 report
             } else {
                 crate::cursor_context::read_insertion_report(conn).await
             };
+            let status = if fallback && report.context.is_some() {
+                "changed-before-paste"
+            } else {
+                report.status
+            };
             let _ = events.send(Event::ContextRead {
                 utterance,
                 phase: "insertion",
-                status: report.status,
+                status,
                 source: report.source,
             });
-            report.context
-        } else {
-            if output.cursor_aware {
-                // Report the fallback, not the earlier attempt's "available".
-                let _ = events.send(Event::ContextRead {
-                    utterance,
-                    phase: "insertion",
-                    status: "changed-before-paste",
-                    source: "gnome-input-method",
-                });
+            if attempt > 0 && matches!(report.status, "protected-field" | "terminal-field") {
+                anyhow::bail!(
+                    "the focused field changed to a {} before paste; the dictation was not inserted",
+                    if report.status == "terminal-field" {
+                        "terminal"
+                    } else {
+                        "protected field"
+                    }
+                );
             }
+            report.context.filter(|_| !fallback)
+        } else {
             None
         };
         anyhow::ensure!(!cancelled.load(Ordering::Acquire), "dictation cancelled");
@@ -265,12 +274,12 @@ async fn insert_adapted(
             .await;
         match result {
             Err(e)
-                if !unbound
+                if !fallback
                     && crate::inject::is_stale_context(&e)
                     && !cancelled.load(Ordering::Acquire) =>
             {
                 attempt += 1;
-                tracing::debug!("insertion context changed before paste; retry {attempt}");
+                tracing::debug!("insertion target changed before paste; retry {attempt}");
             }
             result => return result,
         }
@@ -1356,10 +1365,10 @@ impl Engine {
             || self.cfg.hud.bands != new.hud.bands;
         let cancel = match self.phase {
             Phase::Idle => false,
-            // Processing runs on its own copy of the configuration; only an
-            // unloaded worker or rebuilt input can break it. Anything else
-            // (output, cleanup wording, languages) must not discard speech.
-            Phase::Processing => reloads_models || rebuilds_input,
+            // Processing runs on its own configuration copy, already holds its
+            // samples, and reads only the shared modifier state, which a
+            // hotkey reconfiguration keeps. Only unloading its worker breaks it.
+            Phase::Processing => reloads_models,
             // Output settings are read after recording ends; they never cancel.
             Phase::Recording { .. } => {
                 rebuilds_input
@@ -1977,6 +1986,8 @@ mod tests {
         stale: std::sync::Mutex<u32>,
         /// Set (as a user cancel would) when a stale reply is sent.
         cancel: Option<Arc<AtomicBool>>,
+        /// Context status reported by reads after the first.
+        retry_status: &'static str,
         pasted: std::sync::Mutex<Vec<(String, bool)>>,
         tokens: std::sync::Mutex<u32>,
     }
@@ -1988,8 +1999,22 @@ mod tests {
         fn get_insertion_context(&self) -> (String, String, String, bool, String) {
             let mut tokens = self.0.tokens.lock().unwrap();
             *tokens += 1;
+            let status = if *tokens == 1 {
+                "available"
+            } else {
+                self.0.retry_status
+            };
+            if status != "available" {
+                return (
+                    status.into(),
+                    String::new(),
+                    String::new(),
+                    false,
+                    String::new(),
+                );
+            }
             (
-                "available".into(),
+                status.into(),
                 "Done.".into(),
                 String::new(),
                 false,
@@ -2043,6 +2068,7 @@ mod tests {
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(stale),
                 cancel: None,
+                retry_status: "available",
                 pasted: std::sync::Mutex::default(),
                 tokens: std::sync::Mutex::default(),
             });
@@ -2078,7 +2104,52 @@ mod tests {
                 vec![(expected.0.to_owned(), expected.1)],
                 "stale={stale}"
             );
-            assert_eq!(*shell.tokens.lock().unwrap(), stale.min(1) + 1);
+            // The fallback still reads, to refuse a field turned protected.
+            assert_eq!(*shell.tokens.lock().unwrap(), stale.min(2) + 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn a_retry_never_pastes_into_a_field_that_became_protected_or_a_terminal() {
+        for retry_status in ["protected", "terminal"] {
+            let (engine, _bus) = engine().await;
+            let shell = Arc::new(StaleShell {
+                stale: std::sync::Mutex::new(9),
+                cancel: None,
+                retry_status,
+                pasted: std::sync::Mutex::default(),
+                tokens: std::sync::Mutex::default(),
+            });
+            engine
+                .conn
+                .object_server()
+                .at("/org/localwispr/Shell", StaleShellRef(shell.clone()))
+                .await
+                .unwrap();
+            engine.conn.request_name(dbus::SHELL_NAME).await.unwrap();
+            let route = Route::Gnome(dbus::ShellProxy::new(&engine.conn).await.unwrap());
+            let mut output = engine.cfg.output.clone();
+            output.cursor_aware = true;
+            let held = AtomicBool::new(false);
+            let cancelled = Arc::new(AtomicBool::new(false));
+            let (events, _rx) = mpsc::unbounded_channel();
+            let error = insert_adapted(
+                &mut Injector::new(false),
+                &route,
+                &engine.conn,
+                "hello",
+                &output,
+                (&held, &cancelled),
+                &events,
+                1,
+            )
+            .await
+            .unwrap_err();
+            assert!(
+                format!("{error:#}").contains("not inserted"),
+                "{retry_status}"
+            );
+            assert!(shell.pasted.lock().unwrap().is_empty(), "{retry_status}");
         }
     }
 
@@ -2089,6 +2160,7 @@ mod tests {
         let shell = Arc::new(StaleShell {
             stale: std::sync::Mutex::new(9),
             cancel: Some(cancelled.clone()),
+            retry_status: "available",
             pasted: std::sync::Mutex::default(),
             tokens: std::sync::Mutex::default(),
         });
@@ -2123,7 +2195,7 @@ mod tests {
     async fn settings_saved_while_processing_cancel_only_when_the_task_breaks() {
         let (mut engine, _bus) = engine().await;
         type Change = fn(&mut Config);
-        let changes: [(Change, bool); 5] = [
+        let changes: [(Change, bool); 7] = [
             (|c| c.output.append_space = !c.output.append_space, false),
             (|c| c.output.cursor_aware = !c.output.cursor_aware, false),
             (
@@ -2131,6 +2203,8 @@ mod tests {
                 false,
             ),
             (|c| c.transcription.languages.push("de".into()), false),
+            (|c| c.hotkeys.push_to_talk = vec!["KEY_F13".into()], false),
+            (|c| c.hud.bands = 12, false),
             (|c| c.transcription.use_gpu = !c.transcription.use_gpu, true),
         ];
         for (change, cancels) in changes {

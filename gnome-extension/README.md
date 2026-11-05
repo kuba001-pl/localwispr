@@ -22,7 +22,8 @@ that a client re-commits only triggers a recheck of the bound range. A bound
 request that ends before its keys are queued, for any reason except explicit
 cancellation, fails with `StaleContext` and pastes nothing; the daemon then
 re-reads context and retries once, and falls back to plain insertion rather than
-dropping the dictation. The clipboard-restore delay is capped at two seconds.
+dropping the dictation (never into a field that became protected or a terminal
+meanwhile). The clipboard-restore delay is capped at two seconds.
 Recognition continues using `GetCursorContext`. Old loaded extensions still
 paste normally, but GNOME cursor formatting reports `unbound-extension` until
 these new methods are loaded. AT-SPI remains available for recognition and for
