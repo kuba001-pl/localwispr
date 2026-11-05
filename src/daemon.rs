@@ -209,8 +209,8 @@ const INSERTION_CONTEXT_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Formats `text` for the destination caret and inserts it. A bound GNOME
 /// insertion fails without pasting when its target changed after the context
-/// read: re-read and re-format once, then insert unadapted rather than drop
-/// the dictation. A retry never pastes into a field that has meanwhile become
+/// read: re-read and re-format, then insert unadapted rather than drop the
+/// dictation. A retry never pastes into a field that has meanwhile become
 /// protected or a terminal (a password prompt that grabbed focus, say).
 #[allow(clippy::too_many_arguments)]
 async fn insert_adapted(
@@ -260,19 +260,27 @@ async fn insert_adapted(
                 },
                 source: report.source,
             });
-            // After a stale attempt the target is unknown. Paste again only
-            // into a field just confirmed readable and unprotected; "changed",
-            // "timeout" or "protected" could be a prompt that took focus.
+            // After a stale attempt the target is unknown. A field that is now
+            // protected or a terminal (a prompt that took focus) never gets the
+            // text; the extension reports protection before focus changes, so
+            // such a prompt cannot hide behind "changed". Other unconfirmed
+            // reads ("changed", "timeout") re-read once, then insert unadapted
+            // as a plain paste always has.
             if attempt > 0 && report.context.is_none() {
-                if !fallback && !matches!(report.status, "protected-field" | "terminal-field") {
+                if matches!(report.status, "protected-field" | "terminal-field") {
+                    anyhow::bail!(
+                        "the focused field became a {} before paste; the dictation was not inserted",
+                        if report.status == "terminal-field" {
+                            "terminal"
+                        } else {
+                            "protected field"
+                        }
+                    );
+                }
+                if !fallback {
                     attempt += 1;
                     continue;
                 }
-                anyhow::bail!(
-                    "the focused field changed before paste and could not be confirmed safe \
-                     ({}); the dictation was not inserted",
-                    report.status
-                );
             }
             report.context.filter(|_| !fallback)
         } else {
@@ -1999,8 +2007,8 @@ mod tests {
         stale: std::sync::Mutex<u32>,
         /// Set (as a user cancel would) when a stale reply is sent.
         cancel: Option<Arc<AtomicBool>>,
-        /// Context status reported by reads after the first.
-        retry_status: &'static str,
+        /// Context statuses reported by reads after the first (last repeats).
+        retry_status: &'static [&'static str],
         pasted: std::sync::Mutex<Vec<(String, bool)>>,
         tokens: std::sync::Mutex<u32>,
     }
@@ -2042,10 +2050,10 @@ mod tests {
         fn get_insertion_context(&self) -> (String, String, String, bool, String) {
             let mut tokens = self.0.tokens.lock().unwrap();
             *tokens += 1;
-            let status = if *tokens == 1 {
-                "available"
-            } else {
-                self.0.retry_status
+            let retries = self.0.retry_status;
+            let status = match *tokens {
+                1 => "available",
+                n => retries[(n as usize - 2).min(retries.len() - 1)],
             };
             if status != "available" {
                 return (
@@ -2110,7 +2118,7 @@ mod tests {
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(stale),
                 cancel: None,
-                retry_status: "available",
+                retry_status: &["available"],
                 pasted: std::sync::Mutex::default(),
                 tokens: std::sync::Mutex::default(),
             });
@@ -2156,12 +2164,29 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_retry_pastes_only_into_a_field_confirmed_readable_and_unprotected() {
-        // "changed"/"timeout": a prompt taking focus mid-read is not
-        // confirmed safe either, even after the extra read.
-        for retry_status in ["protected", "terminal", "changed", "timeout"] {
+    async fn retries_refuse_protected_fields_and_reread_unconfirmed_ones() {
+        // (stale replies, statuses of reads after the first, expected paste,
+        // total reads)
+        type Case = (
+            u32,
+            &'static [&'static str],
+            Option<(&'static str, bool)>,
+            u32,
+        );
+        let cases: [Case; 6] = [
+            (1, &["protected"], None, 2),
+            (1, &["terminal"], None, 2),
+            // The fallback's own read refuses a field turned protected too.
+            (2, &["available", "protected"], None, 3),
+            // Unconfirmed reads: one re-read, then an unadapted plain paste.
+            (1, &["changed"], Some(("hello ", false)), 3),
+            (1, &["timeout"], Some(("hello ", false)), 3),
+            // A clean read after a stale attempt is used for the bound retry.
+            (1, &["available"], Some((" Hello ", true)), 2),
+        ];
+        for (stale, retry_status, expected, reads) in cases {
             let shell = Arc::new(StaleShell {
-                stale: std::sync::Mutex::new(9),
+                stale: std::sync::Mutex::new(stale),
                 cancel: None,
                 retry_status,
                 pasted: std::sync::Mutex::default(),
@@ -2171,10 +2196,11 @@ mod tests {
             let route = Route::Gnome(dbus::ShellProxy::new(&conn).await.unwrap());
             let mut output = Config::default().output;
             output.cursor_aware = true;
+            output.append_space = true;
             let held = AtomicBool::new(false);
             let cancelled = Arc::new(AtomicBool::new(false));
             let (events, _rx) = mpsc::unbounded_channel();
-            let error = insert_adapted(
+            let result = insert_adapted(
                 &mut Injector::new(false),
                 &route,
                 &conn,
@@ -2184,13 +2210,23 @@ mod tests {
                 &events,
                 1,
             )
-            .await
-            .unwrap_err();
-            assert!(
-                format!("{error:#}").contains("not inserted"),
-                "{retry_status}"
-            );
-            assert!(shell.pasted.lock().unwrap().is_empty(), "{retry_status}");
+            .await;
+            let pasted = shell.pasted.lock().unwrap().clone();
+            match expected {
+                None => {
+                    let error = result.unwrap_err();
+                    assert!(
+                        format!("{error:#}").contains("not inserted"),
+                        "{retry_status:?}"
+                    );
+                    assert!(pasted.is_empty(), "{retry_status:?}");
+                }
+                Some((text, bound)) => {
+                    result.unwrap();
+                    assert_eq!(pasted, vec![(text.to_owned(), bound)], "{retry_status:?}");
+                }
+            }
+            assert_eq!(*shell.tokens.lock().unwrap(), reads, "{retry_status:?}");
         }
     }
 
@@ -2200,7 +2236,7 @@ mod tests {
         let shell = Arc::new(StaleShell {
             stale: std::sync::Mutex::new(9),
             cancel: Some(cancelled.clone()),
-            retry_status: "available",
+            retry_status: &["available"],
             pasted: std::sync::Mutex::default(),
             tokens: std::sync::Mutex::default(),
         });
