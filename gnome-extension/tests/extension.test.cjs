@@ -198,7 +198,7 @@ function contextHarness(properties = {}) {
     };
     const assertClean = () => {
         assert.equal(h.timers.size, 0);
-        assert.equal(inputMethod.handlers.size, 0);
+        assert.equal(inputMethod.handlers.size, caretWatches(service, inputMethod));
         assert.equal(h.context.global.display.handlers.size, 0);
         assert.equal(h.context.global.stage.handlers.size, 0);
         assert.equal(service._contextRequests.size, 0);
@@ -1098,7 +1098,7 @@ test('focus leaving and returning before paste still cancels the request', async
     assert.equal(h.keyEvents.length, 0);
     assert.equal(h.owners.get(1).formats.get('text/plain'), 'original');
     assert.equal(h.context.global.display.handlers.size, 0);
-    assert.equal(h.inputMethod.handlers.size, 0);
+    assert.equal(h.inputMethod.handlers.size, caretWatches(h.service, h.inputMethod));
     h.service.destroy();
 });
 
@@ -1157,9 +1157,14 @@ function prepareBound(h, snapshot = ['We old tools.', 3, 6]) {
     return {reply, token};
 }
 
+// The service's one persistent caret-rectangle watch is not context state.
+function caretWatches(service, inputMethod) {
+    return service._caretWatch && service._caretSource === inputMethod ? 1 : 0;
+}
+
 function assertNoContextWatches(h) {
     assert.equal(h.service._handoff, null);
-    assert.equal(h.inputMethod.handlers.size, 0);
+    assert.equal(h.inputMethod.handlers.size, caretWatches(h.service, h.inputMethod));
     assert.equal(h.context.global.display.handlers.size, 0);
     assert.equal(h.context.global.stage.handlers.size, 0);
     assert.equal(h.timers.size, 0);
@@ -1630,6 +1635,22 @@ test('repeated identical cursor rectangles keep the handoff; a moved rectangle m
         assert.equal(h.keyEvents.length, expected[0] === true ? 4 : 0);
         assertNoContextWatches(h); h.service.destroy();
     }
+});
+
+test('a caret moved only by its rectangle (a click) before InjectBound is stale', async () => {
+    const rect = (x, y) => ({get_x: () => x, get_y: () => y, get_width: () => 1, get_height: () => 18});
+    const h = contextHarness();
+    h.inputMethod.emit('cursor-location-changed', rect(10, 20)); // Before the read.
+    const {token} = prepareBound(h);
+    // GTK re-sends unchanged surrounding text on a click; only the rectangle moves.
+    h.inputMethod.emit('cursor-location-changed', rect(10, 40));
+    const reply = h.invocation();
+    await h.service.InjectBoundAsync(['click', token, 'ADAPTED', 'ctrl-v', true, 350], reply);
+    assert.deepEqual(reply.replies, ['StaleContext']);
+    assert.equal(h.keyEvents.length, 0);
+    assertNoContextWatches(h);
+    h.service.destroy();
+    assert.equal(h.inputMethod.handlers.size, 0, 'destroy releases the caret watch');
 });
 
 test('the requested clipboard restore delay is capped', async () => {

@@ -637,6 +637,23 @@ class ShellService {
         this._contextRequests = new Set();
         this._injection = null;
         this._handoff = null;
+        // The latest caret rectangle per focused field. A click moves only the
+        // rectangle (GTK re-sends unchanged surrounding text), so a token must
+        // start from the rectangle current when it is issued.
+        this._caret = null;
+        this._caretSource = null;
+        this._caretWatch = 0;
+        try {
+            const inputMethod = Main.inputMethod;
+            this._caretWatch = inputMethod?.connect?.('cursor-location-changed', (im, rect) => {
+                this._caret = {focus: im.currentFocus, key: rectKey(rect)};
+            }) ?? 0;
+            if (this._caretWatch)
+                this._caretSource = inputMethod;
+        } catch {
+            // No caret signal: tokens fall back to their first observed rectangle.
+            this._caretWatch = 0;
+        }
     }
 
     Version() {
@@ -803,6 +820,8 @@ class ShellService {
     _bindContext(target, range) {
         this._releaseHandoff();
         const handoff = {...target, range, token: GLib.uuid_string_random(), active: true, signals: [], timeout: 0};
+        if (this._caret?.focus === target.focus && this._caret.key !== null)
+            handoff.rect = this._caret.key;
         this._handoff = handoff;
         try {
             const watch = (object, signal, callback) => {
@@ -893,6 +912,16 @@ class ShellService {
     }
 
     destroy() {
+        if (this._caretWatch) {
+            try {
+                this._caretSource.disconnect(this._caretWatch);
+            } catch {
+                // The input method may already be gone.
+            }
+        }
+        this._caretWatch = 0;
+        this._caretSource = null;
+        this._caret = null;
         this._cancelInjection(true);
         this._releaseHandoff();
         ++this._generation;

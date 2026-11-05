@@ -264,7 +264,9 @@ active. If the cursor or field changes between the context read and the paste,
 the daemon re-reads context and retries; if that fails again it inserts the text
 unadapted instead of discarding it. A retry never pastes into a field that has
 meanwhile become protected or a terminal (for example a password prompt that took
-focus); that rare dictation is reported as not inserted. Neither route can inspect an
+focus); that rare dictation is reported as not inserted. Protection relies on the field
+declaring itself: a plain GTK entry that only hides its characters, without a
+password purpose, reads as an ordinary field. Neither route can inspect an
 editor that exposes no surrounding-text or accessibility interface. Terminals,
 inaccessible browser/editor fields, ambiguous selections, and unavailable
 desktop services fall back to ordinary
