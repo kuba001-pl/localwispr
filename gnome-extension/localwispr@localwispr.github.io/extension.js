@@ -721,10 +721,15 @@ class ShellService {
                     return 'denied';
                 if (!this._lifetime.active)
                     return 'unavailable';
+                // Protection first: a password prompt that just took focus must
+                // read as protected, not merely changed, so no retry pastes there.
+                const protection = Main.inputMethod === inputMethod ? contextProtection(inputMethod) : null;
+                if (protection)
+                    return protection;
                 if (Main.inputMethod !== inputMethod || inputMethod.currentFocus !== focus ||
                     global.display.focus_window !== window || global.stage.get_key_focus?.() !== keyFocus)
                     return 'changed';
-                return contextProtection(inputMethod) ?? (inputMethod.hasPreedit() ? 'changed' : null);
+                return inputMethod.hasPreedit() ? 'changed' : null;
             };
             const initial = invalid();
             if (initial) {

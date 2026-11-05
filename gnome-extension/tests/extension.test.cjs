@@ -410,6 +410,18 @@ test('cursor context discards a snapshot if focus or protection changes while re
     }
 });
 
+test('a protected field that takes focus mid-read reports protected, not merely changed', () => {
+    const h = contextHarness();
+    h.request();
+    h.inputMethod.currentFocus = {};
+    h.inputMethod.content_purpose = 8;
+    h.respond(['secret', 0, 0]);
+    assert.deepEqual(h.reply.values, [['protected', '', '', false]]);
+    assert.equal(h.inputMethod.reads, 0);
+    h.assertClean();
+    h.service.destroy();
+});
+
 test('cursor context requires the currently watched unique daemon owner', () => {
     for (const [owner, sender] of [[null, ':1.42'], [':1.42', ':1.99'], [':1.42', 'org.localwispr.Daemon']]) {
         const h = contextHarness();

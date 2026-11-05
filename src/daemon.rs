@@ -231,8 +231,8 @@ async fn insert_adapted(
             let report = if let Route::Gnome(shell) = &route {
                 let (report, token) =
                     crate::cursor_context::read_gnome_insertion_report(shell).await;
-                // The fallback still reads, for the protection check below,
-                // but inserts unbound: the target keeps changing under us.
+                // The fallback still reads, for the checks below, but inserts
+                // unbound: the target keeps changing under us.
                 if let Some(token) = token.filter(|_| !fallback) {
                     route = Route::GnomeBound(shell.clone(), token);
                 }
@@ -240,25 +240,28 @@ async fn insert_adapted(
             } else {
                 crate::cursor_context::read_insertion_report(conn).await
             };
-            let status = if fallback && report.context.is_some() {
-                "changed-before-paste"
-            } else {
-                report.status
-            };
             let _ = events.send(Event::ContextRead {
                 utterance,
                 phase: "insertion",
-                status,
+                status: if fallback && report.context.is_some() {
+                    "changed-before-paste"
+                } else {
+                    report.status
+                },
                 source: report.source,
             });
-            if attempt > 0 && matches!(report.status, "protected-field" | "terminal-field") {
+            // After a stale attempt the target is unknown. Paste again only
+            // into a field just confirmed readable and unprotected; "changed",
+            // "timeout" or "protected" could be a prompt that took focus.
+            if attempt > 0 && report.context.is_none() {
+                if !fallback && !matches!(report.status, "protected-field" | "terminal-field") {
+                    attempt += 1;
+                    continue;
+                }
                 anyhow::bail!(
-                    "the focused field changed to a {} before paste; the dictation was not inserted",
-                    if report.status == "terminal-field" {
-                        "terminal"
-                    } else {
-                        "protected field"
-                    }
+                    "the focused field changed before paste and could not be confirmed safe \
+                     ({}); the dictation was not inserted",
+                    report.status
                 );
             }
             report.context.filter(|_| !fallback)
@@ -2110,8 +2113,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_retry_never_pastes_into_a_field_that_became_protected_or_a_terminal() {
-        for retry_status in ["protected", "terminal"] {
+    async fn a_retry_pastes_only_into_a_field_confirmed_readable_and_unprotected() {
+        // "changed"/"timeout": a prompt taking focus mid-read is not
+        // confirmed safe either, even after the extra read.
+        for retry_status in ["protected", "terminal", "changed", "timeout"] {
             let (engine, _bus) = engine().await;
             let shell = Arc::new(StaleShell {
                 stale: std::sync::Mutex::new(9),
